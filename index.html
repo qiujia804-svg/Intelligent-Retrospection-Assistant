@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>智能复盘助手</title>
+    <link rel="stylesheet" href="review-assistant.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>智能复盘助手</h1>
+            <p>记录每日成长，规划高效未来</p>
+        </header>
+
+        <main>
+            <!-- 标签切换 -->
+            <div class="tabs">
+                <button class="tab-btn active" data-tab="review-content">今日复盘</button>
+                <button class="tab-btn" data-tab="plan-content">明日规划</button>
+                <button class="tab-btn" data-tab="history-content">历史记录</button>
+                <button class="tab-btn" data-tab="advice-content">智能建议</button>
+            </div>
+
+            <!-- 复盘表单区域 -->
+            <div class="tab-content" id="review-content">
+                <h2>今日复盘</h2>
+                
+                <!-- 数据概览模块 -->
+                <div class="data-overview">
+                    <div class="data-overview-header">
+                        <h3>数据概览</h3>
+                    </div>
+                    
+                    <!-- 目标达成率趋势图 -->
+                    <div class="chart-container">
+                        <h4>目标达成率趋势图</h4>
+                        <div class="chart-wrapper">
+                            <canvas id="completionTrendChart"></canvas>
+                        </div>
+                    </div>
+                    
+                    <!-- 数据概览卡片 -->
+                    <div class="data-cards">
+                        <div class="data-card">
+                            <div class="data-value" id="total-days">8</div>
+                            <div class="data-label">总复盘天数</div>
+                        </div>
+                        <div class="data-card">
+                            <div class="data-value" id="avg-completion">0%</div>
+                            <div class="data-label">总体平均达成率</div>
+                        </div>
+                        <div class="data-card">
+                            <div class="data-value" id="streak-days">0天</div>
+                            <div class="data-label">连续复盘</div>
+                        </div>
+                        <div class="data-card">
+                            <div class="data-value" id="improvement-rate">0%</div>
+                            <div class="data-label">关键改进项完成率</div>
+                        </div>
+                        <div class="data-card">
+                            <div class="data-value" id="last-review">11月21日</div>
+                            <div class="data-label">最后复盘日期</div>
+                        </div>
+                    </div>
+                    
+                    <!-- 7天分段数据 -->
+                    <div class="segmented-data">
+                        <div class="segment-header">
+                            <input type="checkbox" id="segment-toggle" checked>
+                            <label for="segment-toggle">7天分段数据</label>
+                        </div>
+                        <div class="segment-cards">
+                            <div class="segment-card">
+                                <div class="segment-label">最近7天</div>
+                                <div class="segment-value" id="segment-7">0%</div>
+                            </div>
+                            <div class="segment-card">
+                                <div class="segment-label">8-14天前</div>
+                                <div class="segment-value" id="segment-14">0%</div>
+                            </div>
+                            <div class="segment-card">
+                                <div class="segment-label">15-21天前</div>
+                                <div class="segment-value" id="segment-21">--</div>
+                            </div>
+                            <div class="segment-card">
+                                <div class="segment-label">22-28天前</div>
+                                <div class="segment-value" id="segment-28">--</div>
+                            </div>
+                          </div>
+                    </div>
+                    
+                    <!-- 数据更新区域 -->
+                    <div class="data-update">
+                        <div class="update-info">数据自动更新</div>
+                        <button id="refresh-data" class="refresh-btn">刷新</button>
+                    </div>
+                </div>
+                
+                <form id="review-form">
+                    <div class="form-group">
+                        <label for="date">日期</label>
+                        <input type="date" id="date" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="goal-completion">目标达成情况</label>
+                        <div class="progress-container">
+                            <input type="range" id="goal-progress" min="0" max="100" value="50">
+                            <span id="progress-value">50%</span>
+                        </div>
+                        <textarea id="goal-completion" placeholder="请详细描述今日目标的完成情况，例如：完成了项目报告的70%，会议准备工作全部完成..." rows="3"></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="strengths">优点</label>
+                        <textarea id="strengths" placeholder="记录今天做得好的地方，例如：高效完成了会议准备，主动帮助同事解决问题..." rows="3"></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="weaknesses">不足</label>
+                        <textarea id="weaknesses" placeholder="记录需要改进的地方，例如：时间管理不够合理，沟通效率有待提高..." rows="3"></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="improvements">改进措施</label>
+                        <textarea id="improvements" placeholder="针对不足提出具体的改进方法，例如：明天使用番茄工作法，提前准备会议议程..." rows="3"></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="todos">待办事项</label>
+                        <textarea id="todos" placeholder="列出未完成的任务，例如：完成项目报告，回复重要邮件..." rows="3"></textarea>
+                    </div>
+
+                    <button type="submit" class="submit-btn">保存复盘</button>
+                </form>
+            </div>
+
+            <!-- 四象限规划区域 -->
+            <div class="tab-content" id="plan-content">
+                <h2>明日规划（四象限法则）</h2>
+                <form id="plan-form">
+                    <div class="quadrants">
+                        <!-- A类：重要且紧急 -->
+                        <div class="quadrant important-urgent">
+                            <h3>A类：重要且紧急</h3>
+                            <div class="task-list" id="quadrant-a">
+                                <div class="task-item">
+                                    <input type="text" placeholder="做什么（任务内容）" class="task-what">
+                                    <input type="text" placeholder="为什么做（重要性）" class="task-why">
+                                    <textarea placeholder="怎么做（执行方法）" class="task-how" rows="2"></textarea>
+                                    <input type="text" placeholder="解决方案" class="task-solution">
+                                    <div class="task-help-row">
+                                        <input type="text" placeholder="求助对象" class="task-help">
+                                        <button type="button" class="add-task-btn">+</button>
+                                        <button type="button" class="remove-task-btn">-</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- 任务优先级提醒 -->
+                        <div class="task-priority">
+                            <h3>任务优先级提醒</h3>
+                            <div class="priority-tips">
+                                <div class="priority-item priority-a">
+                                    <strong>A类：重要且紧急</strong>
+                                    <p>需优先处理，避免拖延导致危机</p>
+                                </div>
+                                <div class="priority-item priority-b">
+                                    <strong>B类：重要不紧急</strong>
+                                    <p>需长期规划，避免因忽视转为紧急任务</p>
+                                </div>
+                                <div class="priority-item priority-c">
+                                    <strong>C类：紧急不重要</strong>
+                                    <p>可委托或批量处理，避免占用核心时间</p>
+                                </div>
+                                <div class="priority-item priority-d">
+                                    <strong>D类：不重要不紧急</strong>
+                                    <p>尽量减少或取消，属于时间消耗型活动</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- B类：重要不紧急 -->
+                        <div class="quadrant important-not-urgent">
+                            <h3>B类：重要不紧急</h3>
+                            <div class="task-list" id="quadrant-b">
+                                <div class="task-item">
+                                    <input type="text" placeholder="做什么（任务内容）" class="task-what">
+                                    <input type="text" placeholder="为什么做（重要性）" class="task-why">
+                                    <textarea placeholder="怎么做（执行方法）" class="task-how" rows="2"></textarea>
+                                    <input type="text" placeholder="解决方案" class="task-solution">
+                                    <div class="task-help-row">
+                                        <input type="text" placeholder="求助对象" class="task-help">
+                                        <button type="button" class="add-task-btn">+</button>
+                                        <button type="button" class="remove-task-btn">-</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- C类：紧急不重要 -->
+                        <div class="quadrant not-important-urgent">
+                            <h3>C类：紧急不重要</h3>
+                            <div class="task-list" id="quadrant-c">
+                                <div class="task-item">
+                                    <input type="text" placeholder="做什么（任务内容）" class="task-what">
+                                    <input type="text" placeholder="为什么做（重要性）" class="task-why">
+                                    <textarea placeholder="怎么做（执行方法）" class="task-how" rows="2"></textarea>
+                                    <input type="text" placeholder="解决方案" class="task-solution">
+                                    <div class="task-help-row">
+                                        <input type="text" placeholder="求助对象" class="task-help">
+                                        <button type="button" class="add-task-btn">+</button>
+                                        <button type="button" class="remove-task-btn">-</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- D类：不重要不紧急 -->
+                        <div class="quadrant not-important-not-urgent">
+                            <h3>D类：不重要不紧急</h3>
+                            <div class="task-list" id="quadrant-d">
+                                <div class="task-item">
+                                    <input type="text" placeholder="做什么（任务内容）" class="task-what">
+                                    <input type="text" placeholder="为什么做（重要性）" class="task-why">
+                                    <textarea placeholder="怎么做（执行方法）" class="task-how" rows="2"></textarea>
+                                    <input type="text" placeholder="解决方案" class="task-solution">
+                                    <div class="task-help-row">
+                                        <input type="text" placeholder="求助对象" class="task-help">
+                                        <button type="button" class="add-task-btn">+</button>
+                                        <button type="button" class="remove-task-btn">-</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 时间管理界面 -->
+                    <div class="time-management">
+                        <h2>时间管理</h2>
+                        <div class="time-management-container">
+                            <!-- 今日时间安排 -->
+                            <div class="today-schedule">
+                                <h3>今日时间安排</h3>
+                                <div class="schedule-table">
+                                    <div class="schedule-header">
+                                        <div class="time-column">时间段</div>
+                                        <div class="task-column">具体任务</div>
+                                        <div class="duration-column">时长(分钟)</div>
+                                    </div>
+                                    <div id="schedule-items">
+                                        <!-- 时间段将自动生成 -->
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- 时间分配统计 -->
+                            <div class="time-stats">
+                                <h3>时间分配统计</h3>
+                                <div class="chart-container">
+                                    <canvas id="timeDistributionChart"></canvas>
+                                </div>
+                                <div class="stats-summary">
+                                    <span>总时长：<span id="total-duration">0分钟</span></span>
+                                    <span>任务数量：<span id="total-tasks">0</span></span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="submit-btn">保存规划</button>
+                </form>
+            </div>
+
+            <!-- 历史记录区域 -->
+            <div class="tab-content" id="history-content">
+                <h2>历史记录</h2>
+                <div class="history-controls">
+                    <input type="month" id="history-filter">
+                    <button id="clear-history">清空历史</button>
+                </div>
+                <div id="history-list"></div>
+                <div id="history-detail" class="history-detail">
+                    <h3>复盘详情</h3>
+                    <div id="detail-content"></div>
+                    <button id="close-detail">关闭</button>
+                </div>
+            </div>
+
+            <!-- 智能建议区域 -->
+            <div class="tab-content" id="advice-content">
+                <h2>智能成长建议</h2>
+                <div class="advice-generator">
+                    <button id="generate-advice" class="advice-btn">生成建议</button>
+                </div>
+                <div id="advice-result" class="advice-result">
+                    <h3>基于你的复盘记录，我们为你准备了以下建议：</h3>
+                    <div class="advice-content">
+                        <!-- 智能建议将在这里显示 -->
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <footer>
+            <p>&copy; 2024 智能复盘助手 - 让每一天都有进步</p>
+        </footer>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="review-assistant.js"></script>
+</body>
+</html>
