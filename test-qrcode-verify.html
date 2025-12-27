@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>二维码验证</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .qrcode-container { margin: 20px; }
+        img { border: 1px solid #ccc; margin: 10px; }
+        .status { padding: 10px; margin: 10px; border-radius: 5px; }
+        .success { background-color: #d4edda; color: #155724; }
+        .error { background-color: #f8d7da; color: #721c24; }
+    </style>
+</head>
+<body>
+    <h1>二维码验证</h1>
+    
+    <div class="qrcode-container">
+        <h2>微信收款码</h2>
+        <img id="wechat-qrcode" src="images/wechat-qrcode.svg" alt="微信收款码" style="width: 200px; height: 200px; object-fit: contain;">
+        <div id="wechat-status" class="status"></div>
+    </div>
+    
+    <div class="qrcode-container">
+        <h2>支付宝收款码</h2>
+        <img id="alipay-qrcode" src="images/alipay-qrcode.svg" alt="支付宝收款码" style="width: 200px; height: 200px; object-fit: contain;">
+        <div id="alipay-status" class="status"></div>
+    </div>
+    
+    <script>
+        // 验证微信收款码
+        const wechatImg = document.getElementById('wechat-qrcode');
+        const wechatStatus = document.getElementById('wechat-status');
+        
+        wechatImg.onload = function() {
+            wechatStatus.textContent = '微信收款码加载成功';
+            wechatStatus.className = 'status success';
+            console.log('微信收款码加载成功:', wechatImg.src);
+        };
+        
+        wechatImg.onerror = function() {
+            wechatStatus.textContent = '微信收款码加载失败';
+            wechatStatus.className = 'status error';
+            console.error('微信收款码加载失败:', wechatImg.src);
+        };
+        
+        // 验证支付宝收款码
+        const alipayImg = document.getElementById('alipay-qrcode');
+        const alipayStatus = document.getElementById('alipay-status');
+        
+        alipayImg.onload = function() {
+            alipayStatus.textContent = '支付宝收款码加载成功';
+            alipayStatus.className = 'status success';
+            console.log('支付宝收款码加载成功:', alipayImg.src);
+        };
+        
+        alipayImg.onerror = function() {
+            alipayStatus.textContent = '支付宝收款码加载失败';
+            alipayStatus.className = 'status error';
+            console.error('支付宝收款码加载失败:', alipayImg.src);
+        };
+        
+        // 检查图片尺寸
+        window.addEventListener('load', function() {
+            console.log('微信收款码尺寸:', wechatImg.width, 'x', wechatImg.height);
+            console.log('支付宝收款码尺寸:', alipayImg.width, 'x', alipayImg.height);
+        });
+    </script>
+</body>
+</html>

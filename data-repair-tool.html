@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>数据修复工具</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .container {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 40px;
+            max-width: 800px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            animation: fadeIn 0.5s ease-in;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 28px;
+        }
+        .status-box {
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+        .success {
+            background: #d4edda;
+            border-left: 4px solid #28a745;
+            color: #155724;
+        }
+        .warning {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            color: #856404;
+        }
+        .error {
+            background: #f8d7da;
+            border-left: 4px solid #dc3545;
+            color: #721c24;
+        }
+        .info {
+            background: #d1ecf1;
+            border-left: 4px solid #17a2b8;
+            color: #0c5460;
+        }
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        .data-table th,
+        .data-table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        .data-table th {
+            background: #f8f9fa;
+            font-weight: bold;
+            color: #333;
+        }
+        .data-table tr:hover {
+            background: #f5f5f5;
+        }
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin: 5px;
+        }
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+        .btn-danger {
+            background: #dc3545;
+            color: white;
+        }
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        }
+        .btn-container {
+            text-align: center;
+            margin-top: 30px;
+        }
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #666;
+        }
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 复盘数据修复工具</h1>
+        
+        <div id="loading" class="loading">
+            正在加载数据...
+        </div>
+        
+        <div id="results" class="hidden">
+            <!-- 检查结果将显示在这里 -->
+        </div>
+        
+        <div class="btn-container hidden" id="btn-container">
+            <button class="btn btn-primary" onclick="loadMainSite()">📊 打开主网站</button>
+            <button class="btn btn-success" onclick="checkData()">🔍 重新检查</button>
+        </div>
+    </div>
+
+    <script>
+        // 页面加载时自动检查数据
+        window.onload = function() {
+            checkData();
+        };
+
+        function checkData() {
+            const loading = document.getElementById('loading');
+            const results = document.getElementById('results');
+            const btnContainer = document.getElementById('btn-container');
+            
+            loading.classList.remove('hidden');
+            results.classList.add('hidden');
+            btnContainer.classList.add('hidden');
+            
+            setTimeout(() => {
+                const reviews = JSON.parse(localStorage.getItem('reviewHistory') || '[]');
+                let html = '';
+                let hasError = false;
+                let hasSuccess = false;
+                
+                // 查找12月23日和12月24日的数据
+                const dec23 = reviews.find(r => r.date === '2025-12-23');
+                const dec24 = reviews.find(r => r.date === '2025-12-24');
+                
+                html += '<div class="status-box info">';
+                html += '<h3>📊 数据检查结果</h3>';
+                html += '<p>总记录数: ' + reviews.length + ' 条</p>';
+                html += '</div>';
+                
+                html += '<table class="data-table">';
+                html += '<thead><tr><th>日期</th><th>状态</th><th>完成率</th><th>优点</th></tr></thead>';
+                html += '<tbody>';
+                
+                if (dec23) {
+                    const percentage = typeof dec23.goalCompletion === 'object' 
+                        ? dec23.goalCompletion.percentage + '%' 
+                        : dec23.goalCompletion;
+                    html += `<tr>
+                        <td><strong>12月23日</strong></td>
+                        <td style="color: #28a745;">✅ 有数据</td>
+                        <td>${percentage}</td>
+                        <td>${dec23.strengths || '无'}</td>
+                    </tr>`;
+                    hasSuccess = true;
+                } else {
+                    html += `<tr>
+                        <td><strong>12月23日</strong></td>
+                        <td style="color: #ffc107;">⚠️ 无数据</td>
+                        <td>-</td>
+                        <td>-</td>
+                    </tr>`;
+                }
+                
+                if (dec24) {
+                    const percentage = typeof dec24.goalCompletion === 'object' 
+                        ? dec24.goalCompletion.percentage + '%' 
+                        : dec24.goalCompletion;
+                    html += `<tr>
+                        <td><strong>12月24日</strong></td>
+                        <td style="color: #dc3545;">❌ 错误数据</td>
+                        <td>${percentage}</td>
+                        <td>${dec24.strengths || '无'}</td>
+                    </tr>`;
+                    hasError = true;
+                } else {
+                    html += `<tr>
+                        <td><strong>12月24日</strong></td>
+                        <td style="color: #28a745;">✅ 无数据（正确）</td>
+                        <td>-</td>
+                        <td>-</td>
+                    </tr>`;
+                    hasSuccess = true;
+                }
+                
+                html += '</tbody></table>';
+                
+                if (hasError) {
+                    html += '<div class="status-box error">';
+                    html += '<h3>⚠️ 发现问题</h3>';
+                    html += '<p>检测到12月24日存在错误的复盘数据。系统会在主网站打开时自动修复此问题。</p>';
+                    html += '<p><strong>自动修复说明：</strong></p>';
+                    html += '<ul>';
+                    html += '<li>如果12月23日没有数据，系统会将12月24日的数据改为12月23日</li>';
+                    html += '<li>如果12月23日已有数据，系统会删除重复的12月24日数据</li>';
+                    html += '</ul>';
+                    html += '</div>';
+                } else if (dec23 && !dec24) {
+                    html += '<div class="status-box success">';
+                    html += '<h3>✅ 数据正常</h3>';
+                    html += '<p>您的复盘数据是正确的！12月23日有数据，12月24日没有数据。</p>';
+                    html += '</div>';
+                } else if (!dec23 && !dec24) {
+                    html += '<div class="status-box warning">';
+                    html += '<h3>ℹ️ 提示</h3>';
+                    html += '<p>没有找到12月23日和12月24日的数据，这是正常的。</p>';
+                    html += '</div>';
+                }
+                
+                html += '<div class="status-box info">';
+                html += '<h3>🔧 如何修复</h3>';
+                html += '<p>系统会在您打开主网站时自动检测并修复日期错误。</p>';
+                html += '<p>修复逻辑：</p>';
+                html += '<ol>';
+                html += '<li>打开主网站（index.html）</li>';
+                html += '<li>系统会自动检查localStorage中的数据</li>';
+                html += '<li>发现12月24日的错误数据会自动修复</li>';
+                html += '<li>刷新页面后折线图会显示正确的日期</li>';
+                html += '</ol>';
+                html += '</div>';
+                
+                results.innerHTML = html;
+                loading.classList.add('hidden');
+                results.classList.remove('hidden');
+                btnContainer.classList.remove('hidden');
+                
+            }, 500);
+        }
+
+        function loadMainSite() {
+            window.open('index.html', '_blank');
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,563 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>智能复盘助手 - 图表展示</title>
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        h1 {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+        }
+        .chart-container {
+            display: flex;
+            justify-content: space-around;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+        .insight-chart-card {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 10px;
+            padding: 20px;
+            width: 45%;
+            min-width: 400px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+        h4 {
+            color: white;
+            margin-top: 0;
+        }
+        .chart-desc {
+            color: rgba(255, 255, 255, 0.8);
+            margin-bottom: 20px;
+            font-size: 14px;
+        }
+        .echarts-container {
+            width: 100%;
+            height: 300px;
+        }
+        .data-source {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 10px;
+            padding: 20px;
+            margin-top: 30px;
+            color: white;
+        }
+        .data-source h3 {
+            margin-top: 0;
+        }
+        .data-item {
+            margin: 10px 0;
+        }
+        .data-item strong {
+            display: inline-block;
+            width: 100px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>人生资产报告</h1>
+        
+        <div class="chart-container">
+            <div class="insight-chart-card">
+                <h4>精力多维分布</h4>
+                <p class="chart-desc">展示本月各领域的时间投入比例</p>
+                <div id="radar-chart" class="echarts-container"></div>
+            </div>
+            
+            <div class="insight-chart-card">
+                <h4>时间花费对比</h4>
+                <p class="chart-desc">本月各项目累计时长排名</p>
+                <div id="bar-chart" class="echarts-container"></div>
+            </div>
+        </div>
+        
+        <div class="data-source">
+            <h3>数据来源</h3>
+            <div id="data-summary"></div>
+        </div>
+    </div>
+
+    <script>
+        // JSON数据（从文件中提取）
+        const jsonData = {
+            "reviews": [
+                {
+                    "date": "2025-12-01",
+                    "goalCompletion": "49%",
+                    "strengths": "起床、晨练、吃饭、冥想、读佛经、学习AI，开始实践AI项目，如网站学习AI,实践AI项目——完善复盘网站学习python学习营销学习英语",
+                    "weaknesses": "其他时间占比太大",
+                    "improvements": "其他时间占比21.8%，总时长是180分钟，压缩其他时间",
+                    "todos": ""
+                },
+                {
+                    "date": "2025-12-02",
+                    "goalCompletion": "63%",
+                    "strengths": "起床、晨练、吃饭、 冥想、学习python，学习AI 实践AI项目——完善复盘网站,AI换装，AI换脸 学习营销 学习英语",
+                    "weaknesses": "休息时间太长，如晚上可节约1小时，早上可节约半小时",
+                    "improvements": "听佛经、热饭，可跟洗漱一起，冥想从原来的20分钟，缩减成15分钟也就是说1小时完成洗漱、听佛经、热饭、吃饭、晨练、冥想",
+                    "todos": ""
+                },
+                {
+                    "date": "2025-12-03",
+                    "goalCompletion": "65%",
+                    "strengths": "起床、晨练、吃饭、 冥想、学习python，学习AI ",
+                    "weaknesses": "工作休息时间，有时休息太长",
+                    "improvements": "严格控制休息时间，高效工作，休息时间最多不超过20分钟",
+                    "todos": ""
+                },
+                {
+                    "date": "2025-12-04",
+                    "goalCompletion": "68%",
+                    "strengths": "学习英语从0到100的单词，学到静心法则《阴符本经——养志法灵龟》，发布AI翻唱懒洋洋《将爱却晚秋》，积累了许多AI工具",
+                    "weaknesses": "只学了11个半小时，还不到12小时，拍摄月亮花费时间太长",
+                    "improvements": "合理分配消息时间，困了就去做深蹲，俯卧撑、洗洗脸",
+                    "todos": ""
+                },
+                {
+                    "date": "2025-12-05",
+                    "goalCompletion": "75%",
+                    "strengths": "1.发布AI换发型\n2.学习python，if语句\n3.整合了AI超实用工具1\n4.复习之前学的英语",
+                    "weaknesses": "早上刷视频时间太长",
+                    "improvements": "可以把早上的休息时间，分配给后面每小时",
+                    "todos": ""
+                },
+                {
+                    "date": "2025-12-07",
+                    "goalCompletion": "77%",
+                    "strengths": "学习总时长：785分钟(13小时5分钟)，占比77.0%",
+                    "weaknesses": "没看书",
+                    "improvements": "明确看书的好处",
+                    "todos": "看书"
+                },
+                {
+                    "date": "2025-12-06",
+                    "goalCompletion": "75%",
+                    "strengths": "学习总时长：765分钟(12小时45分钟)，占比75.0%",
+                    "weaknesses": "时间提上去的同时，也要注意效率",
+                    "improvements": "我今天学到什么新技能，我能为社会提供什么独特价值",
+                    "todos": ""
+                },
+                {
+                    "date": "2025-12-08",
+                    "goalCompletion": "65%",
+                    "strengths": "学会如何从GitHub上下载下来的应用程序，我只需放在kikm上解读一下README.md文件，就知道怎么用了。",
+                    "weaknesses": "昨天刷手机，闹钟没响，晚起一小时，6：30才起床",
+                    "improvements": "晚上把手机放书房",
+                    "todos": ""
+                },
+                {
+                    "date": "2025-12-09",
+                    "goalCompletion": "69%",
+                    "strengths": "学习总时长：690分钟(11小时30分钟)，占比67.6%。完成AI翻译视频（视频一键翻译+配音+字幕）的发布",
+                    "weaknesses": "AI翻译视频的结尾仍有瑕疵，不过好在音频没问题.晚起，闹钟没响",
+                    "improvements": "先放下，去完成其他更重要的事。设置4：50、5：00闹钟",
+                    "todos": "学英语、看书"
+                },
+                {
+                    "date": "2025-12-10",
+                    "goalCompletion": "78%",
+                    "strengths": "学习总时长：800分钟(13小时20分钟)，占比78.4%.学会了如何用基于AutoGLM用手机去控制app，自动化",
+                    "weaknesses": "没学习英语",
+                    "improvements": "每天必须给长期成长一定的时间",
+                    "todos": "学习英语"
+                },
+                {
+                    "date": "2025-12-11",
+                    "goalCompletion": "71%",
+                    "strengths": "学习总时长：730分钟(12小时10分钟)，占比71.6%.。学会用电脑自动搭建网站、托管、发布",
+                    "weaknesses": "没剪辑视频、学英语、",
+                    "improvements": "每天晚上8：00钟开始学营销、剪视频，审美很重要，知道什么是好视频",
+                    "todos": ""
+                },
+                {
+                    "date": "2025-12-14",
+                    "goalCompletion": "57%",
+                    "strengths": "学习总时长：582分钟(9小时42分钟)，占比57.1%.推进了AI自动剪辑，看《早起的奇迹》5章，学习英语1小时",
+                    "weaknesses": "刷视频时间太长148分钟",
+                    "improvements": "把晚上8点的刷视频，改成看剪辑视频",
+                    "todos": ""
+                },
+                {
+                    "date": "2025-12-13",
+                    "goalCompletion": "0%",
+                    "strengths": "放假休息",
+                    "weaknesses": "放假休息",
+                    "improvements": "放假休息",
+                    "todos": ""
+                },
+                {
+                    "date": "2025-12-12",
+                    "goalCompletion": "50%",
+                    "strengths": "730分钟(12小时10分钟)，占比71%",
+                    "weaknesses": "没学英语",
+                    "improvements": "加深脑子对英语的重要性",
+                    "todos": ""
+                },
+                {
+                    "date": "2025-12-15",
+                    "goalCompletion": "71%",
+                    "strengths": "学习总时长：725分钟(12小时5分钟)，占比71.1%,推荐了AI自动剪辑系统，打开了网页，报名了trae.cn的线下编程赛",
+                    "weaknesses": "没剪辑视频",
+                    "improvements": "明天必须剪辑一个视频",
+                    "todos": ""
+                },
+                {
+                    "date": "2025-12-16",
+                    "goalCompletion": "73%",
+                    "strengths": "学习总时长：750分钟(12小时30分钟)，占比73.5%,",
+                    "weaknesses": "迷茫，不知所措",
+                    "improvements": "看《纳瓦尔宝典》",
+                    "todos": ""
+                },
+                {
+                    "date": "2025-12-17",
+                    "goalCompletion": "82%",
+                    "strengths": "学会claude code、从赚钱思维，转化成\"解决问题思维\"兴趣很重要。我第一次工作了14个小时",
+                    "weaknesses": "没学英语、没看营销教科书",
+                    "improvements": "合理规划时间",
+                    "todos": ""
+                },
+                {
+                    "date": "2025-12-18",
+                    "goalCompletion": "82%",
+                    "strengths": "1.学会了Claude code搭建自动剪辑系统 2.给AI智能复盘，添加登录、注册、收款码",
+                    "weaknesses": "没学英语，没早读",
+                    "improvements": "提升早读意识、英语重要性",
+                    "todos": "完善AI自动剪辑系统和AI智能复盘收费系统"
+                },
+                {
+                    "date": "2025-12-19",
+                    "goalCompletion": "80%",
+                    "strengths": "推进AI自动剪辑系统",
+                    "weaknesses": "迷茫了，不断修该AI自动剪辑，不断出错",
+                    "improvements": "看书、学习、行动，停下来也没用",
+                    "todos": ""
+                },
+                {
+                    "date": "2025-12-20",
+                    "goalCompletion": "80%",
+                    "strengths": "推进了AI自动剪辑系统。仍为搭建第一条管道努力：web搭建——注册支付宝、微信商家，获取API——买服务器，备案icp——发布系统——获取反馈——完善web",
+                    "weaknesses": "AI自动剪辑系统搭建缓慢",
+                    "improvements": "分析原因，思考解决办法",
+                    "todos": ""
+                },
+                {
+                    "date": "2025-12-21",
+                    "goalCompletion": "86%",
+                    "strengths": "反思，确定了方向，先搭建起一条管道收入，如智能复盘网，再专注搭建第二条坚持什么和放弃什么，同样重要",
+                    "weaknesses": "AI效率有待提高",
+                    "improvements": "多花时间思考",
+                    "todos": ""
+                },
+                {
+                    "date": "2025-12-22",
+                    "goalCompletion": "88%",
+                    "strengths": "学习总时长：900分钟(15小时)，占比88.2%\n看书/70分钟/7%\n学习AI/590分钟/58%\n休息放松/120分钟/12%\n学习营销/240分钟/24%\n\n推进了AI智能复盘系统的搭建\n发布了图片转url链接的视频",
+                    "weaknesses": "AI智能复盘系统的搭建，进度缓慢",
+                    "improvements": "更换平台，使用扣子",
+                    "todos": "学习英语"
+                }
+            ]
+        };
+
+        // 提取12月份的数据
+        function extractDecemberData() {
+            const decemberReviews = jsonData.reviews.filter(review => 
+                review.date.startsWith('2025-12')
+            );
+            
+            console.log('12月份复盘记录数:', decemberReviews.length);
+            
+            // 提取时间分配数据
+            const timeData = {};
+            
+            decemberReviews.forEach(review => {
+                const strengths = review.strengths || '';
+                
+                // 匹配格式：项目名/时长分钟/百分比% 或 项目名/时长分钟
+                const timePattern = /([^\/\n]+)\/(\d+)分钟\/?(\d+)?%?/g;
+                let match;
+                
+                while ((match = timePattern.exec(strengths)) !== null) {
+                    const project = match[1].trim();
+                    const minutes = parseInt(match[2], 10);
+                    
+                    if (project && !isNaN(minutes) && minutes > 0) {
+                        if (!timeData[project]) {
+                            timeData[project] = 0;
+                        }
+                        timeData[project] += minutes;
+                    }
+                }
+                
+                // 匹配学习总时长
+                const totalPattern = /学习总时长：(\d+)分钟/;
+                const totalMatch = strengths.match(totalPattern);
+                if (totalMatch) {
+                    const totalMinutes = parseInt(totalMatch[1], 10);
+                    if (!isNaN(totalMinutes)) {
+                        if (!timeData['总学习时长']) {
+                            timeData['总学习时长'] = 0;
+                        }
+                        timeData['总学习时长'] += totalMinutes;
+                    }
+                }
+            });
+            
+            console.log('提取的时间数据:', timeData);
+            return timeData;
+        }
+
+        // 生成图表数据
+        function generateChartData() {
+            const timeData = extractDecemberData();
+            
+            // 移除总学习时长，只保留具体项目
+            const { '总学习时长': totalStudyHours, ...projectData } = timeData;
+            
+            // 转换为图表所需格式
+            const categories = Object.keys(projectData);
+            const values = Object.values(projectData);
+            
+            // 计算总时长（小时）
+            const totalMinutes = values.reduce((sum, val) => sum + val, 0);
+            const totalHours = (totalMinutes / 60).toFixed(1);
+            
+            // 生成雷达图指标
+            const radarIndicator = categories.map(name => ({
+                name: name,
+                max: Math.max(...values) * 1.2
+            }));
+            
+            // 生成柱状图数据
+            const barData = categories.map((name, index) => ({
+                name: name,
+                value: values[index],
+                hours: `${Math.floor(values[index] / 60)}h${values[index] % 60}m`
+            })).sort((a, b) => b.value - a.value);
+            
+            return {
+                radar: {
+                    indicator: radarIndicator,
+                    data: values
+                },
+                bar: barData,
+                totalHours: totalHours,
+                totalDays: jsonData.reviews.filter(review => 
+                    review.date.startsWith('2025-12')
+                ).length,
+                projectData: projectData
+            };
+        }
+
+        // 初始化雷达图
+        function initRadarChart(data) {
+            const radarChart = echarts.init(document.getElementById('radar-chart'));
+            
+            const option = {
+                tooltip: {
+                    trigger: 'item',
+                    formatter: function(params) {
+                        const value = params.value;
+                        const hours = Math.floor(value / 60);
+                        const mins = value % 60;
+                        const timeStr = hours > 0 ? `${hours}h${mins > 0 ? mins + 'm' : ''}` : `${mins}m`;
+                        return `${params.name}<br/>投入时间: ${timeStr}`;
+                    }
+                },
+                radar: {
+                    indicator: data.indicator,
+                    center: ['50%', '50%'],
+                    radius: '65%',
+                    axisName: {
+                        color: 'rgba(255, 255, 255, 0.8)',
+                        fontSize: 11
+                    },
+                    splitArea: {
+                        areaStyle: {
+                            color: ['rgba(255, 255, 255, 0.05)', 'rgba(255, 255, 255, 0.1)']
+                        }
+                    },
+                    axisLine: {
+                        lineStyle: {
+                            color: 'rgba(255, 255, 255, 0.2)'
+                        }
+                    },
+                    splitLine: {
+                        lineStyle: {
+                            color: 'rgba(255, 255, 255, 0.2)'
+                        }
+                    }
+                },
+                series: [{
+                    type: 'radar',
+                    data: [{
+                        value: data.data,
+                        name: '时间投入',
+                        symbol: 'circle',
+                        symbolSize: 6,
+                        lineStyle: {
+                            color: '#1890ff',
+                            width: 2
+                        },
+                        areaStyle: {
+                            color: 'rgba(24, 144, 255, 0.3)'
+                        },
+                        itemStyle: {
+                            color: '#1890ff',
+                            borderColor: '#fff',
+                            borderWidth: 2
+                        }
+                    }]
+                }]
+            };
+            
+            radarChart.setOption(option);
+        }
+
+        // 初始化柱状图
+        function initBarChart(data) {
+            const barChart = echarts.init(document.getElementById('bar-chart'));
+            
+            const option = {
+                tooltip: {
+                    trigger: 'axis',
+                    axisPointer: {
+                        type: 'shadow'
+                    },
+                    formatter: function(params) {
+                        const value = params[0].value;
+                        const hours = Math.floor(value / 60);
+                        const mins = value % 60;
+                        const timeStr = hours > 0 ? `${hours}h${mins > 0 ? mins + 'm' : ''}` : `${mins}m`;
+                        return `${params[0].name}<br/>投入时间: ${timeStr}`;
+                    }
+                },
+                grid: {
+                    left: '3%',
+                    right: '4%',
+                    bottom: '15%',
+                    top: '10%',
+                    containLabel: true
+                },
+                xAxis: {
+                    type: 'category',
+                    data: data.map(item => item.name),
+                    axisLabel: {
+                        color: 'rgba(255, 255, 255, 0.8)',
+                        fontSize: 10,
+                        interval: 0,
+                        rotate: data.length > 4 ? 30 : 0
+                    },
+                    axisLine: {
+                        lineStyle: {
+                            color: 'rgba(255, 255, 255, 0.3)'
+                        }
+                    }
+                },
+                yAxis: {
+                    type: 'value',
+                    axisLabel: {
+                        color: 'rgba(255, 255, 255, 0.6)',
+                        fontSize: 10,
+                        formatter: function(value) {
+                            return Math.floor(value / 60) + 'h';
+                        }
+                    },
+                    axisLine: {
+                        show: false
+                    },
+                    splitLine: {
+                        lineStyle: {
+                            color: 'rgba(255, 255, 255, 0.1)'
+                        }
+                    }
+                },
+                series: [{
+                    type: 'bar',
+                    data: data.map(item => ({
+                        value: item.value,
+                        itemStyle: {
+                            color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+                                { offset: 0, color: '#1890ff' },
+                                { offset: 1, color: '#1890ff80' }
+                            ]),
+                            borderRadius: [4, 4, 0, 0]
+                        }
+                    })),
+                    barWidth: '60%',
+                    label: {
+                        show: true,
+                        position: 'top',
+                        color: 'rgba(255, 255, 255, 0.9)',
+                        fontSize: 10,
+                        formatter: function(params) {
+                            const hours = Math.floor(params.value / 60);
+                            const mins = params.value % 60;
+                            if (hours > 0) {
+                                return mins > 0 ? `${hours}h${mins}m` : `${hours}h`;
+                            }
+                            return `${mins}m`;
+                        }
+                    }
+                }]
+            };
+            
+            barChart.setOption(option);
+        }
+
+        // 显示数据摘要
+        function showDataSummary(chartData) {
+            const summaryDiv = document.getElementById('data-summary');
+            let html = '';
+            
+            html += `<div class="data-item"><strong>本月总投入:</strong> ${chartData.totalHours}小时</div>`;
+            html += `<div class="data-item"><strong>复盘天数:</strong> ${chartData.totalDays}天</div>`;
+            html += `<div class="data-item"><strong>项目明细:</strong></div>`;
+            
+            for (const [project, minutes] of Object.entries(chartData.projectData)) {
+                const hours = Math.floor(minutes / 60);
+                const mins = minutes % 60;
+                const timeStr = hours > 0 ? `${hours}h${mins > 0 ? mins + 'm' : ''}` : `${mins}m`;
+                html += `<div class="data-item" style="margin-left: 20px;">${project}: ${timeStr}</div>`;
+            }
+            
+            summaryDiv.innerHTML = html;
+        }
+
+        // 初始化图表
+        function initCharts() {
+            const chartData = generateChartData();
+            
+            initRadarChart(chartData.radar);
+            initBarChart(chartData.bar);
+            showDataSummary(chartData);
+            
+            // 监听窗口大小变化
+            window.addEventListener('resize', function() {
+                echarts.getInstanceByDom(document.getElementById('radar-chart')).resize();
+                echarts.getInstanceByDom(document.getElementById('bar-chart')).resize();
+            });
+        }
+
+        // 页面加载完成后初始化图表
+        document.addEventListener('DOMContentLoaded', initCharts);
+    </script>
+</body>
+</html>

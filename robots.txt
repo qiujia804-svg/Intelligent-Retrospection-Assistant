@@ -1,0 +1,3 @@
+User-agent: *
+Disallow: 
+Sitemap: https://smart-retro-assistant.com/sitemap.xml

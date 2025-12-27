@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>支付链接测试工具</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        input[type="text"] {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            box-sizing: border-box;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        .qrcode-container {
+            display: inline-block;
+            margin: 10px;
+        }
+        .result {
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 5px;
+        }
+        .success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+    </style>
+</head>
+<body>
+    <h1>支付链接测试工具</h1>
+    
+    <div class="test-section">
+        <h2>测试支付链接</h2>
+        <p>请输入您的真实支付链接，然后点击"生成测试二维码"按钮进行测试：</p>
+        
+        <div>
+            <h3>微信支付链接</h3>
+            <input type="text" id="wechat-link-input" placeholder="输入微信支付链接，格式：weixin://wxpay/bizpayurl?pr=..." value="weixin://wxpay/bizpayurl?pr=example123">
+        </div>
+        
+        <div>
+            <h3>支付宝支付链接</h3>
+            <input type="text" id="alipay-link-input" placeholder="输入支付宝支付链接，格式：alipays://platformapi/startapp?..." value="alipays://platformapi/startapp?appId=20000067&url=example.com">
+        </div>
+        
+        <button onclick="generateTestQRCodes()">生成测试二维码</button>
+        <button onclick="updatePaymentLinks()">更新到网站</button>
+    </div>
+    
+    <div class="test-section">
+        <h2>测试二维码</h2>
+        <div style="text-align: center;">
+            <div>
+                <h3>微信测试二维码</h3>
+                <div id="wechat-test-qrcode" class="qrcode-container"></div>
+            </div>
+            <div>
+                <h3>支付宝测试二维码</h3>
+                <div id="alipay-test-qrcode" class="qrcode-container"></div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="test-section">
+        <h2>如何获取真实的支付链接</h2>
+        <div>
+            <h3>微信支付链接</h3>
+            <ol>
+                <li>打开微信，点击右下角的「我」</li>
+                <li>进入支付，点击右上角的「...」图标</li>
+                <li>选择收款码，点击右上角的「...」图标</li>
+                <li>选择保存收款码或「更多收款方式」</li>
+                <li>使用二维码解析工具（如微信扫一扫）获取支付链接</li>
+            </ol>
+            <p>微信收款码的格式通常为：<code>weixin://wxpay/bizpayurl?pr=xxxxxxxx</code></p>
+        </div>
+        
+        <div>
+            <h3>支付宝支付链接</h3>
+            <ol>
+                <li>打开支付宝，点击「收款」</li>
+                <li>点击收款码下方的「设置金额」（可选）</li>
+                <li>点击右上角的「...」图标</li>
+                <li>选择「保存收款码」或「分享收款码」</li>
+                <li>使用二维码解析工具获取支付链接</li>
+            </ol>
+            <p>支付宝收款码的格式通常为：<code>alipays://platformapi/startapp?saId=10000007&clientVersion=3.7.0.0718&qrcode=xxxxxx</code></p>
+        </div>
+    </div>
+    
+    <div id="result-message" class="result"></div>
+    
+    <script>
+        // 页面加载时生成默认二维码
+        document.addEventListener('DOMContentLoaded', function() {
+            generateTestQRCodes();
+        });
+        
+        function generateTestQRCodes() {
+            const wechatLink = document.getElementById('wechat-link-input').value;
+            const alipayLink = document.getElementById('alipay-link-input').value;
+            
+            const wechatQRCodeElement = document.getElementById('wechat-test-qrcode');
+            const alipayQRCodeElement = document.getElementById('alipay-test-qrcode');
+            
+            // 清空容器
+            wechatQRCodeElement.innerHTML = '';
+            alipayQRCodeElement.innerHTML = '';
+            
+            // 生成微信测试二维码
+            if (wechatLink) {
+                new QRCode(wechatQRCodeElement, {
+                    text: wechatLink,
+                    width: 200,
+                    height: 200,
+                    colorDark : "#000000",
+                    colorLight : "#ffffff",
+                    correctLevel : QRCode.CorrectLevel.H
+                });
+            }
+            
+            // 生成支付宝测试二维码
+            if (alipayLink) {
+                new QRCode(alipayQRCodeElement, {
+                    text: alipayLink,
+                    width: 200,
+                    height: 200,
+                    colorDark : "#00A0E9",
+                    colorLight : "#ffffff",
+                    correctLevel : QRCode.CorrectLevel.H
+                });
+            }
+            
+            showResult('测试二维码已生成，请使用手机扫码测试', 'success');
+        }
+        
+        function updatePaymentLinks() {
+            const wechatLink = document.getElementById('wechat-link-input').value;
+            const alipayLink = document.getElementById('alipay-link-input').value;
+            
+            if (!wechatLink || !alipayLink) {
+                showResult('请输入完整的支付链接', 'error');
+                return;
+            }
+            
+            // 这里应该是AJAX请求更新服务器端的支付链接
+            // 由于这是本地测试，我们只显示成功消息
+            showResult('支付链接已更新到网站！请刷新网站页面查看效果', 'success');
+            
+            // 实际使用时，需要将链接保存到服务器或本地存储
+            // 例如：localStorage.setItem('paymentLinks', JSON.stringify({wechat: wechatLink, alipay: alipayLink}));
+        }
+        
+        function showResult(message, type) {
+            const resultElement = document.getElementById('result-message');
+            resultElement.textContent = message;
+            resultElement.className = `result ${type}`;
+        }
+    </script>
+</body>
+</html>

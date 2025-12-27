@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Fixed QR Code Test</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            padding: 20px;
+        }
+        .modal {
+            display: block;
+            position: fixed;
+            z-index: 1;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgb(0,0,0);
+            background-color: rgba(0,0,0,0.4);
+        }
+        .modal-content {
+            background-color: #fefefe;
+            margin: 15% auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 80%;
+            max-width: 500px;
+            border-radius: 5px;
+        }
+        .qrcode-placeholder {
+            display: inline-block;
+            margin: 10px;
+        }
+        .payment-qrcode {
+            text-align: center;
+        }
+        .submit-btn {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h1>支付模态框二维码测试</h1>
+    
+    <!-- 支付模态框 -->
+    <div id="payment-modal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>支付确认</h2>
+            <div class="payment-info">
+                <p id="payment-plan-name">年度会员</p>
+                <p id="payment-amount">支付金额：¥199/年</p>
+                <div class="payment-qrcode">
+                    <h3>微信收款码</h3>
+                    <div id="wechat-qrcode" class="qrcode-placeholder">
+                        <!-- 二维码将在这里动态生成 -->
+                    </div>
+                    <h3>支付宝收款码</h3>
+                    <div id="alipay-qrcode" class="qrcode-placeholder">
+                        <!-- 二维码将在这里动态生成 -->
+                    </div>
+                </div>
+                <div class="payment-instructions">
+                    <p>请扫描上方任意收款码完成支付，支付后请点击下方按钮确认。</p>
+                </div>
+                <div class="payment-actions">
+                    <button id="payment-confirm" class="submit-btn">确认支付完成</button>
+                    <button id="payment-cancel" class="submit-btn">取消</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // 页面加载时生成二维码
+        document.addEventListener('DOMContentLoaded', function() {
+            const wechatQRCodeElement = document.getElementById('wechat-qrcode');
+            const alipayQRCodeElement = document.getElementById('alipay-qrcode');
+            
+            console.log('微信收款码元素:', wechatQRCodeElement);
+            console.log('支付宝收款码元素:', alipayQRCodeElement);
+            
+            // 确保支付模态框中的二维码元素是空的，以便生成新的二维码
+            if (wechatQRCodeElement) {
+                wechatQRCodeElement.innerHTML = '';
+                // 使用QRCode.js库生成微信支付二维码
+                new QRCode(wechatQRCodeElement, {
+                    text: "weixin://wxpay/bizpayurl?pr=example123",
+                    width: 200,
+                    height: 200,
+                    colorDark : "#000000",
+                    colorLight : "#ffffff",
+                    correctLevel : QRCode.CorrectLevel.H
+                });
+                console.log('微信收款码已生成');
+            }
+            
+            if (alipayQRCodeElement) {
+                alipayQRCodeElement.innerHTML = '';
+                // 使用QRCode.js库生成支付宝支付二维码
+                new QRCode(alipayQRCodeElement, {
+                    text: "alipays://platformapi/startapp?appId=20000067&url=example.com",
+                    width: 200,
+                    height: 200,
+                    colorDark : "#00A0E9",
+                    colorLight : "#ffffff",
+                    correctLevel : QRCode.CorrectLevel.H
+                });
+                console.log('支付宝收款码已生成');
+            }
+        });
+        
+        // 关闭按钮功能
+        document.querySelector('.close').addEventListener('click', function() {
+            document.getElementById('payment-modal').style.display = 'none';
+        });
+        
+        // 取消按钮功能
+        document.getElementById('payment-cancel').addEventListener('click', function() {
+            document.getElementById('payment-modal').style.display = 'none';
+        });
+        
+        // 确认按钮功能
+        document.getElementById('payment-confirm').addEventListener('click', function() {
+            alert('支付确认按钮被点击');
+        });
+    </script>
+</body>
+</html>

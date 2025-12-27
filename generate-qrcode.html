@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Generate QR Code</title>
+    <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js"></script>
+</head>
+<body>
+    <h1>Generate QR Code</h1>
+    <div id="qrcode-container"></div>
+    <script>
+        // 生成微信支付二维码（示例链接）
+        var qrcodeWechat = qrcode(0, 'M');
+        qrcodeWechat.addData('weixin://wxpay/bizpayurl?pr=example123');
+        qrcodeWechat.make();
+        
+        // 生成支付宝支付二维码（示例链接）
+        var qrcodeAlipay = qrcode(0, 'M');
+        qrcodeAlipay.addData('alipays://platformapi/startapp?appId=20000067&url=example.com');
+        qrcodeAlipay.make();
+        
+        // 显示SVG内容
+        var container = document.getElementById('qrcode-container');
+        container.innerHTML = '<h2>微信收款码 SVG:</h2>' + qrcodeWechat.createSvgTag() + '<h2>支付宝收款码 SVG:</h2>' + qrcodeAlipay.createSvgTag();
+        
+        // 输出SVG内容到控制台
+        console.log('微信收款码 SVG:');
+        console.log(qrcodeWechat.createSvgTag());
+        console.log('支付宝收款码 SVG:');
+        console.log(qrcodeAlipay.createSvgTag());
+    </script>
+</body>
+</html>
