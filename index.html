@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, shrink-to-fit=no">
     <title>智能复盘助手 - 每日复盘、明日规划、成长跟踪</title>
     <meta name="description" content="智能复盘助手是一款帮助您进行每日复盘、明日规划、历史记录管理和智能成长建议的工具，提升个人效率与自我管理能力。">
     <meta name="keywords" content="智能复盘,每日复盘,明日规划,时间管理,个人成长,效率提升,四象限法则">
@@ -423,24 +423,6 @@
                 <h2>明日规划（四象限法则）</h2>
                 <form id="plan-form">
                     <div class="quadrants">
-                        <!-- A类：重要且紧急 -->
-                        <div class="quadrant important-urgent">
-                            <h3>A类：重要且紧急</h3>
-                            <div class="task-list" id="quadrant-a">
-                                <div class="task-item">
-                                    <input type="text" placeholder="做什么（任务内容）" class="task-what">
-                                    <input type="text" placeholder="为什么做（重要性）" class="task-why">
-                                    <textarea placeholder="怎么做（执行方法）" class="task-how" rows="2"></textarea>
-                                    <input type="text" placeholder="解决方案" class="task-solution">
-                                    <div class="task-help-row">
-                                        <input type="text" placeholder="求助对象" class="task-help">
-                                        <button type="button" class="add-task-btn">+</button>
-                                        <button type="button" class="remove-task-btn">-</button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        
                         <!-- 任务优先级提醒 -->
                         <div class="task-priority">
                             <h3>任务优先级提醒</h3>
@@ -460,6 +442,24 @@
                                 <div class="priority-item priority-d">
                                     <strong>D类：不重要不紧急</strong>
                                     <p>尽量减少或取消，属于时间消耗型活动</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- A类：重要且紧急 -->
+                        <div class="quadrant important-urgent">
+                            <h3>A类：重要且紧急</h3>
+                            <div class="task-list" id="quadrant-a">
+                                <div class="task-item">
+                                    <input type="text" placeholder="做什么（任务内容）" class="task-what">
+                                    <input type="text" placeholder="为什么做（重要性）" class="task-why">
+                                    <textarea placeholder="怎么做（执行方法）" class="task-how" rows="2"></textarea>
+                                    <input type="text" placeholder="解决方案" class="task-solution">
+                                    <div class="task-help-row">
+                                        <input type="text" placeholder="求助对象" class="task-help">
+                                        <button type="button" class="add-task-btn">+</button>
+                                        <button type="button" class="remove-task-btn">-</button>
+                                    </div>
                                 </div>
                             </div>
                         </div>
