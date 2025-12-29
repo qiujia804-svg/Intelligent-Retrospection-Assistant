@@ -3124,8 +3124,7 @@ function createTimeSlot(startTime, endTime, isFirstRow = false) {
         const tags = typeof getUserTags === 'function' ? getUserTags() : [
             { name: '学习', color: '#1890ff' },
             { name: '工作', color: '#722ed1' },
-            { name: '生活', color: '#52c41a' },
-            { name: '锻炼', color: '#fa8c16' }
+            { name: '休息放松', color: '#52c41a' }
         ];
 
         dropdownMenu.innerHTML = tags.map(tag => `
@@ -3210,16 +3209,9 @@ function createTimeSlot(startTime, endTime, isFirstRow = false) {
 
 // 任务类型映射
 const taskTypeMap = {
-    '学习英语': { color: '#1890ff' },  // 蓝色
-    '学习AI': { color: '#722ed1' },    // 紫色
-    '学习Python': { color: '#faad14' }, // 黄色
-    '学习营销': { color: '#f5222d' },   // 红色
-    '休息放松': { color: '#52c41a' },    // 绿色
-    '看书': { color: '#ff7d00' },        // 橙色
     '学习': { color: '#13c2c2' },         // 青色
     '工作': { color: '#eb2f96' },         // 粉色
-    '生活': { color: '#fa8c16' },         // 橙色
-    '锻炼': { color: '#52c41a' }          // 绿色
+    '休息放松': { color: '#52c41a' }    // 绿色
 };
 
 // 【优化】获取任务类型 - 优先匹配用户自定义标签
