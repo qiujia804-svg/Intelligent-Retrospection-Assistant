@@ -5296,10 +5296,6 @@ const TAG_MANAGER_CONFIG = {
     defaultTags: [
         { id: 'tag_1', name: '学习', color: '#1890ff' },
         { id: 'tag_2', name: '工作', color: '#722ed1' },
-        { id: 'tag_3', name: '生活', color: '#52c41a' },
-        { id: 'tag_4', name: '锻炼', color: '#fa8c16' },
-        { id: 'tag_5', name: '学习AI', color: '#eb2f96' },
-        { id: 'tag_6', name: '看书', color: '#faad14' },
         { id: 'tag_7', name: '休息放松', color: '#13c2c2' }
     ]
 };
@@ -5314,6 +5310,30 @@ function getUserTags() {
         if (stored) {
             const tags = JSON.parse(stored);
             if (Array.isArray(tags) && tags.length > 0) {
+                // 检查是否包含需要删除的旧标签
+                const hasOldTags = tags.some(tag => 
+                    ['生活', '锻炼', '学习AI', '看书'].includes(tag.name)
+                );
+                
+                // 如果包含旧标签，更新为新的标签列表
+                if (hasOldTags) {
+                    // 只保留学习、工作、休息放松这三个标签
+                    const filteredTags = tags.filter(tag => 
+                        ['学习', '工作', '休息放松'].includes(tag.name)
+                    );
+                    
+                    // 确保三个标签都存在
+                    const requiredTags = TAG_MANAGER_CONFIG.defaultTags;
+                    requiredTags.forEach(requiredTag => {
+                        if (!filteredTags.some(tag => tag.name === requiredTag.name)) {
+                            filteredTags.push(requiredTag);
+                        }
+                    });
+                    
+                    saveUserTags(filteredTags);
+                    return filteredTags;
+                }
+                
                 return tags;
             }
         }
