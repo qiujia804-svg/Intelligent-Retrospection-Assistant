@@ -5302,47 +5302,23 @@ const TAG_MANAGER_CONFIG = {
 
 /**
  * 获取用户自定义标签列表
- * 如果是新用户则返回默认预设
+ * 强制返回只包含学习、工作、休息放松三个标签的列表
  */
 function getUserTags() {
     try {
-        const stored = localStorage.getItem(TAG_MANAGER_CONFIG.storageKey);
-        if (stored) {
-            const tags = JSON.parse(stored);
-            if (Array.isArray(tags) && tags.length > 0) {
-                // 检查是否包含需要删除的旧标签
-                const hasOldTags = tags.some(tag => 
-                    ['生活', '锻炼', '学习AI', '看书'].includes(tag.name)
-                );
-                
-                // 如果包含旧标签，更新为新的标签列表
-                if (hasOldTags) {
-                    // 只保留学习、工作、休息放松这三个标签
-                    const filteredTags = tags.filter(tag => 
-                        ['学习', '工作', '休息放松'].includes(tag.name)
-                    );
-                    
-                    // 确保三个标签都存在
-                    const requiredTags = TAG_MANAGER_CONFIG.defaultTags;
-                    requiredTags.forEach(requiredTag => {
-                        if (!filteredTags.some(tag => tag.name === requiredTag.name)) {
-                            filteredTags.push(requiredTag);
-                        }
-                    });
-                    
-                    saveUserTags(filteredTags);
-                    return filteredTags;
-                }
-                
-                return tags;
-            }
-        }
+        // 直接使用默认标签列表，忽略任何已存储的标签
+        const defaultTags = TAG_MANAGER_CONFIG.defaultTags;
+        
+        // 保存默认标签列表到本地存储，覆盖任何旧标签
+        localStorage.setItem(TAG_MANAGER_CONFIG.storageKey, JSON.stringify(defaultTags));
+        console.log('【标签管理】已重置为默认标签列表:', defaultTags.length, '个');
+        
+        return defaultTags;
     } catch (e) {
         console.warn('【标签管理】读取标签失败:', e);
+        // 即使出错也返回默认标签
+        return TAG_MANAGER_CONFIG.defaultTags;
     }
-    // 返回默认预设并保存
-    saveUserTags(TAG_MANAGER_CONFIG.defaultTags);
-    return TAG_MANAGER_CONFIG.defaultTags;
 }
 
 /**
@@ -5360,50 +5336,71 @@ function saveUserTags(tags) {
 }
 
 /**
- * 添加新标签
+ * 添加新标签 - 仅允许添加学习、工作、休息放松三个标签
  */
 function addUserTag(name, color) {
+    // 只允许添加学习、工作、休息放松三个标签
+    const allowedTags = ['学习', '工作', '休息放松'];
+    const tagName = name.trim();
+    
+    if (!allowedTags.includes(tagName)) {
+        alert('仅允许添加学习、工作、休息放松三个标签！');
+        return false;
+    }
+    
     const tags = getUserTags();
+    
     // 检查是否已存在同名标签
-    if (tags.some(t => t.name === name)) {
+    if (tags.some(t => t.name === tagName)) {
         alert('该标签名称已存在！');
         return false;
     }
+    
     const newTag = {
         id: 'tag_' + Date.now(),
-        name: name.trim(),
+        name: tagName,
         color: color
     };
+    
     tags.push(newTag);
     saveUserTags(tags);
     return true;
 }
 
 /**
- * 更新标签
+ * 更新标签 - 仅允许更新标签颜色，不允许修改标签名称
  */
 function updateUserTag(tagId, newName, newColor) {
     const tags = getUserTags();
     const index = tags.findIndex(t => t.id === tagId);
     if (index === -1) return false;
-
-    // 检查新名称是否与其他标签重复
-    if (tags.some(t => t.id !== tagId && t.name === newName)) {
-        alert('该标签名称已存在！');
+    
+    // 只允许更新标签颜色，不允许修改标签名称
+    // 检查新名称是否与原名称相同
+    const originalName = tags[index].name;
+    if (newName.trim() !== originalName) {
+        alert('标签名称不可修改！');
         return false;
     }
 
-    tags[index].name = newName.trim();
     tags[index].color = newColor;
     saveUserTags(tags);
     return true;
 }
 
 /**
- * 删除标签
+ * 删除标签 - 不允许删除学习、工作、休息放松三个标签
  */
 function deleteUserTag(tagId) {
     let tags = getUserTags();
+    const tag = tags.find(t => t.id === tagId);
+    
+    // 不允许删除学习、工作、休息放松三个标签
+    if (tag && ['学习', '工作', '休息放松'].includes(tag.name)) {
+        alert('学习、工作、休息放松三个标签不可删除！');
+        return false;
+    }
+    
     tags = tags.filter(t => t.id !== tagId);
     saveUserTags(tags);
     return true;
