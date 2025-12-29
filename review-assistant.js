@@ -131,18 +131,9 @@ function checkTrialStatus() {
     const remainingHours = Math.floor((remaining % (24 * 60 * 60 * 1000)) / (60 * 60 * 1000));
     const remainingMinutes = Math.floor((remaining % (60 * 60 * 1000)) / (60 * 1000));
 
-    // 4. 锁定逻辑 - 过期且非会员
+    // 4. 移除强制锁定逻辑，允许用户继续使用应用
     if (isExpired && !isPremium) {
-        console.log("【VIP】试用期已过，强制锁定");
-        const container = document.querySelector('.container');
-        if (container) container.style.filter = 'blur(15px)';
-
-        // 显示试用期结束提示
-        alert('您好，您的会员试用期已结束，登录权限已暂时关闭。请点击【会员中心】完成续费，支付成功后系统将自动恢复您的登录权限及所有历史数据。如有疑问，请联系客服。');
-        
-        // 强制弹出会员中心，参数true表示强制(无关闭按钮)
-        document.body.insertAdjacentHTML('beforeend', renderVipCenter(true, remainingDays, remainingHours, remainingMinutes));
-        return { isLocked: true, isPremium: false, remainingDays: 0, remainingHours: 0, remainingMinutes: 0 };
+        console.log("【VIP】试用期已过，但允许用户继续使用");
     }
 
     return {
@@ -164,8 +155,8 @@ function renderVipCenter(isForced = false, days = 3, hours = 0, minutes = 0) {
         backdrop-filter: blur(10px);
     `;
 
-    // 2. 强制锁定时不显示关闭按钮
-    const closeBtn = isForced ? '' : `<button onclick="closeVipCenter()" style="position:absolute; top:20px; right:20px; background:rgba(255,255,255,0.2); border:none; color:#fff; width:36px; height:36px; border-radius:50%; cursor:pointer; font-size: 20px; transition: 0.3s;" onmouseover="this.style.background='rgba(255,255,255,0.4)'" onmouseout="this.style.background='rgba(255,255,255,0.2)'">×</button>`;
+    // 2. 始终显示关闭按钮，允许用户退出会员中心
+    const closeBtn = `<button onclick="closeVipCenter()" style="position:absolute; top:20px; right:20px; background:rgba(255,255,255,0.2); border:none; color:#fff; width:36px; height:36px; border-radius:50%; cursor:pointer; font-size: 20px; transition: 0.3s;" onmouseover="this.style.background='rgba(255,255,255,0.4)'" onmouseout="this.style.background='rgba(255,255,255,0.2)'">×</button>`;
 
     // 3. 顶部状态栏 - 试用标签（左）+ 唯一有效期容器（右，默认隐藏）
     const topStatusBar = `
@@ -661,10 +652,31 @@ console.log('  - window.debug_resetTrial()   : 重置试用状态');
 console.log('  - window.debug_setPremium()   : 设为会员');
 console.log('  - window.debug_extractData("2025-12") : 抓取指定月份真实数据');
 console.log('  - window.debug_viewRecord("2025-12-22") : 查看指定日期原始记录');
+console.log('  - window.debug_clearVipLock() : 清除VIP锁定状态，恢复正常使用');
 console.log('');
 console.log('【数据格式说明】');
 console.log('  精准匹配格式: "项目名/XX分钟/XX%"');
 console.log('  示例: "看书/70分钟/7%", "学习AI/590分钟/58%"');
+
+// 新增：清除VIP锁定状态的调试函数
+window.debug_clearVipLock = function() {
+    // 移除可能存在的VIP中心遮罩
+    const overlay = document.getElementById('vip-center-overlay');
+    if (overlay) overlay.remove();
+    
+    // 移除页面模糊效果
+    const container = document.querySelector('.container');
+    if (container) container.style.filter = '';
+    
+    // 移除页面锁定类
+    document.body.classList.remove('app-locked');
+    
+    // 移除锁定遮罩
+    const lockOverlay = document.querySelector('.vip-lock-overlay');
+    if (lockOverlay) lockOverlay.remove();
+    
+    console.log('【调试】VIP锁定状态已清除，页面已恢复正常使用');
+};
 
 // 会员数据
 let currentUser = null;
@@ -3203,7 +3215,11 @@ const taskTypeMap = {
     '学习Python': { color: '#faad14' }, // 黄色
     '学习营销': { color: '#f5222d' },   // 红色
     '休息放松': { color: '#52c41a' },    // 绿色
-    '看书': { color: '#ff7d00' }         // 橙色
+    '看书': { color: '#ff7d00' },        // 橙色
+    '学习': { color: '#13c2c2' },         // 青色
+    '工作': { color: '#eb2f96' },         // 粉色
+    '生活': { color: '#fa8c16' },         // 橙色
+    '锻炼': { color: '#52c41a' }          // 绿色
 };
 
 // 【优化】获取任务类型 - 优先匹配用户自定义标签
@@ -3258,9 +3274,6 @@ function updateTimeStatistics() {
     let restRelaxExtraMinutes = 0; // 存储需要额外添加的休息放松时间
     let studyTotalMinutes = 0; // 存储学习类任务总时长
 
-    // 定义学习类任务类型
-    const studyTypes = ['学习英语', '学习AI', '学习Python', '学习营销', '看书', '学习'];
-
     // 计算各类型任务的时长和剩余时间
     scheduleRows.forEach(row => {
         const timeSelect = row.querySelector('.time-select');
@@ -3280,16 +3293,14 @@ function updateTimeStatistics() {
         if (taskName && duration > 0) {
             const { type } = getTaskType(taskName);
             // 确保只添加有效的任务类型，不包括"其他"
-            if (type !== '其他') {
-                typeDurations[type] = (typeDurations[type] || 0) + duration;
-                totalMinutes += duration;
-                taskCount++;
-                
-                // 如果是学习类任务，累加到学习总时长
-                if (studyTypes.includes(type)) {
-                    studyTotalMinutes += duration;
-                }
-            }
+            const taskType = type !== '其他' ? type : taskName;
+            
+            typeDurations[taskType] = (typeDurations[taskType] || 0) + duration;
+            totalMinutes += duration;
+            taskCount++;
+            
+            // 根据需求：将所有任务的时长都累加到自我提升总时长中
+            studyTotalMinutes += duration;
             
             // 计算剩余时间并累加到休息放松类型
             const remainingMinutes = Math.max(0, timeSlotMinutes - duration);
@@ -3502,9 +3513,17 @@ function updatePieChart(typeDurations, totalMinutes) {
             }
         }
 
-        // 4. 如果仍然没有找到颜色，使用默认颜色
+        // 4. 如果仍然没有找到颜色，使用预定义颜色列表
         if (!color) {
-            color = '#8c8c8c';
+            // 预定义颜色列表，用于未匹配到颜色的任务类型
+            const predefinedColors = [
+                '#1890ff', '#722ed1', '#faad14', '#f5222d', '#52c41a', '#ff7d00',
+                '#13c2c2', '#eb2f96', '#fa8c16', '#2f54eb', '#fa541c', '#36cbcb',
+                '#73d13d', '#ffc53d', '#ff4d4f', '#9254de', '#ff7875', '#95de64'
+            ];
+            // 根据类型名称生成一致的颜色索引
+            const colorIndex = type.split('').reduce((sum, char) => sum + char.charCodeAt(0), 0) % predefinedColors.length;
+            color = predefinedColors[colorIndex];
         }
         backgroundColor.push(color + '80'); // 添加透明度
         borderColor.push(color);
