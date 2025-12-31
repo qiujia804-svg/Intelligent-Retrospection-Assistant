@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PWA 图标生成器</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #f5f5f5;
+            padding: 40px;
+        }
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+            color: #333;
+        }
+        .icon-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .icon-card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .icon-preview {
+            display: inline-block;
+            margin-bottom: 15px;
+            border: 2px dashed #ddd;
+            padding: 10px;
+            border-radius: 8px;
+        }
+        canvas {
+            display: block;
+            margin: 0 auto;
+        }
+        .icon-info {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 10px;
+        }
+        .download-btn {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .download-btn:hover {
+            opacity: 0.9;
+        }
+        .instructions {
+            max-width: 800px;
+            margin: 40px auto;
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .instructions h2 {
+            margin-bottom: 15px;
+            color: #333;
+        }
+        .instructions ol {
+            padding-left: 20px;
+        }
+        .instructions li {
+            margin-bottom: 10px;
+            color: #555;
+        }
+        .download-all {
+            display: block;
+            width: 300px;
+            margin: 30px auto;
+            background: #28a745;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 500;
+        }
+        .download-all:hover {
+            background: #218838;
+        }
+    </style>
+</head>
+<body>
+    <h1>📊 智能复盘助手 - PWA 图标生成器</h1>
+
+    <div class="instructions">
+        <h2>使用说明</h2>
+        <ol>
+            <li>点击下方各尺寸图标的"下载"按钮，分别保存为对应文件名</li>
+            <li>或点击"打包下载全部"一次性下载所有图标</li>
+            <li>将下载的图标文件放入 <code>icons/</code> 文件夹</li>
+            <li>部署到 HTTPS 服务器后即可使用 PWA 功能</li>
+        </ol>
+    </div>
+
+    <button class="download-all" onclick="downloadAll()">📦 打包下载全部图标</button>
+
+    <div class="icon-grid" id="icon-grid">
+        <!-- 动态生成 -->
+    </div>
+
+    <script>
+        const sizes = [72, 96, 128, 144, 152, 192, 384, 512];
+
+        function drawIcon(canvas, size) {
+            const ctx = canvas.getContext('2d');
+            canvas.width = size;
+            canvas.height = size;
+
+            // 背景渐变
+            const gradient = ctx.createLinearGradient(0, 0, size, size);
+            gradient.addColorStop(0, '#667eea');
+            gradient.addColorStop(1, '#764ba2');
+
+            // 圆角矩形背景
+            const radius = size * 0.15;
+            ctx.beginPath();
+            ctx.moveTo(radius, 0);
+            ctx.lineTo(size - radius, 0);
+            ctx.quadraticCurveTo(size, 0, size, radius);
+            ctx.lineTo(size, size - radius);
+            ctx.quadraticCurveTo(size, size, size - radius, size);
+            ctx.lineTo(radius, size);
+            ctx.quadraticCurveTo(0, size, 0, size - radius);
+            ctx.lineTo(0, radius);
+            ctx.quadraticCurveTo(0, 0, radius, 0);
+            ctx.closePath();
+            ctx.fillStyle = gradient;
+            ctx.fill();
+
+            // 缩放系数
+            const scale = size / 512;
+
+            ctx.fillStyle = 'white';
+
+            // 柱状图
+            const bars = [
+                { x: 100, y: 280, w: 60, h: 120 },
+                { x: 180, y: 220, w: 60, h: 180 },
+                { x: 260, y: 160, w: 60, h: 240 },
+                { x: 340, y: 120, w: 60, h: 280 }
+            ];
+
+            bars.forEach(bar => {
+                roundRect(ctx, bar.x * scale, bar.y * scale, bar.w * scale, bar.h * scale, 10 * scale);
+            });
+
+            // 趋势线
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.8)';
+            ctx.lineWidth = 12 * scale;
+            ctx.lineCap = 'round';
+            ctx.beginPath();
+            ctx.moveTo(80 * scale, 350 * scale);
+            ctx.lineTo(160 * scale, 280 * scale);
+            ctx.lineTo(240 * scale, 220 * scale);
+            ctx.lineTo(320 * scale, 160 * scale);
+            ctx.lineTo(400 * scale, 100 * scale);
+            ctx.stroke();
+
+            // 箭头
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+            ctx.beginPath();
+            ctx.moveTo(400 * scale, 80 * scale);
+            ctx.lineTo(430 * scale, 110 * scale);
+            ctx.lineTo(400 * scale, 120 * scale);
+            ctx.lineTo(390 * scale, 100 * scale);
+            ctx.closePath();
+            ctx.fill();
+        }
+
+        function roundRect(ctx, x, y, w, h, r) {
+            ctx.beginPath();
+            ctx.moveTo(x + r, y);
+            ctx.lineTo(x + w - r, y);
+            ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+            ctx.lineTo(x + w, y + h - r);
+            ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+            ctx.lineTo(x + r, y + h);
+            ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+            ctx.lineTo(x, y + r);
+            ctx.quadraticCurveTo(x, y, x + r, y);
+            ctx.closePath();
+            ctx.fill();
+        }
+
+        function downloadCanvas(canvas, filename) {
+            const link = document.createElement('a');
+            link.download = filename;
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+        }
+
+        function generateIcons() {
+            const grid = document.getElementById('icon-grid');
+
+            sizes.forEach(size => {
+                const card = document.createElement('div');
+                card.className = 'icon-card';
+
+                const preview = document.createElement('div');
+                preview.className = 'icon-preview';
+
+                const canvas = document.createElement('canvas');
+                canvas.id = `icon-${size}`;
+                drawIcon(canvas, size);
+
+                const info = document.createElement('div');
+                info.className = 'icon-info';
+                info.textContent = `icon-${size}x${size}.png`;
+
+                const btn = document.createElement('button');
+                btn.className = 'download-btn';
+                btn.textContent = '下载';
+                btn.onclick = () => downloadCanvas(canvas, `icon-${size}x${size}.png`);
+
+                preview.appendChild(canvas);
+                card.appendChild(preview);
+                card.appendChild(info);
+                card.appendChild(btn);
+                grid.appendChild(card);
+            });
+        }
+
+        function downloadAll() {
+            sizes.forEach((size, index) => {
+                setTimeout(() => {
+                    const canvas = document.getElementById(`icon-${size}`);
+                    downloadCanvas(canvas, `icon-${size}x${size}.png`);
+                }, index * 300);
+            });
+        }
+
+        generateIcons();
+    </script>
+</body>
+</html>

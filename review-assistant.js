@@ -5294,18 +5294,18 @@ const TAG_MANAGER_CONFIG = {
 
 /**
  * 获取用户自定义标签列表
- * 强制返回只包含学习、工作、休息放松三个标签的列表
+ * 允许用户自由管理标签
  */
 function getUserTags() {
     try {
-        // 直接使用默认标签列表，忽略任何已存储的标签
-        const defaultTags = TAG_MANAGER_CONFIG.defaultTags;
-        
-        // 保存默认标签列表到本地存储，覆盖任何旧标签
-        localStorage.setItem(TAG_MANAGER_CONFIG.storageKey, JSON.stringify(defaultTags));
-        console.log('【标签管理】已重置为默认标签列表:', defaultTags.length, '个');
-        
-        return defaultTags;
+        // 先尝试从本地存储获取用户自定义标签
+        const storedTags = localStorage.getItem(TAG_MANAGER_CONFIG.storageKey);
+        if (storedTags) {
+            const tags = JSON.parse(storedTags);
+            return tags.length > 0 ? tags : TAG_MANAGER_CONFIG.defaultTags;
+        }
+        // 如果没有存储的标签，返回默认标签
+        return TAG_MANAGER_CONFIG.defaultTags;
     } catch (e) {
         console.warn('【标签管理】读取标签失败:', e);
         // 即使出错也返回默认标签
@@ -5328,15 +5328,13 @@ function saveUserTags(tags) {
 }
 
 /**
- * 添加新标签 - 仅允许添加学习、工作、休息放松三个标签
+ * 添加新标签 - 允许添加任何名称的标签
  */
 function addUserTag(name, color) {
-    // 只允许添加学习、工作、休息放松三个标签
-    const allowedTags = ['学习', '工作', '休息放松'];
     const tagName = name.trim();
     
-    if (!allowedTags.includes(tagName)) {
-        alert('仅允许添加学习、工作、休息放松三个标签！');
+    if (!tagName) {
+        alert('标签名称不能为空！');
         return false;
     }
     
@@ -5360,36 +5358,40 @@ function addUserTag(name, color) {
 }
 
 /**
- * 更新标签 - 仅允许更新标签颜色，不允许修改标签名称
+ * 更新标签 - 允许更新标签名称和颜色
  */
 function updateUserTag(tagId, newName, newColor) {
     const tags = getUserTags();
     const index = tags.findIndex(t => t.id === tagId);
     if (index === -1) return false;
     
-    // 只允许更新标签颜色，不允许修改标签名称
-    // 检查新名称是否与原名称相同
-    const originalName = tags[index].name;
-    if (newName.trim() !== originalName) {
-        alert('标签名称不可修改！');
+    const tagName = newName.trim();
+    if (!tagName) {
+        alert('标签名称不能为空！');
+        return false;
+    }
+    
+    // 检查新名称是否与其他标签重复
+    if (tags.some(t => t.id !== tagId && t.name === tagName)) {
+        alert('该标签名称已存在！');
         return false;
     }
 
+    tags[index].name = tagName;
     tags[index].color = newColor;
     saveUserTags(tags);
     return true;
 }
 
 /**
- * 删除标签 - 不允许删除学习、工作、休息放松三个标签
+ * 删除标签 - 允许删除任何标签
  */
 function deleteUserTag(tagId) {
     let tags = getUserTags();
-    const tag = tags.find(t => t.id === tagId);
     
-    // 不允许删除学习、工作、休息放松三个标签
-    if (tag && ['学习', '工作', '休息放松'].includes(tag.name)) {
-        alert('学习、工作、休息放松三个标签不可删除！');
+    // 如果只有一个标签，不允许删除
+    if (tags.length <= 1) {
+        alert('至少需要保留一个标签！');
         return false;
     }
     

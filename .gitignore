@@ -35,3 +35,5 @@ build/
 
 # Personal data
 shuju/
+.vercel
+.env*.local

@@ -2,8 +2,26 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, shrink-to-fit=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>智能复盘助手 - 每日复盘、明日规划、成长跟踪</title>
+
+    <!-- PWA 配置 -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#667eea">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="复盘助手">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="msapplication-TileColor" content="#667eea">
+    <meta name="msapplication-tap-highlight" content="no">
+
+    <!-- iOS 启动图 -->
+    <link rel="apple-touch-icon" href="icons/icon-192x192.png">
+    <link rel="apple-touch-startup-image" href="icons/splash-640x1136.png" media="(device-width: 320px) and (device-height: 568px)">
+    <link rel="apple-touch-startup-image" href="icons/splash-750x1334.png" media="(device-width: 375px) and (device-height: 667px)">
+    <link rel="apple-touch-startup-image" href="icons/splash-1242x2208.png" media="(device-width: 414px) and (device-height: 736px)">
+    <link rel="apple-touch-startup-image" href="icons/splash-1125x2436.png" media="(device-width: 375px) and (device-height: 812px)">
+    <link rel="apple-touch-startup-image" href="icons/splash-1170x2532.png" media="(device-width: 390px) and (device-height: 844px)">
     <meta name="description" content="智能复盘助手是一款帮助您进行每日复盘、明日规划、历史记录管理和智能成长建议的工具，提升个人效率与自我管理能力。">
     <meta name="keywords" content="智能复盘,每日复盘,明日规划,时间管理,个人成长,效率提升,四象限法则">
     <meta name="author" content="智能复盘助手团队">
@@ -43,6 +61,7 @@
     </script>
     
     <link rel="stylesheet" href="review-assistant.css">
+    <link rel="stylesheet" href="mobile.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
 </head>
@@ -667,7 +686,376 @@
     </div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <script src="data-storage.js"></script>
     <script src="review-assistant.js"></script>
     <!-- commercial-system.js 已禁用 -->
+
+    <!-- 启动页 (Splash Screen) -->
+    <div class="splash-screen" id="splash-screen">
+        <div class="splash-logo">📊</div>
+        <div class="splash-title">智能复盘助手</div>
+        <div class="splash-subtitle">让每一天都有收获</div>
+        <div class="splash-loader"></div>
+    </div>
+
+    <!-- 移动端底部导航栏 -->
+    <nav class="mobile-tabbar" id="mobile-tabbar">
+        <div class="mobile-tabbar-inner">
+            <button class="tabbar-item active" data-tab="review-content">
+                <span class="tabbar-icon">📝</span>
+                <span class="tabbar-label">复盘</span>
+            </button>
+            <button class="tabbar-item" data-tab="plan-content">
+                <span class="tabbar-icon">📋</span>
+                <span class="tabbar-label">规划</span>
+            </button>
+            <button class="tabbar-item" data-tab="history-content">
+                <span class="tabbar-icon">📊</span>
+                <span class="tabbar-label">记录</span>
+            </button>
+            <button class="tabbar-item" data-tab="advice-content">
+                <span class="tabbar-icon">💡</span>
+                <span class="tabbar-label">建议</span>
+            </button>
+            <button class="tabbar-item" data-tab="challenge-content">
+                <span class="tabbar-icon">
+                    🏆
+                    <span class="tabbar-badge dot"></span>
+                </span>
+                <span class="tabbar-label">挑战</span>
+            </button>
+        </div>
+    </nav>
+
+    <!-- PWA 安装提示 -->
+    <div class="pwa-install-prompt" id="pwa-install-prompt">
+        <button class="pwa-install-close" id="pwa-install-close">&times;</button>
+        <div class="pwa-install-icon">📊</div>
+        <div class="pwa-install-content">
+            <div class="pwa-install-title">添加到主屏幕</div>
+            <div class="pwa-install-desc">获得更好的使用体验</div>
+        </div>
+        <button class="pwa-install-btn" id="pwa-install-btn">安装</button>
+    </div>
+
+    <!-- Toast 提示组件 -->
+    <div class="mobile-toast" id="mobile-toast">
+        <div class="mobile-toast-icon"></div>
+        <div class="mobile-toast-text"></div>
+    </div>
+
+    <!-- 移动端初始化脚本 -->
+    <script>
+    (function() {
+        'use strict';
+
+        // ==================== PWA 相关 ====================
+
+        // 注册 Service Worker
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', function() {
+                navigator.serviceWorker.register('/service-worker.js')
+                    .then(function(registration) {
+                        console.log('[PWA] Service Worker 注册成功:', registration.scope);
+
+                        // 检查更新
+                        registration.addEventListener('updatefound', function() {
+                            const newWorker = registration.installing;
+                            newWorker.addEventListener('statechange', function() {
+                                if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                                    showToast('发现新版本，刷新页面即可更新', 'info');
+                                }
+                            });
+                        });
+                    })
+                    .catch(function(error) {
+                        console.log('[PWA] Service Worker 注册失败:', error);
+                    });
+            });
+        }
+
+        // PWA 安装提示处理
+        let deferredPrompt;
+        const installPrompt = document.getElementById('pwa-install-prompt');
+        const installBtn = document.getElementById('pwa-install-btn');
+        const installClose = document.getElementById('pwa-install-close');
+
+        window.addEventListener('beforeinstallprompt', function(e) {
+            e.preventDefault();
+            deferredPrompt = e;
+
+            // 检查是否已经安装或用户关闭过提示
+            const dismissed = localStorage.getItem('pwa_install_dismissed');
+            if (!dismissed && isMobile()) {
+                setTimeout(function() {
+                    installPrompt.classList.add('show');
+                }, 3000);
+            }
+        });
+
+        if (installBtn) {
+            installBtn.addEventListener('click', function() {
+                if (deferredPrompt) {
+                    deferredPrompt.prompt();
+                    deferredPrompt.userChoice.then(function(choiceResult) {
+                        if (choiceResult.outcome === 'accepted') {
+                            showToast('应用已添加到主屏幕', 'success');
+                        }
+                        deferredPrompt = null;
+                        installPrompt.classList.remove('show');
+                    });
+                }
+            });
+        }
+
+        if (installClose) {
+            installClose.addEventListener('click', function() {
+                installPrompt.classList.remove('show');
+                localStorage.setItem('pwa_install_dismissed', 'true');
+            });
+        }
+
+        // 检测是否以 PWA 模式运行
+        window.addEventListener('appinstalled', function() {
+            console.log('[PWA] 应用已安装');
+            installPrompt.classList.remove('show');
+        });
+
+        // ==================== 启动页处理 ====================
+
+        const splashScreen = document.getElementById('splash-screen');
+
+        window.addEventListener('load', function() {
+            // 延迟隐藏启动页，确保资源加载完成
+            setTimeout(function() {
+                if (splashScreen) {
+                    splashScreen.classList.add('hidden');
+                    // 动画结束后移除元素
+                    setTimeout(function() {
+                        splashScreen.style.display = 'none';
+                    }, 350);
+                }
+            }, 800);
+        });
+
+        // ==================== 底部导航栏 ====================
+
+        const tabbar = document.getElementById('mobile-tabbar');
+        const tabbarItems = tabbar ? tabbar.querySelectorAll('.tabbar-item') : [];
+        const tabContents = document.querySelectorAll('.tab-content');
+        const originalTabs = document.querySelectorAll('.tab-btn');
+
+        // 页面切换动画方向追踪
+        let currentTabIndex = 0;
+        const tabOrder = ['review-content', 'plan-content', 'history-content', 'advice-content', 'challenge-content'];
+
+        tabbarItems.forEach(function(item, index) {
+            // 触摸开始 - 缩放动画
+            item.addEventListener('touchstart', function(e) {
+                this.classList.add('pressing');
+                // 轻触反馈
+                triggerHaptic('light');
+            }, { passive: true });
+
+            // 触摸结束 - 恢复动画
+            item.addEventListener('touchend', function() {
+                this.classList.remove('pressing');
+            }, { passive: true });
+
+            item.addEventListener('touchcancel', function() {
+                this.classList.remove('pressing');
+            }, { passive: true });
+
+            item.addEventListener('click', function() {
+                const targetTab = this.getAttribute('data-tab');
+                const newIndex = tabOrder.indexOf(targetTab);
+
+                // 如果点击当前选中的标签，不做任何操作
+                if (newIndex === currentTabIndex) {
+                    return;
+                }
+
+                // 更新底部导航高亮
+                tabbarItems.forEach(function(i) { i.classList.remove('active'); });
+                this.classList.add('active');
+
+                // 同步更新原有顶部标签（保持兼容）
+                originalTabs.forEach(function(tab) {
+                    tab.classList.remove('active');
+                    if (tab.getAttribute('data-tab') === targetTab) {
+                        tab.classList.add('active');
+                    }
+                });
+
+                // 切换页面内容（带动画）
+                const direction = newIndex > currentTabIndex ? 'right' : 'left';
+                switchTab(targetTab, direction);
+                currentTabIndex = newIndex;
+
+                // 触觉反馈 - 中等强度
+                triggerHaptic('medium');
+            });
+        });
+
+        // 增强触觉反馈函数
+        function triggerHaptic(intensity) {
+            // 优先使用 iOS Taptic Engine (如果支持)
+            if (window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.haptic) {
+                window.webkit.messageHandlers.haptic.postMessage(intensity);
+                return;
+            }
+
+            // Android 震动 API
+            if (navigator.vibrate) {
+                switch(intensity) {
+                    case 'light':
+                        navigator.vibrate(5);
+                        break;
+                    case 'medium':
+                        navigator.vibrate(10);
+                        break;
+                    case 'heavy':
+                        navigator.vibrate([15, 5, 10]);
+                        break;
+                    default:
+                        navigator.vibrate(10);
+                }
+            }
+        }
+
+        // 暴露触觉反馈函数供全局使用
+        window.triggerHaptic = triggerHaptic;
+
+        function switchTab(targetTab, direction) {
+            tabContents.forEach(function(content) {
+                if (content.id === targetTab) {
+                    content.style.display = 'block';
+                    content.classList.remove('slide-in-left', 'slide-in-right');
+                    content.classList.add(direction === 'right' ? 'slide-in-right' : 'slide-in-left');
+                } else {
+                    content.style.display = 'none';
+                }
+            });
+        }
+
+        // 监听原有标签切换，同步底部导航
+        originalTabs.forEach(function(tab) {
+            tab.addEventListener('click', function() {
+                const targetTab = this.getAttribute('data-tab');
+                tabbarItems.forEach(function(item) {
+                    item.classList.remove('active');
+                    if (item.getAttribute('data-tab') === targetTab) {
+                        item.classList.add('active');
+                    }
+                });
+            });
+        });
+
+        // ==================== 工具函数 ====================
+
+        function isMobile() {
+            return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
+                   window.innerWidth <= 768;
+        }
+
+        function showToast(message, type) {
+            type = type || 'info';
+            const toast = document.getElementById('mobile-toast');
+            if (!toast) return;
+
+            const iconMap = {
+                success: '✓',
+                error: '✕',
+                info: 'ℹ',
+                warning: '⚠'
+            };
+
+            toast.querySelector('.mobile-toast-icon').textContent = iconMap[type] || '';
+            toast.querySelector('.mobile-toast-text').textContent = message;
+            toast.classList.add('show');
+
+            setTimeout(function() {
+                toast.classList.remove('show');
+            }, 2500);
+        }
+
+        // 暴露全局方法
+        window.showMobileToast = showToast;
+
+        // ==================== 消除 300ms 点击延迟 ====================
+
+        // FastClick 简化实现
+        document.addEventListener('touchstart', function() {}, { passive: true });
+
+        // ==================== 网络状态监听 ====================
+
+        window.addEventListener('online', function() {
+            showToast('网络已恢复', 'success');
+            document.body.classList.remove('offline-mode');
+            // 触发数据同步
+            if (window.DataStorage && window.DataStorage.processSyncQueue) {
+                window.DataStorage.processSyncQueue();
+            }
+            if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+                navigator.serviceWorker.ready.then(function(registration) {
+                    if (registration.sync) {
+                        registration.sync.register('sync-reviews');
+                    }
+                });
+            }
+        });
+
+        window.addEventListener('offline', function() {
+            showToast('当前处于离线状态', 'warning');
+            document.body.classList.add('offline-mode');
+        });
+
+        // 初始化时检查网络状态
+        if (!navigator.onLine) {
+            document.body.classList.add('offline-mode');
+        }
+
+        // ==================== 移动端仅显示底部导航 ====================
+
+        function updateNavVisibility() {
+            if (isMobile()) {
+                document.body.classList.add('mobile-mode');
+                if (tabbar) tabbar.style.display = 'block';
+            } else {
+                document.body.classList.remove('mobile-mode');
+                if (tabbar) tabbar.style.display = 'none';
+            }
+        }
+
+        updateNavVisibility();
+        window.addEventListener('resize', updateNavVisibility);
+
+        // ==================== URL 参数处理（快捷方式支持）====================
+
+        const urlParams = new URLSearchParams(window.location.search);
+        const tabParam = urlParams.get('tab');
+        if (tabParam && tabOrder.includes(tabParam + '-content')) {
+            const targetTab = tabParam + '-content';
+            // 延迟执行，确保 DOM 已准备好
+            setTimeout(function() {
+                tabbarItems.forEach(function(item) {
+                    item.classList.remove('active');
+                    if (item.getAttribute('data-tab') === targetTab) {
+                        item.classList.add('active');
+                    }
+                });
+                originalTabs.forEach(function(tab) {
+                    tab.classList.remove('active');
+                    if (tab.getAttribute('data-tab') === targetTab) {
+                        tab.classList.add('active');
+                        tab.click(); // 触发原有的切换逻辑
+                    }
+                });
+            }, 100);
+        }
+
+        console.log('[Mobile] 移动端增强已加载');
+    })();
+    </script>
 </body>
 </html>

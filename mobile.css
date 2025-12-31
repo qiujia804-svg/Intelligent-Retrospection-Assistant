@@ -1,0 +1,3083 @@
+/**
+ * 智能复盘助手 - 移动端专用样式
+ * 提供类微信的原生APP体验
+ */
+
+/* ====================
+   CSS 变量定义
+==================== */
+:root {
+  /* 主题色 */
+  --primary-color: #667eea;
+  --primary-dark: #5a6fd6;
+  --primary-light: #8b9df5;
+  --gradient-start: #667eea;
+  --gradient-end: #764ba2;
+
+  /* 文字颜色 */
+  --text-primary: #1a1a1a;
+  --text-secondary: #666666;
+  --text-muted: #999999;
+  --text-white: #ffffff;
+
+  /* 背景色 */
+  --bg-primary: #f5f5f5;
+  --bg-white: #ffffff;
+  --bg-card: #ffffff;
+  --bg-overlay: rgba(0, 0, 0, 0.5);
+
+  /* 边框和分割线 */
+  --border-color: #e8e8e8;
+  --divider-color: #f0f0f0;
+
+  /* 尺寸变量 */
+  --navbar-height: 56px;
+  --tabbar-height: 60px;
+  --safe-area-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-area-top: env(safe-area-inset-top, 0px);
+  --content-padding: 16px;
+
+  /* 动画时长 */
+  --transition-fast: 0.15s;
+  --transition-normal: 0.25s;
+  --transition-slow: 0.35s;
+
+  /* 阴影 */
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.08);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.1);
+  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.15);
+  --shadow-tabbar: 0 -2px 10px rgba(0, 0, 0, 0.05);
+
+  /* 圆角 */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 20px;
+  --radius-full: 9999px;
+}
+
+/* ====================
+   全局重置和基础样式
+==================== */
+* {
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+html {
+  font-size: 16px;
+  -webkit-text-size-adjust: 100%;
+  touch-action: manipulation;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC',
+    'Hiragino Sans GB', 'Microsoft YaHei', 'Helvetica Neue', sans-serif;
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  line-height: 1.5;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* 允许输入框选择文本 */
+input, textarea, [contenteditable="true"] {
+  -webkit-user-select: text;
+  user-select: text;
+}
+
+/* ====================
+   移动端应用容器
+==================== */
+.mobile-app {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  min-height: 100dvh;
+  max-width: 100vw;
+  overflow-x: hidden;
+}
+
+/* ====================
+   顶部导航栏 (Header)
+==================== */
+.mobile-header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  background: linear-gradient(135deg, var(--gradient-start), var(--gradient-end));
+  padding-top: var(--safe-area-top);
+}
+
+.mobile-header-inner {
+  height: var(--navbar-height);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 var(--content-padding);
+}
+
+.mobile-header-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-white);
+  flex: 1;
+  text-align: center;
+}
+
+.mobile-header-btn {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-full);
+  background: transparent;
+  border: none;
+  color: var(--text-white);
+  font-size: 20px;
+  transition: background-color var(--transition-fast);
+}
+
+.mobile-header-btn:active {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+/* ====================
+   主内容区域
+==================== */
+.mobile-content {
+  flex: 1;
+  padding-top: calc(var(--navbar-height) + var(--safe-area-top));
+  padding-bottom: calc(var(--tabbar-height) + var(--safe-area-bottom));
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* 页面视图容器 */
+.page-view {
+  min-height: calc(100vh - var(--navbar-height) - var(--tabbar-height) - var(--safe-area-top) - var(--safe-area-bottom));
+  min-height: calc(100dvh - var(--navbar-height) - var(--tabbar-height) - var(--safe-area-top) - var(--safe-area-bottom));
+  padding: var(--content-padding);
+  opacity: 1;
+  transform: translateX(0);
+  transition: opacity var(--transition-normal), transform var(--transition-normal);
+}
+
+.page-view.page-hidden {
+  display: none;
+}
+
+/* 页面切换动画 */
+.page-view.slide-in-right {
+  animation: slideInRight var(--transition-normal) ease-out;
+}
+
+.page-view.slide-in-left {
+  animation: slideInLeft var(--transition-normal) ease-out;
+}
+
+.page-view.slide-out-right {
+  animation: slideOutRight var(--transition-normal) ease-out;
+}
+
+.page-view.slide-out-left {
+  animation: slideOutLeft var(--transition-normal) ease-out;
+}
+
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(30%);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes slideInLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-30%);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes slideOutRight {
+  from {
+    opacity: 1;
+    transform: translateX(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateX(30%);
+  }
+}
+
+@keyframes slideOutLeft {
+  from {
+    opacity: 1;
+    transform: translateX(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateX(-30%);
+  }
+}
+
+/* ====================
+   底部标签栏 (TabBar) - 类微信风格
+==================== */
+.mobile-tabbar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  background: var(--bg-white);
+  box-shadow: var(--shadow-tabbar);
+  padding-bottom: var(--safe-area-bottom);
+  border-top: 1px solid var(--divider-color);
+}
+
+.mobile-tabbar-inner {
+  height: var(--tabbar-height);
+  display: flex;
+  align-items: stretch;
+  justify-content: space-around;
+}
+
+.tabbar-item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 0;
+  text-decoration: none;
+  color: var(--text-muted);
+  transition: color var(--transition-fast);
+  position: relative;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+}
+
+.tabbar-item:active {
+  background-color: rgba(0, 0, 0, 0.03);
+}
+
+.tabbar-item.active {
+  color: var(--primary-color);
+}
+
+.tabbar-icon {
+  font-size: 24px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  transition: transform var(--transition-fast);
+}
+
+.tabbar-item:active .tabbar-icon {
+  transform: scale(0.92);
+}
+
+.tabbar-item.active .tabbar-icon {
+  transform: scale(1.05);
+}
+
+/* 图标徽章 */
+.tabbar-badge {
+  position: absolute;
+  top: -4px;
+  right: -8px;
+  min-width: 18px;
+  height: 18px;
+  background: #ff4757;
+  color: white;
+  font-size: 10px;
+  font-weight: 600;
+  border-radius: var(--radius-full);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 5px;
+}
+
+.tabbar-badge.dot {
+  width: 8px;
+  height: 8px;
+  min-width: 8px;
+  padding: 0;
+}
+
+.tabbar-label {
+  font-size: 11px;
+  margin-top: 2px;
+  font-weight: 500;
+}
+
+.tabbar-item.active .tabbar-label {
+  font-weight: 600;
+}
+
+/* ====================
+   卡片组件
+==================== */
+.mobile-card {
+  background: var(--bg-card);
+  border-radius: var(--radius-lg);
+  padding: var(--content-padding);
+  margin-bottom: 12px;
+  box-shadow: var(--shadow-sm);
+}
+
+.mobile-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.mobile-card-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.mobile-card-subtitle {
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.mobile-card-action {
+  font-size: 13px;
+  color: var(--primary-color);
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+/* ====================
+   表单组件
+==================== */
+.mobile-form-group {
+  margin-bottom: 16px;
+}
+
+.mobile-form-label {
+  display: block;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-primary);
+  margin-bottom: 8px;
+}
+
+.mobile-form-input {
+  width: 100%;
+  padding: 12px 14px;
+  font-size: 16px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  background: var(--bg-white);
+  color: var(--text-primary);
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.mobile-form-input:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.15);
+}
+
+.mobile-form-textarea {
+  min-height: 100px;
+  resize: vertical;
+}
+
+/* ====================
+   按钮组件
+==================== */
+.mobile-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px 24px;
+  font-size: 16px;
+  font-weight: 500;
+  border-radius: var(--radius-md);
+  border: none;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.mobile-btn-primary {
+  background: linear-gradient(135deg, var(--gradient-start), var(--gradient-end));
+  color: var(--text-white);
+}
+
+.mobile-btn-primary:active {
+  transform: scale(0.98);
+  opacity: 0.9;
+}
+
+.mobile-btn-secondary {
+  background: var(--bg-primary);
+  color: var(--text-primary);
+}
+
+.mobile-btn-secondary:active {
+  background: var(--border-color);
+}
+
+.mobile-btn-block {
+  width: 100%;
+}
+
+.mobile-btn-lg {
+  padding: 14px 28px;
+  font-size: 17px;
+  border-radius: var(--radius-lg);
+}
+
+/* 按钮触摸反馈 */
+.mobile-btn::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: inherit;
+  opacity: 0;
+  transition: opacity var(--transition-fast);
+}
+
+.mobile-btn:active::after {
+  opacity: 1;
+}
+
+/* ====================
+   列表组件
+==================== */
+.mobile-list {
+  background: var(--bg-card);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+
+.mobile-list-item {
+  display: flex;
+  align-items: center;
+  padding: 14px var(--content-padding);
+  border-bottom: 1px solid var(--divider-color);
+  transition: background-color var(--transition-fast);
+}
+
+.mobile-list-item:last-child {
+  border-bottom: none;
+}
+
+.mobile-list-item:active {
+  background-color: rgba(0, 0, 0, 0.03);
+}
+
+.mobile-list-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  margin-right: 12px;
+  flex-shrink: 0;
+}
+
+.mobile-list-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.mobile-list-title {
+  font-size: 15px;
+  color: var(--text-primary);
+  margin-bottom: 2px;
+}
+
+.mobile-list-desc {
+  font-size: 13px;
+  color: var(--text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mobile-list-arrow {
+  color: var(--text-muted);
+  font-size: 16px;
+  margin-left: 8px;
+}
+
+/* ====================
+   四象限布局 (移动端优化)
+==================== */
+.mobile-quadrant-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.mobile-quadrant-item {
+  background: var(--bg-card);
+  border-radius: var(--radius-md);
+  padding: 14px;
+  min-height: 140px;
+  position: relative;
+  transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.mobile-quadrant-item:active {
+  transform: scale(0.98);
+  box-shadow: var(--shadow-md);
+}
+
+.mobile-quadrant-header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.mobile-quadrant-badge {
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 600;
+  color: white;
+  margin-right: 8px;
+}
+
+.mobile-quadrant-item.quadrant-a .mobile-quadrant-badge { background: #ff6b6b; }
+.mobile-quadrant-item.quadrant-b .mobile-quadrant-badge { background: #ffc107; }
+.mobile-quadrant-item.quadrant-c .mobile-quadrant-badge { background: #2196f3; }
+.mobile-quadrant-item.quadrant-d .mobile-quadrant-badge { background: #adb5bd; }
+
+.mobile-quadrant-title {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.mobile-quadrant-tasks {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.mobile-quadrant-count {
+  position: absolute;
+  bottom: 10px;
+  right: 10px;
+  font-size: 28px;
+  font-weight: 700;
+  color: rgba(0, 0, 0, 0.08);
+}
+
+/* ====================
+   进度条组件
+==================== */
+.mobile-progress {
+  height: 8px;
+  background: var(--bg-primary);
+  border-radius: var(--radius-full);
+  overflow: hidden;
+}
+
+.mobile-progress-bar {
+  height: 100%;
+  background: linear-gradient(90deg, var(--gradient-start), var(--gradient-end));
+  border-radius: var(--radius-full);
+  transition: width var(--transition-normal) ease-out;
+}
+
+/* ====================
+   空状态
+==================== */
+.mobile-empty {
+  text-align: center;
+  padding: 60px 30px;
+}
+
+.mobile-empty-icon {
+  font-size: 64px;
+  margin-bottom: 16px;
+  opacity: 0.5;
+}
+
+.mobile-empty-title {
+  font-size: 18px;
+  font-weight: 500;
+  color: var(--text-primary);
+  margin-bottom: 8px;
+}
+
+.mobile-empty-desc {
+  font-size: 14px;
+  color: var(--text-muted);
+  line-height: 1.6;
+}
+
+/* ====================
+   弹窗组件
+==================== */
+.mobile-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: var(--bg-overlay);
+  z-index: 1000;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity var(--transition-normal), visibility var(--transition-normal);
+}
+
+.mobile-modal-overlay.active {
+  opacity: 1;
+  visibility: visible;
+}
+
+.mobile-modal {
+  background: var(--bg-white);
+  border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  transform: translateY(100%);
+  transition: transform var(--transition-normal) cubic-bezier(0.4, 0, 0.2, 1);
+  padding-bottom: var(--safe-area-bottom);
+}
+
+.mobile-modal-overlay.active .mobile-modal {
+  transform: translateY(0);
+}
+
+.mobile-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--divider-color);
+  position: sticky;
+  top: 0;
+  background: var(--bg-white);
+  z-index: 1;
+}
+
+.mobile-modal-title {
+  font-size: 17px;
+  font-weight: 600;
+}
+
+.mobile-modal-close {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  color: var(--text-muted);
+  background: none;
+  border: none;
+  cursor: pointer;
+  border-radius: var(--radius-full);
+}
+
+.mobile-modal-close:active {
+  background: var(--bg-primary);
+}
+
+.mobile-modal-body {
+  padding: 20px;
+}
+
+/* ====================
+   Toast 提示
+==================== */
+.mobile-toast {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) scale(0.9);
+  background: rgba(0, 0, 0, 0.75);
+  color: white;
+  padding: 14px 24px;
+  border-radius: var(--radius-md);
+  font-size: 14px;
+  z-index: 2000;
+  opacity: 0;
+  visibility: hidden;
+  transition: all var(--transition-fast);
+  max-width: 280px;
+  text-align: center;
+}
+
+.mobile-toast.show {
+  opacity: 1;
+  visibility: visible;
+  transform: translate(-50%, -50%) scale(1);
+}
+
+.mobile-toast-icon {
+  font-size: 40px;
+  margin-bottom: 10px;
+}
+
+/* ====================
+   下拉刷新
+==================== */
+.pull-to-refresh {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transform: translateY(-100%);
+  transition: transform var(--transition-normal);
+}
+
+.pull-to-refresh.pulling {
+  transform: translateY(0);
+}
+
+.pull-to-refresh-spinner {
+  width: 24px;
+  height: 24px;
+  border: 2px solid var(--border-color);
+  border-top-color: var(--primary-color);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ====================
+   骨架屏加载
+==================== */
+.skeleton {
+  background: linear-gradient(90deg, #f0f0f0 25%, #e8e8e8 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: skeleton-loading 1.5s infinite;
+  border-radius: var(--radius-sm);
+}
+
+@keyframes skeleton-loading {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+.skeleton-text {
+  height: 14px;
+  margin-bottom: 8px;
+}
+
+.skeleton-text:last-child {
+  width: 60%;
+}
+
+.skeleton-avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius-md);
+}
+
+.skeleton-card {
+  height: 120px;
+}
+
+/* ====================
+   启动页 (Splash Screen)
+==================== */
+.splash-screen {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, var(--gradient-start), var(--gradient-end));
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  transition: opacity var(--transition-slow), visibility var(--transition-slow);
+}
+
+.splash-screen.hidden {
+  opacity: 0;
+  visibility: hidden;
+}
+
+.splash-logo {
+  font-size: 64px;
+  margin-bottom: 20px;
+  animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+}
+
+.splash-title {
+  font-size: 24px;
+  font-weight: 600;
+  color: white;
+  margin-bottom: 8px;
+}
+
+.splash-subtitle {
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.splash-loader {
+  position: absolute;
+  bottom: 80px;
+  width: 40px;
+  height: 40px;
+}
+
+.splash-loader::after {
+  content: '';
+  display: block;
+  width: 100%;
+  height: 100%;
+  border: 3px solid rgba(255, 255, 255, 0.3);
+  border-top-color: white;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+/* ====================
+   PWA 安装提示
+==================== */
+.pwa-install-prompt {
+  position: fixed;
+  bottom: calc(var(--tabbar-height) + var(--safe-area-bottom) + 16px);
+  left: 16px;
+  right: 16px;
+  background: var(--bg-card);
+  border-radius: var(--radius-lg);
+  padding: 16px;
+  box-shadow: var(--shadow-lg);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  z-index: 500;
+  transform: translateY(150%);
+  transition: transform var(--transition-normal);
+}
+
+.pwa-install-prompt.show {
+  transform: translateY(0);
+}
+
+.pwa-install-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: var(--radius-md);
+  background: linear-gradient(135deg, var(--gradient-start), var(--gradient-end));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  flex-shrink: 0;
+}
+
+.pwa-install-content {
+  flex: 1;
+}
+
+.pwa-install-title {
+  font-size: 15px;
+  font-weight: 600;
+  margin-bottom: 2px;
+}
+
+.pwa-install-desc {
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.pwa-install-btn {
+  padding: 8px 16px;
+  background: var(--primary-color);
+  color: white;
+  border: none;
+  border-radius: var(--radius-full);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.pwa-install-close {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  color: var(--text-muted);
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+/* ====================
+   响应式断点
+==================== */
+
+/* 超小屏幕 (< 360px) */
+@media (max-width: 359px) {
+  :root {
+    --content-padding: 12px;
+  }
+
+  .mobile-quadrant-grid {
+    gap: 8px;
+  }
+
+  .mobile-quadrant-item {
+    padding: 12px;
+    min-height: 120px;
+  }
+
+  .tabbar-label {
+    font-size: 10px;
+  }
+}
+
+/* 小屏幕手机 (360-413px) */
+@media (min-width: 360px) and (max-width: 413px) {
+  :root {
+    font-size: 15px;
+  }
+}
+
+/* 标准手机 (414-767px) */
+@media (min-width: 414px) and (max-width: 767px) {
+  :root {
+    font-size: 16px;
+  }
+
+  .mobile-quadrant-item {
+    min-height: 150px;
+  }
+}
+
+/* 平板 (768px+) - 不改变布局，保持手机体验 */
+@media (min-width: 768px) {
+  .mobile-app {
+    max-width: 480px;
+    margin: 0 auto;
+    box-shadow: 0 0 30px rgba(0, 0, 0, 0.1);
+    min-height: 100vh;
+    position: relative;
+  }
+
+  .mobile-header,
+  .mobile-tabbar {
+    max-width: 480px;
+    left: 50%;
+    transform: translateX(-50%);
+  }
+}
+
+/* ====================
+   暗色模式支持 (预留)
+==================== */
+@media (prefers-color-scheme: dark) {
+  /* 暗色模式变量覆盖 - 后续可启用 */
+  /*
+  :root {
+    --text-primary: #ffffff;
+    --text-secondary: #b0b0b0;
+    --text-muted: #808080;
+    --bg-primary: #121212;
+    --bg-white: #1e1e1e;
+    --bg-card: #2a2a2a;
+    --border-color: #3a3a3a;
+    --divider-color: #333333;
+  }
+  */
+}
+
+/* ====================
+   消除 300ms 点击延迟
+==================== */
+a, button, input, select, textarea, label,
+[role="button"], [tabindex] {
+  touch-action: manipulation;
+}
+
+/* ====================
+   优化滚动性能
+==================== */
+.mobile-content,
+.mobile-modal {
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+}
+
+/* ====================
+   隐藏原有的顶部标签导航
+==================== */
+@media (max-width: 768px) {
+  .tabs-container,
+  .tab-buttons,
+  .main-tabs {
+    display: none !important;
+  }
+}
+
+/* ====================
+   统计卡片移动端优化
+==================== */
+.mobile-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.mobile-stat-card {
+  background: var(--bg-card);
+  border-radius: var(--radius-md);
+  padding: 14px;
+  text-align: center;
+}
+
+.mobile-stat-value {
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--primary-color);
+  line-height: 1;
+}
+
+.mobile-stat-label {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-top: 6px;
+}
+
+/* ====================
+   AI 建议卡片样式
+==================== */
+.mobile-ai-card {
+  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+  position: relative;
+  overflow: hidden;
+}
+
+.mobile-ai-card::before {
+  content: '🤖';
+  position: absolute;
+  top: -20px;
+  right: -10px;
+  font-size: 80px;
+  opacity: 0.1;
+}
+
+.mobile-ai-title {
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.mobile-ai-content {
+  font-size: 14px;
+  line-height: 1.7;
+  color: var(--text-secondary);
+}
+
+/* ====================
+   挑战赛进度卡片
+==================== */
+.mobile-challenge-card {
+  background: linear-gradient(135deg, var(--gradient-start), var(--gradient-end));
+  border-radius: var(--radius-lg);
+  padding: 20px;
+  color: white;
+  text-align: center;
+}
+
+.mobile-challenge-days {
+  font-size: 48px;
+  font-weight: 700;
+  line-height: 1;
+  margin-bottom: 8px;
+}
+
+.mobile-challenge-label {
+  font-size: 14px;
+  opacity: 0.9;
+  margin-bottom: 16px;
+}
+
+.mobile-challenge-progress {
+  height: 8px;
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: var(--radius-full);
+  overflow: hidden;
+}
+
+.mobile-challenge-progress-bar {
+  height: 100%;
+  background: white;
+  border-radius: var(--radius-full);
+  transition: width var(--transition-normal);
+}
+
+/* ====================
+   原有样式覆盖 - 移动端优化
+==================== */
+
+/* 移动端模式下的样式覆盖 */
+body.mobile-mode {
+  background-color: var(--bg-primary);
+}
+
+/* 隐藏原有顶部标签和 header */
+body.mobile-mode .tabs {
+  display: none !important;
+}
+
+body.mobile-mode header {
+  background: linear-gradient(135deg, var(--gradient-start), var(--gradient-end));
+  padding: 20px 16px;
+  padding-top: calc(20px + var(--safe-area-top));
+  margin: 0;
+  border-radius: 0;
+}
+
+body.mobile-mode header h1 {
+  font-size: 20px;
+  color: white;
+  margin-bottom: 4px;
+}
+
+body.mobile-mode header p {
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.8);
+  margin: 0;
+}
+
+body.mobile-mode .member-controls {
+  position: absolute;
+  top: calc(16px + var(--safe-area-top));
+  right: 16px;
+}
+
+body.mobile-mode .member-btn {
+  padding: 6px 12px;
+  font-size: 12px;
+  border-radius: var(--radius-full);
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+  border: none;
+}
+
+/* 主容器移动端优化 */
+body.mobile-mode .container {
+  max-width: 100%;
+  margin: 0;
+  padding: 0;
+  padding-bottom: calc(var(--tabbar-height) + var(--safe-area-bottom) + 20px);
+}
+
+body.mobile-mode main {
+  padding: var(--content-padding);
+  padding-top: 0;
+}
+
+/* Tab 内容区域优化 */
+body.mobile-mode .tab-content {
+  background: transparent;
+  border-radius: 0;
+  box-shadow: none;
+  padding: 0;
+}
+
+body.mobile-mode .tab-content h2 {
+  font-size: 18px;
+  color: var(--text-primary);
+  margin-bottom: 16px;
+  padding: 0;
+}
+
+/* 数据概览卡片移动端优化 */
+body.mobile-mode .data-overview {
+  background: var(--bg-card);
+  border-radius: var(--radius-lg);
+  padding: var(--content-padding);
+  margin-bottom: 16px;
+  box-shadow: var(--shadow-sm);
+}
+
+body.mobile-mode .data-cards {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+}
+
+body.mobile-mode .data-card {
+  background: var(--bg-primary);
+  border-radius: var(--radius-md);
+  padding: 14px;
+  text-align: center;
+}
+
+body.mobile-mode .data-value {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--primary-color);
+}
+
+body.mobile-mode .data-label {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-top: 4px;
+}
+
+/* 表单移动端优化 */
+body.mobile-mode .form-group {
+  margin-bottom: 16px;
+}
+
+body.mobile-mode .form-group label {
+  display: block;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-primary);
+  margin-bottom: 8px;
+}
+
+body.mobile-mode .form-group input,
+body.mobile-mode .form-group textarea,
+body.mobile-mode .form-group select {
+  width: 100%;
+  padding: 12px 14px;
+  font-size: 16px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  background: var(--bg-white);
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+body.mobile-mode .form-group input:focus,
+body.mobile-mode .form-group textarea:focus,
+body.mobile-mode .form-group select:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.15);
+}
+
+body.mobile-mode .form-group textarea {
+  min-height: 100px;
+  resize: vertical;
+}
+
+/* 提交按钮移动端优化 */
+body.mobile-mode .submit-btn {
+  width: 100%;
+  padding: 14px 24px;
+  font-size: 16px;
+  font-weight: 500;
+  background: linear-gradient(135deg, var(--gradient-start), var(--gradient-end));
+  color: white;
+  border: none;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: transform var(--transition-fast), opacity var(--transition-fast);
+}
+
+body.mobile-mode .submit-btn:active {
+  transform: scale(0.98);
+  opacity: 0.9;
+}
+
+/* 四象限区域移动端优化 */
+body.mobile-mode .quadrant-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+}
+
+body.mobile-mode .quadrant-item {
+  background: var(--bg-card);
+  border-radius: var(--radius-md);
+  padding: 12px;
+  min-height: 120px;
+}
+
+body.mobile-mode .quadrant-header {
+  margin-bottom: 10px;
+}
+
+body.mobile-mode .quadrant-title {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+/* 历史记录列表移动端优化 */
+body.mobile-mode .history-controls {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+body.mobile-mode .history-controls input[type="month"] {
+  flex: 1;
+  min-width: 150px;
+  padding: 10px 12px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  font-size: 14px;
+}
+
+body.mobile-mode .history-controls button {
+  padding: 10px 16px;
+  font-size: 14px;
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  color: var(--text-primary);
+}
+
+body.mobile-mode #history-list {
+  background: var(--bg-card);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+
+/* 历史记录项移动端优化 */
+body.mobile-mode .history-item {
+  padding: 14px var(--content-padding);
+  border-bottom: 1px solid var(--divider-color);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  transition: background-color var(--transition-fast);
+}
+
+body.mobile-mode .history-item:active {
+  background-color: rgba(0, 0, 0, 0.03);
+}
+
+body.mobile-mode .history-item:last-child {
+  border-bottom: none;
+}
+
+/* 智能建议区域移动端优化 */
+body.mobile-mode .advice-generator {
+  margin-bottom: 16px;
+}
+
+body.mobile-mode .advice-btn {
+  width: 100%;
+  padding: 14px 24px;
+  font-size: 16px;
+  font-weight: 500;
+  background: linear-gradient(135deg, var(--gradient-start), var(--gradient-end));
+  color: white;
+  border: none;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+}
+
+body.mobile-mode .advice-result {
+  background: var(--bg-card);
+  border-radius: var(--radius-lg);
+  padding: var(--content-padding);
+}
+
+body.mobile-mode .advice-result h3 {
+  font-size: 15px;
+  margin-bottom: 12px;
+}
+
+body.mobile-mode .advice-content {
+  font-size: 14px;
+  line-height: 1.7;
+  color: var(--text-secondary);
+}
+
+/* 数据洞察面板移动端优化 */
+body.mobile-mode .data-insight-panel {
+  background: var(--bg-card);
+  border-radius: var(--radius-lg);
+  padding: var(--content-padding);
+  margin-bottom: 16px;
+}
+
+body.mobile-mode .insight-header h3 {
+  font-size: 18px;
+  margin-bottom: 4px;
+}
+
+body.mobile-mode .insight-subtitle {
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+body.mobile-mode .insight-charts {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 16px;
+  margin: 16px 0;
+}
+
+body.mobile-mode .insight-chart-card {
+  background: var(--bg-primary);
+  border-radius: var(--radius-md);
+  padding: 14px;
+}
+
+body.mobile-mode .echarts-container {
+  height: 200px;
+}
+
+body.mobile-mode .insight-cards {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+}
+
+body.mobile-mode .insight-card {
+  background: var(--bg-primary);
+  border-radius: var(--radius-md);
+  padding: 12px;
+}
+
+/* 模态框移动端优化 */
+body.mobile-mode .modal,
+body.mobile-mode .modal-content {
+  max-width: 100%;
+  margin: 0;
+  border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+}
+
+body.mobile-mode .payment-modal-container,
+body.mobile-mode .vip-payment-container {
+  max-width: 100%;
+  border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+/* 时间管理界面移动端优化 */
+body.mobile-mode .time-management {
+  background: var(--bg-card);
+  border-radius: var(--radius-lg);
+  padding: var(--content-padding);
+  margin-bottom: 16px;
+}
+
+body.mobile-mode .time-slots {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+body.mobile-mode .time-slot {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px;
+  background: var(--bg-primary);
+  border-radius: var(--radius-md);
+}
+
+body.mobile-mode .time-slot input {
+  flex: 1;
+  padding: 8px 10px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  font-size: 14px;
+}
+
+/* 图表容器移动端优化 */
+body.mobile-mode .chart-container {
+  background: var(--bg-primary);
+  border-radius: var(--radius-md);
+  padding: 14px;
+  margin-bottom: 16px;
+}
+
+body.mobile-mode .chart-container h4 {
+  font-size: 14px;
+  margin-bottom: 12px;
+}
+
+body.mobile-mode .chart-wrapper {
+  height: 180px;
+}
+
+/* 进度条移动端优化 */
+body.mobile-mode .progress-bar-container {
+  height: 8px;
+  background: var(--bg-primary);
+  border-radius: var(--radius-full);
+  overflow: hidden;
+  margin: 8px 0;
+}
+
+body.mobile-mode .progress-bar {
+  height: 100%;
+  background: linear-gradient(90deg, var(--gradient-start), var(--gradient-end));
+  border-radius: var(--radius-full);
+  transition: width 0.3s ease;
+}
+
+/* 挑战赛页面移动端优化 */
+body.mobile-mode #challenge-page-container {
+  padding: 0;
+}
+
+body.mobile-mode .challenge-hero {
+  background: linear-gradient(135deg, var(--gradient-start), var(--gradient-end));
+  border-radius: var(--radius-lg);
+  padding: 24px;
+  color: white;
+  text-align: center;
+  margin-bottom: 16px;
+}
+
+/* 页脚移动端优化 */
+body.mobile-mode footer {
+  text-align: center;
+  padding: 20px;
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-bottom: 20px;
+}
+
+/* 安全区域适配 */
+@supports (padding-bottom: env(safe-area-inset-bottom)) {
+  body.mobile-mode .container {
+    padding-bottom: calc(var(--tabbar-height) + env(safe-area-inset-bottom) + 20px);
+  }
+
+  body.mobile-mode header {
+    padding-top: calc(20px + env(safe-area-inset-top));
+  }
+}
+
+/* 横屏模式适配 */
+@media (orientation: landscape) and (max-height: 500px) {
+  body.mobile-mode header {
+    padding: 10px 16px;
+  }
+
+  body.mobile-mode header h1 {
+    font-size: 18px;
+  }
+
+  .mobile-tabbar {
+    height: 50px;
+  }
+
+  .tabbar-icon {
+    font-size: 20px;
+  }
+
+  .tabbar-label {
+    font-size: 10px;
+  }
+}
+
+/* ====================
+   第二阶段优化 - 增强安全区域适配
+==================== */
+
+/* 全局安全区域变量增强 */
+:root {
+  /* 使用 max() 确保最小安全距离 */
+  --safe-area-top: max(env(safe-area-inset-top, 0px), 0px);
+  --safe-area-bottom: max(env(safe-area-inset-bottom, 0px), 0px);
+  --safe-area-left: max(env(safe-area-inset-left, 0px), 0px);
+  --safe-area-right: max(env(safe-area-inset-right, 0px), 0px);
+}
+
+/* iPhone X 及以上刘海屏适配 */
+@supports (padding-top: env(safe-area-inset-top)) {
+  /* 顶部 Header 刘海适配 */
+  body.mobile-mode header {
+    padding-top: calc(20px + env(safe-area-inset-top));
+    min-height: calc(var(--navbar-height) + env(safe-area-inset-top));
+  }
+
+  /* 会员控制按钮位置调整 */
+  body.mobile-mode .member-controls {
+    top: calc(16px + env(safe-area-inset-top));
+  }
+
+  /* 底部 TabBar Home Indicator 适配 */
+  .mobile-tabbar {
+    padding-bottom: env(safe-area-inset-bottom);
+    /* 确保 TabBar 内容不被 Home Indicator 遮挡 */
+  }
+
+  /* 主容器底部内边距 */
+  body.mobile-mode .container {
+    padding-bottom: calc(var(--tabbar-height) + env(safe-area-inset-bottom) + 20px);
+  }
+
+  /* 底部弹出面板适配 */
+  .mobile-modal {
+    padding-bottom: calc(20px + env(safe-area-inset-bottom));
+  }
+
+  /* PWA 安装提示适配 */
+  .pwa-install-prompt {
+    bottom: calc(var(--tabbar-height) + env(safe-area-inset-bottom) + 16px);
+  }
+
+  /* Toast 提示位置调整 (避开刘海) */
+  .mobile-toast {
+    top: calc(50% + env(safe-area-inset-top) / 2);
+  }
+
+  /* 启动页适配 */
+  .splash-screen .splash-loader {
+    bottom: calc(80px + env(safe-area-inset-bottom));
+  }
+
+  /* 模态框底部适配 */
+  body.mobile-mode .payment-modal-container,
+  body.mobile-mode .vip-payment-container,
+  body.mobile-mode .challenge-modal-container {
+    padding-bottom: calc(20px + env(safe-area-inset-bottom));
+  }
+
+  /* 左右安全区域 (横屏模式下重要) */
+  body.mobile-mode main {
+    padding-left: calc(var(--content-padding) + env(safe-area-inset-left));
+    padding-right: calc(var(--content-padding) + env(safe-area-inset-right));
+  }
+}
+
+/* 横屏模式下的安全区域适配 */
+@media (orientation: landscape) {
+  @supports (padding-left: env(safe-area-inset-left)) {
+    body.mobile-mode header {
+      padding-left: calc(16px + env(safe-area-inset-left));
+      padding-right: calc(16px + env(safe-area-inset-right));
+    }
+
+    .mobile-tabbar-inner {
+      padding-left: env(safe-area-inset-left);
+      padding-right: env(safe-area-inset-right);
+    }
+
+    body.mobile-mode .container {
+      padding-left: env(safe-area-inset-left);
+      padding-right: env(safe-area-inset-right);
+    }
+  }
+}
+
+/* ====================
+   第二阶段优化 - TabBar 触感动画增强
+==================== */
+
+/* TabBar 项目基础动画 */
+.tabbar-item {
+  transition:
+    color var(--transition-fast),
+    transform var(--transition-fast) cubic-bezier(0.4, 0, 0.2, 1);
+  will-change: transform;
+  position: relative;
+  overflow: visible;
+}
+
+/* 按压状态动画 - 类微信缩放效果 */
+.tabbar-item.pressing {
+  transform: scale(0.9);
+}
+
+.tabbar-item.pressing .tabbar-icon {
+  transform: scale(0.95);
+}
+
+/* 激活状态图标弹跳动画 */
+.tabbar-item.active .tabbar-icon {
+  animation: tabIconBounce 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+
+@keyframes tabIconBounce {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.15);
+  }
+  100% {
+    transform: scale(1.05);
+  }
+}
+
+/* TabBar 图标容器增强 */
+.tabbar-icon {
+  transition: transform var(--transition-fast) cubic-bezier(0.4, 0, 0.2, 1);
+  will-change: transform;
+}
+
+/* 底部涟漪效果 (点击反馈) */
+.tabbar-item::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 48px;
+  height: 48px;
+  background: radial-gradient(circle, rgba(102, 126, 234, 0.3) 0%, transparent 70%);
+  border-radius: 50%;
+  transform: translate(-50%, -50%) scale(0);
+  opacity: 0;
+  transition: transform 0.4s ease-out, opacity 0.4s ease-out;
+  pointer-events: none;
+  z-index: -1;
+}
+
+.tabbar-item.pressing::before {
+  transform: translate(-50%, -50%) scale(1.5);
+  opacity: 1;
+}
+
+/* 激活状态的强调指示器 */
+.tabbar-item.active::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 20px;
+  height: 3px;
+  background: var(--primary-color);
+  border-radius: 2px;
+  animation: indicatorSlide 0.25s ease-out;
+}
+
+@keyframes indicatorSlide {
+  from {
+    width: 0;
+    opacity: 0;
+  }
+  to {
+    width: 20px;
+    opacity: 1;
+  }
+}
+
+/* 徽章呼吸动画 (新消息提示) */
+.tabbar-badge.dot {
+  animation: badgePulse 2s ease-in-out infinite;
+}
+
+@keyframes badgePulse {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.2);
+    opacity: 0.8;
+  }
+}
+
+/* TabBar 标签文字增强 */
+.tabbar-label {
+  transition:
+    color var(--transition-fast),
+    transform var(--transition-fast),
+    font-weight var(--transition-fast);
+}
+
+.tabbar-item.active .tabbar-label {
+  transform: scale(1.02);
+}
+
+/* TabBar 整体背景毛玻璃效果 (iOS 风格) */
+@supports (backdrop-filter: blur(20px)) {
+  .mobile-tabbar {
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+  }
+}
+
+/* 暗色模式下的毛玻璃效果 */
+@media (prefers-color-scheme: dark) {
+  @supports (backdrop-filter: blur(20px)) {
+    .mobile-tabbar {
+      background: rgba(28, 28, 30, 0.85);
+    }
+  }
+}
+
+/* ====================
+   第二阶段优化 - 页面切换动画增强
+==================== */
+
+/* 页面内容切换增强动画 */
+.tab-content {
+  transition:
+    opacity var(--transition-normal) ease-out,
+    transform var(--transition-normal) ease-out;
+  will-change: opacity, transform;
+}
+
+.tab-content.slide-in-right {
+  animation: pageSlideInRight var(--transition-normal) cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.tab-content.slide-in-left {
+  animation: pageSlideInLeft var(--transition-normal) cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+@keyframes pageSlideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(50px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes pageSlideInLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-50px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* ====================
+   第二阶段优化 - 滚动性能和触摸优化
+==================== */
+
+/* 优化滚动性能 */
+.mobile-content,
+body.mobile-mode main,
+body.mobile-mode .tab-content {
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-y: contain;
+  scroll-behavior: smooth;
+}
+
+/* 阻止橡皮筋效果 (在不需要的地方) */
+body.mobile-mode {
+  overscroll-behavior: none;
+}
+
+/* 优化触摸目标大小 (至少 44x44px) */
+.tabbar-item,
+.mobile-btn,
+button,
+a[role="button"],
+input[type="submit"],
+input[type="button"] {
+  min-height: 44px;
+  min-width: 44px;
+}
+
+/* ====================
+   第二阶段优化 - 离线状态指示器
+==================== */
+
+/* 离线状态全局提示条 */
+body.offline-mode::before {
+  content: '当前处于离线模式';
+  position: fixed;
+  top: env(safe-area-inset-top, 0);
+  left: 0;
+  right: 0;
+  padding: 4px 16px;
+  background: #ff9800;
+  color: white;
+  font-size: 12px;
+  text-align: center;
+  z-index: 9999;
+  transform: translateY(-100%);
+  animation: slideDownOffline 0.3s ease-out forwards;
+}
+
+@keyframes slideDownOffline {
+  to {
+    transform: translateY(0);
+  }
+}
+
+body.offline-mode header {
+  margin-top: 28px;
+}
+
+/* 同步状态图标动画 */
+.sync-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.sync-indicator.syncing::before {
+  content: '';
+  width: 12px;
+  height: 12px;
+  border: 2px solid var(--primary-color);
+  border-top-color: transparent;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+.sync-indicator.synced::before {
+  content: '✓';
+  color: #4caf50;
+}
+
+.sync-indicator.pending::before {
+  content: '⏳';
+}
+
+/* ====================
+   第二阶段优化 - 复盘挑战赛移动端适配
+==================== */
+
+/* 挑战赛主容器 */
+body.mobile-mode #challenge-page-container {
+  padding: 0;
+}
+
+/* 挑战赛英雄区 */
+body.mobile-mode .challenge-hero-section,
+body.mobile-mode .challenge-hero {
+  background: linear-gradient(135deg, var(--gradient-start), var(--gradient-end));
+  border-radius: var(--radius-lg);
+  padding: 24px 20px;
+  color: white;
+  text-align: center;
+  margin-bottom: 16px;
+  position: relative;
+  overflow: hidden;
+}
+
+body.mobile-mode .challenge-hero::before {
+  content: '🏆';
+  position: absolute;
+  top: -20px;
+  right: -20px;
+  font-size: 120px;
+  opacity: 0.1;
+  transform: rotate(-15deg);
+}
+
+/* 挑战天数显示 */
+body.mobile-mode .challenge-days-display {
+  margin-bottom: 16px;
+}
+
+body.mobile-mode .challenge-days-number {
+  font-size: 64px;
+  font-weight: 800;
+  line-height: 1;
+  text-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+body.mobile-mode .challenge-days-unit {
+  font-size: 18px;
+  font-weight: 500;
+  opacity: 0.9;
+  margin-left: 4px;
+}
+
+body.mobile-mode .challenge-days-label {
+  font-size: 14px;
+  opacity: 0.85;
+  margin-top: 4px;
+}
+
+/* 挑战进度条 */
+body.mobile-mode .challenge-progress-container {
+  background: rgba(255, 255, 255, 0.2);
+  height: 12px;
+  border-radius: 6px;
+  overflow: hidden;
+  margin: 16px 0;
+}
+
+body.mobile-mode .challenge-progress-bar {
+  height: 100%;
+  background: white;
+  border-radius: 6px;
+  transition: width 0.5s ease-out;
+  position: relative;
+}
+
+body.mobile-mode .challenge-progress-bar::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+  animation: progressShine 2s ease-in-out infinite;
+}
+
+@keyframes progressShine {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+body.mobile-mode .challenge-progress-text {
+  font-size: 13px;
+  opacity: 0.9;
+}
+
+/* 挑战规则卡片 */
+body.mobile-mode .challenge-rules-card {
+  background: var(--bg-card);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+  margin-bottom: 16px;
+}
+
+body.mobile-mode .challenge-rules-title {
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+body.mobile-mode .challenge-rules-list {
+  font-size: 14px;
+  line-height: 1.8;
+  color: var(--text-secondary);
+}
+
+body.mobile-mode .challenge-rules-list li {
+  margin-bottom: 8px;
+  padding-left: 20px;
+  position: relative;
+}
+
+body.mobile-mode .challenge-rules-list li::before {
+  content: '✓';
+  position: absolute;
+  left: 0;
+  color: var(--primary-color);
+  font-weight: 600;
+}
+
+/* 挑战奖励卡片 */
+body.mobile-mode .challenge-reward-card {
+  background: linear-gradient(135deg, #fff3e0, #ffe0b2);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+  margin-bottom: 16px;
+  text-align: center;
+}
+
+body.mobile-mode .reward-icon-wrapper {
+  font-size: 48px;
+  margin-bottom: 12px;
+}
+
+body.mobile-mode .reward-amount {
+  font-size: 32px;
+  font-weight: 700;
+  color: #f57c00;
+  margin-bottom: 4px;
+}
+
+body.mobile-mode .reward-description {
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+/* 挑战成就墙 */
+body.mobile-mode .challenge-achievements {
+  background: var(--bg-card);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+  margin-bottom: 16px;
+}
+
+body.mobile-mode .achievement-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  margin-top: 12px;
+}
+
+body.mobile-mode .achievement-item {
+  text-align: center;
+  padding: 12px 8px;
+  background: var(--bg-primary);
+  border-radius: var(--radius-md);
+  transition: transform var(--transition-fast);
+}
+
+body.mobile-mode .achievement-item:active {
+  transform: scale(0.95);
+}
+
+body.mobile-mode .achievement-item.unlocked {
+  background: linear-gradient(135deg, #e8f5e9, #c8e6c9);
+}
+
+body.mobile-mode .achievement-item.locked {
+  opacity: 0.5;
+  filter: grayscale(1);
+}
+
+body.mobile-mode .achievement-icon {
+  font-size: 28px;
+  margin-bottom: 4px;
+}
+
+body.mobile-mode .achievement-label {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+/* 挑战日历 */
+body.mobile-mode .challenge-calendar {
+  background: var(--bg-card);
+  border-radius: var(--radius-lg);
+  padding: 16px;
+  margin-bottom: 16px;
+}
+
+body.mobile-mode .calendar-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+body.mobile-mode .calendar-title {
+  font-size: 16px;
+  font-weight: 600;
+}
+
+body.mobile-mode .calendar-nav {
+  display: flex;
+  gap: 8px;
+}
+
+body.mobile-mode .calendar-nav-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-full);
+  background: var(--bg-primary);
+  border: none;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+body.mobile-mode .calendar-weekdays {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+  margin-bottom: 8px;
+}
+
+body.mobile-mode .calendar-weekday {
+  text-align: center;
+  font-size: 12px;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+body.mobile-mode .calendar-days {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+}
+
+body.mobile-mode .calendar-day {
+  aspect-ratio: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  border-radius: var(--radius-sm);
+  background: var(--bg-primary);
+  transition: transform var(--transition-fast);
+}
+
+body.mobile-mode .calendar-day.completed {
+  background: var(--primary-color);
+  color: white;
+}
+
+body.mobile-mode .calendar-day.today {
+  border: 2px solid var(--primary-color);
+  font-weight: 600;
+}
+
+body.mobile-mode .calendar-day.missed {
+  background: #ffebee;
+  color: #ef5350;
+}
+
+/* ====================
+   第二阶段优化 - 数据概览移动端适配
+==================== */
+
+/* 数据概览主容器 */
+body.mobile-mode .data-overview {
+  background: var(--bg-card);
+  border-radius: var(--radius-lg);
+  padding: 16px;
+  margin-bottom: 16px;
+  box-shadow: var(--shadow-sm);
+}
+
+body.mobile-mode .data-overview-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+body.mobile-mode .data-overview-header h3 {
+  font-size: 18px;
+  font-weight: 600;
+  margin: 0;
+}
+
+/* 数据卡片网格 - 移动端优化布局 */
+body.mobile-mode .data-cards {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+body.mobile-mode .data-card {
+  background: linear-gradient(135deg, #f8f9ff 0%, #fff 100%);
+  border-radius: var(--radius-md);
+  padding: 16px 12px;
+  text-align: center;
+  border: 1px solid var(--border-color);
+  transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+body.mobile-mode .data-card:active {
+  transform: scale(0.98);
+  box-shadow: var(--shadow-md);
+}
+
+body.mobile-mode .data-card .data-value {
+  font-size: 28px;
+  font-weight: 700;
+  background: linear-gradient(135deg, var(--gradient-start), var(--gradient-end));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  line-height: 1.2;
+}
+
+body.mobile-mode .data-card .data-label {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-top: 6px;
+  font-weight: 500;
+}
+
+/* 连续复盘卡片特殊样式 */
+body.mobile-mode .data-card.streak-card {
+  background: linear-gradient(135deg, var(--gradient-start), var(--gradient-end));
+  color: white;
+  grid-column: span 2;
+  padding: 20px;
+}
+
+body.mobile-mode .data-card.streak-card .data-value {
+  font-size: 48px;
+  background: none;
+  -webkit-text-fill-color: white;
+}
+
+body.mobile-mode .data-card.streak-card .data-label {
+  color: rgba(255, 255, 255, 0.9);
+}
+
+/* 趋势图表容器 */
+body.mobile-mode .chart-container {
+  background: var(--bg-primary);
+  border-radius: var(--radius-md);
+  padding: 16px;
+  margin-bottom: 16px;
+}
+
+body.mobile-mode .chart-container h4 {
+  font-size: 15px;
+  font-weight: 600;
+  margin-bottom: 12px;
+  color: var(--text-primary);
+}
+
+body.mobile-mode .chart-wrapper {
+  height: 200px;
+  position: relative;
+}
+
+body.mobile-mode .chart-wrapper canvas {
+  max-width: 100%;
+}
+
+/* 7天分段数据移动端优化 */
+body.mobile-mode .segmented-data {
+  margin-top: 16px;
+}
+
+body.mobile-mode .segment-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+body.mobile-mode .segment-header label {
+  font-size: 14px;
+  font-weight: 500;
+}
+
+body.mobile-mode .segment-cards {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+}
+
+body.mobile-mode .segment-card {
+  background: var(--bg-primary);
+  border-radius: var(--radius-md);
+  padding: 14px 12px;
+  text-align: center;
+}
+
+body.mobile-mode .segment-label {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-bottom: 4px;
+}
+
+body.mobile-mode .segment-value {
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--primary-color);
+}
+
+/* 数据刷新区域 */
+body.mobile-mode .data-update {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 16px;
+  padding-top: 12px;
+  border-top: 1px solid var(--divider-color);
+}
+
+body.mobile-mode .update-info {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+body.mobile-mode .refresh-btn {
+  padding: 8px 16px;
+  font-size: 13px;
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-full);
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+body.mobile-mode .refresh-btn:active {
+  background: var(--border-color);
+}
+
+/* 人生资产报告移动端优化 */
+body.mobile-mode .data-insight-panel {
+  background: var(--bg-card);
+  border-radius: var(--radius-lg);
+  padding: 16px;
+  margin-bottom: 16px;
+}
+
+body.mobile-mode .insight-header {
+  text-align: center;
+  margin-bottom: 16px;
+}
+
+body.mobile-mode .insight-header h3 {
+  font-size: 18px;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+body.mobile-mode .insight-subtitle {
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+/* 月份选择器移动端优化 */
+body.mobile-mode .insight-month-selector {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+body.mobile-mode .insight-month-selector label {
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+body.mobile-mode .insight-month-selector input[type="month"] {
+  flex: 1;
+  min-width: 140px;
+  padding: 10px 12px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  font-size: 14px;
+}
+
+/* 洞察图表容器 */
+body.mobile-mode .insight-charts {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+body.mobile-mode .insight-chart-card {
+  background: var(--bg-primary);
+  border-radius: var(--radius-md);
+  padding: 16px;
+}
+
+body.mobile-mode .insight-chart-card h4 {
+  font-size: 15px;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+body.mobile-mode .insight-chart-card .chart-desc {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-bottom: 12px;
+}
+
+body.mobile-mode .echarts-container {
+  height: 220px;
+}
+
+/* 洞察卡片网格 */
+body.mobile-mode .insight-cards {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+}
+
+body.mobile-mode .insight-card {
+  background: var(--bg-primary);
+  border-radius: var(--radius-md);
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+body.mobile-mode .insight-card.primary {
+  grid-column: span 2;
+  background: linear-gradient(135deg, #fff3e0, #ffe0b2);
+  flex-direction: row;
+  align-items: center;
+}
+
+body.mobile-mode .insight-icon {
+  font-size: 28px;
+  line-height: 1;
+}
+
+body.mobile-mode .insight-content h5 {
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 2px;
+  color: var(--text-primary);
+}
+
+body.mobile-mode .insight-content p {
+  font-size: 14px;
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+/* ====================
+   第二阶段优化 - 四象限法则移动端触摸优化
+==================== */
+
+/* 四象限网格布局 - 2行2列 */
+body.mobile-mode .quadrants {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  grid-template-rows: repeat(2, auto);
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+/* 四象限项通用样式 */
+body.mobile-mode .quadrant {
+  background: var(--bg-card);
+  border-radius: var(--radius-lg);
+  padding: 16px;
+  min-height: 200px;
+  position: relative;
+  box-shadow: var(--shadow-sm);
+  transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+  overflow: visible;
+}
+
+/* 四象限触摸反馈 */
+body.mobile-mode .quadrant:active {
+  transform: scale(0.98);
+  box-shadow: var(--shadow-md);
+}
+
+/* 四象限标题样式 */
+body.mobile-mode .quadrant h3 {
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 2px solid transparent;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* 各象限颜色区分 */
+body.mobile-mode .quadrant.important-urgent h3 {
+  color: #e53935;
+  border-bottom-color: #e53935;
+}
+
+body.mobile-mode .quadrant.important-not-urgent h3 {
+  color: #fb8c00;
+  border-bottom-color: #fb8c00;
+}
+
+body.mobile-mode .quadrant.not-important-urgent h3 {
+  color: #1e88e5;
+  border-bottom-color: #1e88e5;
+}
+
+body.mobile-mode .quadrant.not-important-not-urgent h3 {
+  color: #78909c;
+  border-bottom-color: #78909c;
+}
+
+/* 四象限角标标识 */
+body.mobile-mode .quadrant::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-lg) 0 var(--radius-md) 0;
+  font-size: 14px;
+  font-weight: 700;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+body.mobile-mode .quadrant.important-urgent::before {
+  content: 'A';
+  background: #e53935;
+}
+
+body.mobile-mode .quadrant.important-not-urgent::before {
+  content: 'B';
+  background: #fb8c00;
+}
+
+body.mobile-mode .quadrant.not-important-urgent::before {
+  content: 'C';
+  background: #1e88e5;
+}
+
+body.mobile-mode .quadrant.not-important-not-urgent::before {
+  content: 'D';
+  background: #78909c;
+}
+
+/* 任务列表容器 */
+body.mobile-mode .task-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* 任务项移动端优化 */
+body.mobile-mode .task-item {
+  background: var(--bg-primary);
+  border-radius: var(--radius-md);
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  transition: transform var(--transition-fast), background-color var(--transition-fast);
+  touch-action: pan-y pinch-zoom;
+  position: relative;
+}
+
+/* 任务项可拖拽指示 */
+body.mobile-mode .task-item::before {
+  content: '⋮⋮';
+  position: absolute;
+  left: 4px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-muted);
+  font-size: 10px;
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+/* 任务项触摸高亮 */
+body.mobile-mode .task-item:active {
+  background: var(--border-color);
+  transform: scale(0.99);
+}
+
+/* 任务项正在拖拽状态 */
+body.mobile-mode .task-item.dragging {
+  opacity: 0.8;
+  transform: scale(1.02);
+  box-shadow: var(--shadow-lg);
+  z-index: 100;
+}
+
+/* 任务输入框移动端优化 */
+body.mobile-mode .task-item input[type="text"],
+body.mobile-mode .task-item textarea {
+  width: 100%;
+  padding: 10px 12px;
+  font-size: 14px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  background: var(--bg-white);
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+body.mobile-mode .task-item input:focus,
+body.mobile-mode .task-item textarea:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.15);
+}
+
+body.mobile-mode .task-item textarea {
+  min-height: 60px;
+  resize: none;
+}
+
+/* 任务输入占位符样式 */
+body.mobile-mode .task-item input::placeholder,
+body.mobile-mode .task-item textarea::placeholder {
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
+/* 任务输入框标签 */
+body.mobile-mode .task-what {
+  font-weight: 500;
+}
+
+body.mobile-mode .task-why,
+body.mobile-mode .task-how,
+body.mobile-mode .task-solution,
+body.mobile-mode .task-help {
+  font-size: 13px;
+}
+
+/* 任务操作按钮行 */
+body.mobile-mode .task-help-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+body.mobile-mode .task-help-row input {
+  flex: 1;
+}
+
+/* 添加/删除任务按钮 */
+body.mobile-mode .add-task-btn,
+body.mobile-mode .remove-task-btn {
+  width: 36px;
+  height: 36px;
+  min-width: 36px;
+  min-height: 36px;
+  border-radius: var(--radius-full);
+  font-size: 18px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform var(--transition-fast), background-color var(--transition-fast);
+  flex-shrink: 0;
+}
+
+body.mobile-mode .add-task-btn {
+  background: var(--primary-color);
+  color: white;
+  border: none;
+}
+
+body.mobile-mode .add-task-btn:active {
+  transform: scale(0.9);
+  background: var(--primary-dark);
+}
+
+body.mobile-mode .remove-task-btn {
+  background: #ffebee;
+  color: #e53935;
+  border: none;
+}
+
+body.mobile-mode .remove-task-btn:active {
+  transform: scale(0.9);
+  background: #ffcdd2;
+}
+
+/* 任务优先级提醒移动端优化 */
+body.mobile-mode .task-priority {
+  background: var(--bg-card);
+  border-radius: var(--radius-lg);
+  padding: 16px;
+  margin-bottom: 16px;
+}
+
+body.mobile-mode .task-priority h3 {
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 12px;
+  color: var(--text-primary);
+}
+
+body.mobile-mode .priority-tips {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+}
+
+body.mobile-mode .priority-item {
+  padding: 12px;
+  border-radius: var(--radius-md);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+body.mobile-mode .priority-item strong {
+  display: block;
+  font-size: 13px;
+  margin-bottom: 4px;
+}
+
+body.mobile-mode .priority-item p {
+  margin: 0;
+  color: var(--text-secondary);
+}
+
+body.mobile-mode .priority-item.priority-a {
+  background: #ffebee;
+  border-left: 3px solid #e53935;
+}
+
+body.mobile-mode .priority-item.priority-b {
+  background: #fff3e0;
+  border-left: 3px solid #fb8c00;
+}
+
+body.mobile-mode .priority-item.priority-c {
+  background: #e3f2fd;
+  border-left: 3px solid #1e88e5;
+}
+
+body.mobile-mode .priority-item.priority-d {
+  background: #eceff1;
+  border-left: 3px solid #78909c;
+}
+
+/* 时间管理移动端优化 */
+body.mobile-mode .time-management {
+  background: var(--bg-card);
+  border-radius: var(--radius-lg);
+  padding: 16px;
+  margin-bottom: 16px;
+}
+
+body.mobile-mode .time-management h2 {
+  font-size: 18px;
+  margin-bottom: 16px;
+}
+
+body.mobile-mode .time-management-container {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* 今日时间安排表格 */
+body.mobile-mode .today-schedule {
+  background: var(--bg-primary);
+  border-radius: var(--radius-md);
+  padding: 14px;
+}
+
+body.mobile-mode .today-schedule h3 {
+  font-size: 15px;
+  font-weight: 600;
+  margin-bottom: 12px;
+}
+
+body.mobile-mode .schedule-table {
+  display: flex;
+  flex-direction: column;
+}
+
+body.mobile-mode .schedule-header {
+  display: grid;
+  grid-template-columns: 90px 1fr 70px;
+  gap: 8px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border-color);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+body.mobile-mode #schedule-items {
+  display: flex;
+  flex-direction: column;
+}
+
+body.mobile-mode .schedule-item {
+  display: grid;
+  grid-template-columns: 90px 1fr 70px;
+  gap: 8px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--divider-color);
+  align-items: center;
+}
+
+body.mobile-mode .schedule-item:last-child {
+  border-bottom: none;
+}
+
+body.mobile-mode .schedule-item input,
+body.mobile-mode .schedule-item select {
+  width: 100%;
+  padding: 8px 10px;
+  font-size: 13px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  background: var(--bg-white);
+}
+
+/* 时间统计区域 */
+body.mobile-mode .time-stats {
+  background: var(--bg-primary);
+  border-radius: var(--radius-md);
+  padding: 14px;
+}
+
+body.mobile-mode .time-stats-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+body.mobile-mode .time-stats-header h3 {
+  font-size: 15px;
+  font-weight: 600;
+  margin: 0;
+}
+
+body.mobile-mode .manage-tags-btn {
+  padding: 6px 12px;
+  font-size: 12px;
+  background: var(--bg-white);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-full);
+  color: var(--text-primary);
+}
+
+body.mobile-mode .time-stats .chart-container {
+  margin: 0;
+  padding: 0;
+  background: transparent;
+}
+
+body.mobile-mode .stats-summary {
+  display: flex;
+  justify-content: space-around;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border-color);
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+/* 折叠面板 - 小屏幕优化 */
+@media (max-width: 400px) {
+  body.mobile-mode .quadrants {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  body.mobile-mode .quadrant {
+    min-height: 180px;
+  }
+
+  body.mobile-mode .priority-tips {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* 四象限展开/折叠动画 */
+body.mobile-mode .quadrant.collapsed .task-list {
+  display: none;
+}
+
+body.mobile-mode .quadrant.collapsed {
+  min-height: auto;
+}
+
+body.mobile-mode .quadrant h3 {
+  cursor: pointer;
+}
+
+body.mobile-mode .quadrant h3::after {
+  content: '▼';
+  font-size: 10px;
+  margin-left: auto;
+  transition: transform var(--transition-fast);
+}
+
+body.mobile-mode .quadrant.collapsed h3::after {
+  transform: rotate(-90deg);
+}
+
+/* 滑动删除支持 */
+body.mobile-mode .task-item.swipe-left {
+  transform: translateX(-80px);
+}
+
+body.mobile-mode .task-item .delete-action {
+  position: absolute;
+  right: -80px;
+  top: 0;
+  bottom: 0;
+  width: 80px;
+  background: #e53935;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0 var(--radius-md) var(--radius-md) 0;
+  font-size: 24px;
+}
+
+/* ====================
+   第二阶段优化 - 打印样式清理
+==================== */
+@media print {
+  .mobile-tabbar,
+  .splash-screen,
+  .pwa-install-prompt,
+  .mobile-toast {
+    display: none !important;
+  }
+
+  body.mobile-mode .container {
+    padding-bottom: 0;
+  }
+}
+
