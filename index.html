@@ -591,7 +591,7 @@
                     <!-- 月份选择器 -->
                     <div class="insight-month-selector">
                         <label for="insight-month">选择月份：</label>
-                        <input type="month" id="insight-month">
+                        <input type="month" id="insight-month" min="2024-01">
                         <button id="refresh-insight" class="refresh-btn">刷新分析</button>
                     </div>
 
@@ -646,7 +646,7 @@
                 </div>
 
                 <div class="history-controls">
-                    <input type="month" id="history-filter">
+                    <input type="month" id="history-filter" min="2024-01">
                     <button id="clear-history">清空历史</button>
                 </div>
                 <div id="history-list"></div>
@@ -681,7 +681,7 @@
         </main>
 
         <footer>
-            <p>&copy; 2025 智能复盘助手 - 让每一天都有进步</p>
+            <p>&copy; 2026 智能复盘助手 - 让每一天都有进步</p>
         </footer>
     </div>
 
@@ -727,17 +727,7 @@
         </div>
     </nav>
 
-    <!-- PWA 安装提示 -->
-    <div class="pwa-install-prompt" id="pwa-install-prompt">
-        <div class="pwa-install-content">
-            <div class="pwa-install-title">添加到主屏幕</div>
-            <div class="pwa-install-desc">获得更好的使用体验</div>
-        </div>
-        <div>
-            <button class="pwa-install-btn" id="pwa-install-btn">安装</button>
-            <button class="pwa-install-close" id="pwa-install-close">取消</button>
-        </div>
-    </div>
+
 
     <!-- Toast 提示组件 -->
     <div class="mobile-toast" id="mobile-toast">
@@ -775,52 +765,7 @@
             });
         }
 
-        // PWA 安装提示处理
-        let deferredPrompt;
-        const installPrompt = document.getElementById('pwa-install-prompt');
-        const installBtn = document.getElementById('pwa-install-btn');
-        const installClose = document.getElementById('pwa-install-close');
 
-        window.addEventListener('beforeinstallprompt', function(e) {
-            e.preventDefault();
-            deferredPrompt = e;
-
-            // 检查是否已经安装或用户关闭过提示
-            const dismissed = localStorage.getItem('pwa_install_dismissed');
-            if (!dismissed && isMobile()) {
-                setTimeout(function() {
-                    installPrompt.classList.add('show');
-                }, 3000);
-            }
-        });
-
-        if (installBtn) {
-            installBtn.addEventListener('click', function() {
-                if (deferredPrompt) {
-                    deferredPrompt.prompt();
-                    deferredPrompt.userChoice.then(function(choiceResult) {
-                        if (choiceResult.outcome === 'accepted') {
-                            showToast('应用已添加到主屏幕', 'success');
-                        }
-                        deferredPrompt = null;
-                        installPrompt.classList.remove('show');
-                    });
-                }
-            });
-        }
-
-        if (installClose) {
-            installClose.addEventListener('click', function() {
-                installPrompt.classList.remove('show');
-                localStorage.setItem('pwa_install_dismissed', 'true');
-            });
-        }
-
-        // 检测是否以 PWA 模式运行
-        window.addEventListener('appinstalled', function() {
-            console.log('[PWA] 应用已安装');
-            installPrompt.classList.remove('show');
-        });
 
         // ==================== 启动页处理 ====================
 

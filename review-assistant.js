@@ -1817,6 +1817,20 @@ function showHistoryDetail(review) {
             const hours = Math.floor(review.timeStats.totalMinutes / 60);
             const mins = review.timeStats.totalMinutes % 60;
             completionDescription = `自我提升总时长: ${review.timeStats.totalMinutes}分钟 (${hours}小时${mins > 0 ? mins + '分钟' : ''})`;
+            
+            // 添加娱乐总时长显示
+            if (review.timeStats.entertainmentTotalMinutes > 0) {
+                const entertainmentHours = Math.floor(review.timeStats.entertainmentTotalMinutes / 60);
+                const entertainmentMins = review.timeStats.entertainmentTotalMinutes % 60;
+                completionDescription += ` | 娱乐总时长: ${review.timeStats.entertainmentTotalMinutes}分钟 (${entertainmentHours}小时${entertainmentMins > 0 ? entertainmentMins + '分钟' : ''})`;
+            }
+            
+            // 添加生活总时长显示
+            if (review.timeStats.lifeTotalMinutes > 0) {
+                const lifeHours = Math.floor(review.timeStats.lifeTotalMinutes / 60);
+                const lifeMins = review.timeStats.lifeTotalMinutes % 60;
+                completionDescription += ` | 生活总时长: ${review.timeStats.lifeTotalMinutes}分钟 (${lifeHours}小时${lifeMins > 0 ? lifeMins + '分钟' : ''})`;
+            }
         } else {
             completionDescription = '暂无时长数据';
         }
@@ -1880,6 +1894,18 @@ function generateTimeStatsDetailHtml(review) {
         const studyHours = Math.floor(studyMinutes / 60);
         const studyMins = studyMinutes % 60;
         const studyPercentage = totalMinutes > 0 ? ((studyMinutes / totalMinutes) * 100).toFixed(1) : 0;
+        
+        // 添加娱乐总时长统计
+        const entertainmentMinutes = review.timeStats.entertainmentTotalMinutes || 0;
+        const entertainmentHours = Math.floor(entertainmentMinutes / 60);
+        const entertainmentMins = entertainmentMinutes % 60;
+        const entertainmentPercentage = totalMinutes > 0 ? ((entertainmentMinutes / totalMinutes) * 100).toFixed(1) : 0;
+        
+        // 添加生活总时长统计
+        const lifeMinutes = review.timeStats.lifeTotalMinutes || 0;
+        const lifeHours = Math.floor(lifeMinutes / 60);
+        const lifeMins = lifeMinutes % 60;
+        const lifePercentage = totalMinutes > 0 ? ((lifeMinutes / totalMinutes) * 100).toFixed(1) : 0;
 
         // 生成分类卡片HTML
         let itemsHtml = review.timeStats.items.map(item => {
@@ -1899,6 +1925,8 @@ function generateTimeStatsDetailHtml(review) {
             <div class="time-stats-overview">
                 <p><strong>总时长:</strong> <span class="highlight-value">${hours}小时${mins > 0 ? mins + '分钟' : ''}</span></p>
                 <p><strong>自我提升时长:</strong> <span class="highlight-value">${studyHours}小时${studyMins > 0 ? studyMins + '分钟' : ''}</span> <span class="highlight">(占比${studyPercentage}%)</span></p>
+                <p><strong>娱乐总时长:</strong> <span class="highlight-value">${entertainmentHours}小时${entertainmentMins > 0 ? entertainmentMins + '分钟' : ''}</span> <span class="highlight">(占比${entertainmentPercentage}%)</span></p>
+                <p><strong>生活总时长:</strong> <span class="highlight-value">${lifeHours}小时${lifeMins > 0 ? lifeMins + '分钟' : ''}</span> <span class="highlight">(占比${lifePercentage}%)</span></p>
                 <p><strong>任务数量:</strong> <span class="highlight-value">${review.timeStats.taskCount || 0}个</span></p>
             </div>
             <div class="time-stats-items">
@@ -2817,10 +2845,10 @@ function initCompletionTrendChart(reviews) {
                 datasets: [{
                     label: '目标达成率',
                     data: trendData.data,
-                    borderColor: '#1890ff',
-                    backgroundColor: 'rgba(24, 144, 255, 0.1)',
+                    borderColor: '#ffffff',
+                    backgroundColor: 'rgba(255, 255, 255, 0.1)',
                     borderWidth: 3,
-                    pointBackgroundColor: '#1890ff',
+                    pointBackgroundColor: '#ffffff',
                     pointBorderColor: '#fff',
                     pointRadius: 6,
                     pointHoverRadius: 8,
@@ -3090,7 +3118,7 @@ function createTimeSlot(startTime, endTime, isFirstRow = false) {
     row.className = 'schedule-item';
 
     // 根据是否为第一行设置默认值
-    const taskValue = isFirstRow ? '学习' : '';
+    const taskValue = isFirstRow ? '工作' : '';
     const durationValue = isFirstRow ? '60' : '';
 
     // 时间段 + 任务输入 + 时长输入
@@ -3122,8 +3150,8 @@ function createTimeSlot(startTime, endTime, isFirstRow = false) {
     // 填充标签下拉菜单
     function populateDropdown() {
         const tags = typeof getUserTags === 'function' ? getUserTags() : [
-            { name: '学习', color: '#1890ff' },
             { name: '工作', color: '#722ed1' },
+            { name: '学习', color: '#1890ff' },
             { name: '休息放松', color: '#52c41a' }
         ];
 
@@ -3265,6 +3293,14 @@ function updateTimeStatistics() {
     let taskCount = 0;
     let restRelaxExtraMinutes = 0; // 存储需要额外添加的休息放松时间
     let studyTotalMinutes = 0; // 存储学习类任务总时长
+    let entertainmentTotalMinutes = 0; // 存储娱乐类任务总时长
+    let lifeTotalMinutes = 0; // 存储生活类任务总时长
+
+    // 娱乐任务关键词列表
+    const entertainmentKeywords = ['刷视频', '打游戏', '游戏', '视频', '追剧', '看剧', '观影', '电影', '电视剧', '综艺', '动漫', '直播', '抖音', '快手', 'B站', 'b站', '小红书', '社交', '聊天'];
+    
+    // 生活任务关键词列表
+    const lifeKeywords = ['做饭', '吃饭', '洗澡', '打扫卫生', '打扫', '卫生', '出门购物', '购物', '买菜', '做饭', '做饭', '洗衣', '洗碗', '拖地', '擦桌子', '整理房间', '倒垃圾', '遛狗', '喂猫', '照顾孩子', '接孩子', '送孩子', '陪孩子', '做家务', '家务', '生活', '休息', '睡觉'];
 
     // 计算各类型任务的时长和剩余时间
     scheduleRows.forEach(row => {
@@ -3291,8 +3327,18 @@ function updateTimeStatistics() {
             totalMinutes += duration;
             taskCount++;
             
-            // 根据需求：将所有任务的时长都累加到自我提升总时长中
-            studyTotalMinutes += duration;
+            // 判断任务类型
+            const isEntertainment = entertainmentKeywords.some(keyword => taskName.includes(keyword));
+            const isLife = lifeKeywords.some(keyword => taskName.includes(keyword));
+            
+            if (isEntertainment) {
+                entertainmentTotalMinutes += duration;
+            } else if (isLife) {
+                lifeTotalMinutes += duration;
+            } else {
+                // 非娱乐和非生活类任务归类到自我提升总时长
+                studyTotalMinutes += duration;
+            }
             
             // 计算剩余时间并累加到休息放松类型
             const remainingMinutes = Math.max(0, timeSlotMinutes - duration);
@@ -3311,7 +3357,7 @@ function updateTimeStatistics() {
     totalMinutes += restRelaxExtraMinutes;
     
     // 更新总时长、任务数量和学习总占比
-    updateTotalStatistics(totalMinutes, taskCount, studyTotalMinutes);
+    updateTotalStatistics(totalMinutes, taskCount, studyTotalMinutes, entertainmentTotalMinutes, lifeTotalMinutes);
     
     // 更新饼图
     updatePieChart(typeDurations, totalMinutes);
@@ -3321,6 +3367,8 @@ function updateTimeStatistics() {
         typeDurations: { ...typeDurations },
         totalMinutes: totalMinutes,
         studyTotalMinutes: studyTotalMinutes,
+        entertainmentTotalMinutes: entertainmentTotalMinutes,
+        lifeTotalMinutes: lifeTotalMinutes,
         taskCount: taskCount
     };
 }
@@ -3349,6 +3397,8 @@ function getCurrentTimeStats() {
         items: timeStatsArray,
         totalMinutes: currentTimeStats.totalMinutes,
         studyTotalMinutes: currentTimeStats.studyTotalMinutes,
+        entertainmentTotalMinutes: currentTimeStats.entertainmentTotalMinutes,
+        lifeTotalMinutes: currentTimeStats.lifeTotalMinutes,
         taskCount: currentTimeStats.taskCount
     };
 }
@@ -3363,7 +3413,19 @@ function formatTimeStatsText(timeStats) {
     const totalHours = Math.floor(timeStats.totalMinutes / 60);
     const totalMins = timeStats.totalMinutes % 60;
 
-    lines.push(`自我提升总时长：${timeStats.totalMinutes}分钟(${totalHours}小时${totalMins > 0 ? totalMins + '分钟' : ''})，占比${((timeStats.studyTotalMinutes / timeStats.totalMinutes) * 100).toFixed(1)}%`);
+    lines.push(`自我提升总时长：${timeStats.totalMinutes}分钟(${totalHours}小时${totalMins > 0 ? totalMins + '分钟' : ''})`);
+    if (timeStats.studyTotalMinutes > 0) {
+        const studyPercentage = ((timeStats.studyTotalMinutes / timeStats.totalMinutes) * 100).toFixed(1);
+        lines.push(`  - 自我提升：${timeStats.studyTotalMinutes}分钟，占比${studyPercentage}%`);
+    }
+    if (timeStats.entertainmentTotalMinutes > 0) {
+        const entertainmentPercentage = ((timeStats.entertainmentTotalMinutes / timeStats.totalMinutes) * 100).toFixed(1);
+        lines.push(`  - 娱乐：${timeStats.entertainmentTotalMinutes}分钟，占比${entertainmentPercentage}%`);
+    }
+    if (timeStats.lifeTotalMinutes > 0) {
+        const lifePercentage = ((timeStats.lifeTotalMinutes / timeStats.totalMinutes) * 100).toFixed(1);
+        lines.push(`  - 生活：${timeStats.lifeTotalMinutes}分钟，占比${lifePercentage}%`);
+    }
     lines.push('时间分配详情：');
 
     timeStats.items.forEach(item => {
@@ -3376,7 +3438,7 @@ function formatTimeStatsText(timeStats) {
     return lines.join('\n');
 }
 
-function updateTotalStatistics(totalMinutes, taskCount, studyTotalMinutes) {
+function updateTotalStatistics(totalMinutes, taskCount, studyTotalMinutes, entertainmentTotalMinutes, lifeTotalMinutes) {
     if (totalDurationElement) {
         const hours = Math.floor(totalMinutes / 60);
         const minutes = totalMinutes % 60;
@@ -3388,9 +3450,29 @@ function updateTotalStatistics(totalMinutes, taskCount, studyTotalMinutes) {
             studyPercentage = ((studyTotalMinutes / totalMinutes) * 100).toFixed(1);
         }
         
+        // 计算娱乐总占比并显示
+        let entertainmentPercentage = 0;
+        if (totalMinutes > 0) {
+            entertainmentPercentage = ((entertainmentTotalMinutes / totalMinutes) * 100).toFixed(1);
+        }
+        
+        // 计算生活总占比并显示
+        let lifePercentage = 0;
+        if (totalMinutes > 0) {
+            lifePercentage = ((lifeTotalMinutes / totalMinutes) * 100).toFixed(1);
+        }
+        
         // 计算学习总时长的小时和分钟
         const studyHours = Math.floor(studyTotalMinutes / 60);
         const studyMinutes = studyTotalMinutes % 60;
+        
+        // 计算娱乐总时长的小时和分钟
+        const entertainmentHours = Math.floor(entertainmentTotalMinutes / 60);
+        const entertainmentMinutes = entertainmentTotalMinutes % 60;
+        
+        // 计算生活总时长的小时和分钟
+        const lifeHours = Math.floor(lifeTotalMinutes / 60);
+        const lifeMinutes = lifeTotalMinutes % 60;
         
         // 检查是否已有学习占比元素，如果没有则创建
         let studyPercentageElement = document.getElementById('study-percentage');
@@ -3399,12 +3481,40 @@ function updateTotalStatistics(totalMinutes, taskCount, studyTotalMinutes) {
             studyPercentageElement.id = 'study-percentage';
             studyPercentageElement.style.display = 'block';
             studyPercentageElement.style.marginTop = '5px';
-            studyPercentageElement.style.color = '#1890ff';
+            studyPercentageElement.style.color = '#722ed1';
             totalDurationElement.parentNode.appendChild(studyPercentageElement);
+        }
+        
+        // 检查是否已有娱乐占比元素，如果没有则创建
+        let entertainmentPercentageElement = document.getElementById('entertainment-percentage');
+        if (!entertainmentPercentageElement) {
+            entertainmentPercentageElement = document.createElement('span');
+            entertainmentPercentageElement.id = 'entertainment-percentage';
+            entertainmentPercentageElement.style.display = 'block';
+            entertainmentPercentageElement.style.marginTop = '5px';
+            entertainmentPercentageElement.style.color = '#f59e0b';
+            totalDurationElement.parentNode.appendChild(entertainmentPercentageElement);
+        }
+        
+        // 检查是否已有生活占比元素，如果没有则创建
+        let lifePercentageElement = document.getElementById('life-percentage');
+        if (!lifePercentageElement) {
+            lifePercentageElement = document.createElement('span');
+            lifePercentageElement.id = 'life-percentage';
+            lifePercentageElement.style.display = 'block';
+            lifePercentageElement.style.marginTop = '5px';
+            lifePercentageElement.style.color = '#52c41a';
+            totalDurationElement.parentNode.appendChild(lifePercentageElement);
         }
         
         // 显示格式：自我提升总时长：XX分钟（XX小时），占比XX%
         studyPercentageElement.textContent = `自我提升总时长：${studyTotalMinutes}分钟${studyHours > 0 ? `(${studyHours}小时${studyMinutes > 0 ? studyMinutes + '分钟' : ''})` : ''}，占比${studyPercentage}%`;
+        
+        // 显示格式：娱乐总时长：XX分钟（XX小时），占比XX%
+        entertainmentPercentageElement.textContent = `娱乐总时长：${entertainmentTotalMinutes}分钟${entertainmentHours > 0 ? `(${entertainmentHours}小时${entertainmentMinutes > 0 ? entertainmentMinutes + '分钟' : ''})` : ''}，占比${entertainmentPercentage}%`;
+        
+        // 显示格式：生活总时长：XX分钟（XX小时），占比XX%
+        lifePercentageElement.textContent = `生活总时长：${lifeTotalMinutes}分钟${lifeHours > 0 ? `(${lifeHours}小时${lifeMinutes > 0 ? lifeMinutes + '分钟' : ''})` : ''}，占比${lifePercentage}%`;
     }
     
     if (totalTasksElement) {
@@ -3467,7 +3577,15 @@ function updatePieChart(typeDurations, totalMinutes) {
     // 【优化】获取用户自定义标签用于颜色匹配
     const userTags = typeof getUserTags === 'function' ? getUserTags() : [];
 
+    // 1. 永久删除"休息放松"标签
+    const filteredTypeDurations = {};
     for (const [type, duration] of Object.entries(typeDurations)) {
+        if (type !== '休息放松') {
+            filteredTypeDurations[type] = duration;
+        }
+    }
+
+    for (const [type, duration] of Object.entries(filteredTypeDurations)) {
         labels.push(type);
         data.push(duration);
 
@@ -3505,19 +3623,16 @@ function updatePieChart(typeDurations, totalMinutes) {
             }
         }
 
-        // 4. 如果仍然没有找到颜色，使用预定义颜色列表
+        // 4. 如果仍然没有找到颜色，使用白色作为默认颜色
         if (!color) {
-            // 预定义颜色列表，用于未匹配到颜色的任务类型
-            const predefinedColors = [
-                '#1890ff', '#722ed1', '#faad14', '#f5222d', '#52c41a', '#ff7d00',
-                '#13c2c2', '#eb2f96', '#fa8c16', '#2f54eb', '#fa541c', '#36cbcb',
-                '#73d13d', '#ffc53d', '#ff4d4f', '#9254de', '#ff7875', '#95de64'
-            ];
-            // 根据类型名称生成一致的颜色索引
-            const colorIndex = type.split('').reduce((sum, char) => sum + char.charCodeAt(0), 0) % predefinedColors.length;
-            color = predefinedColors[colorIndex];
+            color = '#ffffff'; // 设置默认颜色为白色
         }
-        backgroundColor.push(color + '80'); // 添加透明度
+        // 正确处理3位和6位颜色值，添加透明度
+        let fullColor = color;
+        if (color.length === 4) { // 3位颜色值，如 #fff
+            fullColor = '#' + color[1] + color[1] + color[2] + color[2] + color[3] + color[3];
+        }
+        backgroundColor.push(fullColor + '80'); // 添加透明度
         borderColor.push(color);
 
         // 计算百分比
@@ -4520,14 +4635,14 @@ function updateRadarChart(projectData) {
                 symbol: 'circle',
                 symbolSize: 6,
                 lineStyle: {
-                    color: '#1890ff',
+                    color: '#ffffff',
                     width: 2
                 },
                 areaStyle: {
-                    color: 'rgba(24, 144, 255, 0.3)'
+                    color: 'rgba(255, 255, 255, 0.3)'
                 },
                 itemStyle: {
-                    color: '#1890ff',
+                    color: '#ffffff',
                     borderColor: '#fff',
                     borderWidth: 2
                 }
@@ -4622,7 +4737,7 @@ function updateBarChart(projectData) {
                 return typeConfig.color;
             }
         }
-        return '#1890ff';
+        return '#ffffff'; // 将默认颜色改为白色
     });
 
     const option = {
@@ -5276,7 +5391,7 @@ const TAG_MANAGER_CONFIG = {
     // 预设调色盘 - 5种美观颜色
     presetColors: [
         { name: '翡翠绿', value: '#52c41a' },
-        { name: '活力橙', value: '#fa8c16' },
+        { name: '灰色', value: '#888' },
         { name: '热情红', value: '#f5222d' },
         { name: '神秘紫', value: '#722ed1' },
         { name: '天空蓝', value: '#1890ff' },
@@ -5286,9 +5401,7 @@ const TAG_MANAGER_CONFIG = {
     ],
     // 新用户默认预设标签
     defaultTags: [
-        { id: 'tag_1', name: '学习', color: '#1890ff' },
-        { id: 'tag_2', name: '工作', color: '#722ed1' },
-        { id: 'tag_7', name: '休息放松', color: '#13c2c2' }
+        { id: 'tag_2', name: '工作', color: '#722ed1' }
     ]
 };
 
@@ -5300,12 +5413,37 @@ function getUserTags() {
     try {
         // 先尝试从本地存储获取用户自定义标签
         const storedTags = localStorage.getItem(TAG_MANAGER_CONFIG.storageKey);
+        let tags;
         if (storedTags) {
-            const tags = JSON.parse(storedTags);
-            return tags.length > 0 ? tags : TAG_MANAGER_CONFIG.defaultTags;
+            tags = JSON.parse(storedTags);
+            // 过滤掉需要删除的标签：学习和休息放松
+            tags = tags.filter(tag => tag.name !== '学习' && tag.name !== '休息放松');
+            if (tags.length === 0) {
+                tags = TAG_MANAGER_CONFIG.defaultTags;
+                saveUserTags(tags); // 保存更新后的标签
+            }
+        } else {
+            // 如果没有存储的标签，返回默认标签
+            tags = TAG_MANAGER_CONFIG.defaultTags;
         }
-        // 如果没有存储的标签，返回默认标签
-        return TAG_MANAGER_CONFIG.defaultTags;
+        
+        // 颜色迁移：将旧的橙色 (#fa8c16) 替换为灰色 (#888)
+        let hasChanges = false;
+        const updatedTags = tags.map(tag => {
+            if (tag.color === '#fa8c16') {
+                hasChanges = true;
+                return { ...tag, color: '#888' };
+            }
+            return tag;
+        });
+        
+        // 如果有标签颜色被更新，保存到本地存储
+        if (hasChanges) {
+            saveUserTags(updatedTags);
+            return updatedTags;
+        }
+        
+        return tags;
     } catch (e) {
         console.warn('【标签管理】读取标签失败:', e);
         // 即使出错也返回默认标签

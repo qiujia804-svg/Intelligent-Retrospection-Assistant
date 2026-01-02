@@ -892,91 +892,7 @@ input, textarea, [contenteditable="true"] {
 /* ====================
    PWA 安装提示
 ==================== */
-.pwa-install-prompt {
-  position: fixed;
-  bottom: 20px;
-  left: 10px;
-  right: 10px;
-  background: white;
-  border-radius: 12px;
-  padding: 16px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
-  z-index: 9999;
-  display: none;
-  text-align: center;
-  width: calc(100% - 20px);
-  max-width: 400px;
-  margin: 0 auto;
-}
 
-.pwa-install-prompt.show {
-  display: block;
-}
-
-.pwa-install-content {
-  margin-bottom: 10px;
-}
-
-.pwa-install-title {
-  font-size: 16px;
-  font-weight: 600;
-  margin-bottom: 5px;
-  color: #333;
-}
-
-.pwa-install-desc {
-  font-size: 14px;
-  color: #666;
-  margin-bottom: 15px;
-}
-
-.pwa-install-btn {
-  padding: 10px 20px;
-  background: #1890ff;
-  color: white;
-  border: none;
-  border-radius: 20px;
-  font-size: 15px;
-  font-weight: 500;
-  cursor: pointer;
-  margin-right: 10px;
-}
-
-.pwa-install-close {
-  padding: 10px 20px;
-  background: #f0f0f0;
-  color: #666;
-  border: none;
-  border-radius: 20px;
-  font-size: 15px;
-  font-weight: 500;
-  cursor: pointer;
-}
-
-/* PWA 安装提示适配 */
-@media (max-width: 360px) {
-  .pwa-install-prompt {
-    bottom: 16px;
-    left: 16px;
-    right: 16px;
-    padding: 12px;
-  }
-  
-  .pwa-install-title {
-    font-size: 14px;
-  }
-  
-  .pwa-install-desc {
-    font-size: 12px;
-    margin-bottom: 10px;
-  }
-  
-  .pwa-install-btn,
-  .pwa-install-close {
-    padding: 8px 16px;
-    font-size: 13px;
-  }
-}
 
 /* ====================
    响应式断点
@@ -1690,10 +1606,7 @@ body.mobile-mode footer {
     padding-bottom: calc(20px + env(safe-area-inset-bottom));
   }
 
-  /* PWA 安装提示适配 */
-  .pwa-install-prompt {
-    bottom: 20px;
-  }
+
 
   /* Toast 提示位置调整 (避开刘海) */
   .mobile-toast {
@@ -3082,7 +2995,6 @@ body.mobile-mode .task-item .delete-action {
 @media print {
   .mobile-tabbar,
   .splash-screen,
-  .pwa-install-prompt,
   .mobile-toast {
     display: none !important;
   }
