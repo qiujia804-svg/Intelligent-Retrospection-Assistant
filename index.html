@@ -582,11 +582,11 @@
                 <h2>历史记录</h2>
 
                 <!-- 数据洞察看板 -->
-                <div class="data-insight-panel">
-                    <div class="insight-header">
-                        <h3>人生资产报告</h3>
-                        <p class="insight-subtitle">基于你的时间投入，发现潜在兴趣与成长方向</p>
-                    </div>
+        <div class="data-insight-panel">
+            <div class="insight-header">
+                <h3>月度时光分析</h3>
+                <p class="insight-subtitle">基于你的时间投入，发现潜在兴趣与成长方向</p>
+            </div>
 
                     <!-- 月份选择器 -->
                     <div class="insight-month-selector">
@@ -689,6 +689,7 @@
     <script src="data-storage.js"></script>
     <script src="review-assistant.js"></script>
     <!-- commercial-system.js 已禁用 -->
+    <script src="import-for-browser.js"></script>
 
     <!-- 启动页 (Splash Screen) -->
     <div class="splash-screen" id="splash-screen">
@@ -740,10 +741,27 @@
     (function() {
         'use strict';
 
+        // ==================== 本地文件协议检测 ====================
+
+        // 检测是否在 file:// 协议下运行
+        var isLocalFileProtocol = window.location.protocol === 'file:';
+
+        if (isLocalFileProtocol) {
+            console.log('[本地模式] 检测到 file:// 协议，PWA功能已禁用');
+            console.log('[本地模式] 提示：使用本地服务器（如 VS Code Live Server）可获得完整功能');
+
+            // 移除 manifest 链接以避免 CORS 错误
+            var manifestLink = document.querySelector('link[rel="manifest"]');
+            if (manifestLink) {
+                manifestLink.remove();
+                console.log('[本地模式] 已移除 manifest.json 引用');
+            }
+        }
+
         // ==================== PWA 相关 ====================
 
-        // 注册 Service Worker
-        if ('serviceWorker' in navigator) {
+        // 注册 Service Worker（仅在非 file:// 协议下）
+        if ('serviceWorker' in navigator && !isLocalFileProtocol) {
             window.addEventListener('load', function() {
                 navigator.serviceWorker.register('/service-worker.js')
                     .then(function(registration) {
@@ -763,6 +781,8 @@
                         console.log('[PWA] Service Worker 注册失败:', error);
                     });
             });
+        } else if (isLocalFileProtocol) {
+            console.log('[本地模式] Service Worker 已跳过注册');
         }
 
 

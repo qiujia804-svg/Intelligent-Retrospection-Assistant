@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>测试修复效果</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        .success {
+            background-color: #d4edda;
+            border-color: #c3e6cb;
+            color: #155724;
+        }
+        .error {
+            background-color: #f8d7da;
+            border-color: #f5c6cb;
+            color: #721c24;
+        }
+    </style>
+</head>
+<body>
+    <h1>测试智能复盘助手修复效果</h1>
+    <div id="test-result"></div>
+    
+    <script>
+        // 页面加载完成后测试修复效果
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('=== 开始测试智能复盘助手修复效果 ===');
+            
+            // 直接测试数据导入和总复盘天数计算
+            const testResults = [];
+            
+            try {
+                // 测试1：检查数据是否已导入
+                const reviewsData = localStorage.getItem('smart_review_assistant_reviews');
+                if (!reviewsData) {
+                    testResults.push({ name: '数据导入', status: 'error', message: '未找到复盘数据' });
+                    console.error('未找到复盘数据');
+                } else {
+                    const parsedReviews = JSON.parse(reviewsData);
+                    testResults.push({ name: '数据导入', status: 'success', message: `成功导入 ${parsedReviews.length} 条记录` });
+                    console.log(`成功导入 ${parsedReviews.length} 条记录`);
+                    
+                    // 测试2：计算总复盘天数
+                    const uniqueDates = new Set();
+                    parsedReviews.forEach(review => {
+                        if (review.date) {
+                            const dateStr = review.date.split('T')[0];
+                            uniqueDates.add(dateStr);
+                        }
+                    });
+                    const totalReviewDays = uniqueDates.size;
+                    testResults.push({ name: '总复盘天数', status: 'success', message: `总复盘天数：${totalReviewDays}` });
+                    console.log(`总复盘天数：${totalReviewDays}`);
+                    
+                    // 测试3：检查2025-11-14到2026-01-03期间的天数
+                    const startDate = new Date('2025-11-14');
+                    const endDate = new Date('2026-01-03');
+                    const filteredReviews = parsedReviews.filter(r => {
+                        const reviewDate = new Date(r.date);
+                        return reviewDate >= startDate && reviewDate <= endDate;
+                    });
+                    const uniqueFilteredDates = new Set(filteredReviews.map(r => r.date));
+                    const filteredDays = uniqueFilteredDates.size;
+                    const isFixSuccessful = filteredDays === 51;
+                    testResults.push({ 
+                        name: '2025-11-14到2026-01-03期间的复盘天数', 
+                        status: isFixSuccessful ? 'success' : 'error', 
+                        message: `期间复盘天数：${filteredDays}（预期：51）` 
+                    });
+                    console.log(`2025-11-14到2026-01-03期间的复盘天数：${filteredDays}（预期：51）`);
+                    
+                    // 测试4：修复是否成功
+                    testResults.push({ 
+                        name: '修复效果', 
+                        status: isFixSuccessful ? 'success' : 'error', 
+                        message: isFixSuccessful ? '修复成功！' : '修复失败！' 
+                    });
+                    console.log(`修复${isFixSuccessful ? '成功' : '失败'}！`);
+                }
+            } catch (error) {
+                testResults.push({ name: '测试过程', status: 'error', message: `测试过程出错：${error.message}` });
+                console.error('测试过程出错：', error);
+            }
+            
+            // 显示测试结果
+            const resultDiv = document.getElementById('test-result');
+            let html = '<h2>测试结果</h2>';
+            testResults.forEach(result => {
+                html += `<div class="test-section ${result.status}">`;
+                html += `<h3>${result.name}</h3>`;
+                html += `<p>${result.message}</p>`;
+                html += '</div>';
+            });
+            resultDiv.innerHTML = html;
+            
+            console.log('=== 测试完成 ===');
+        });
+    </script>
+</body>
+</html>

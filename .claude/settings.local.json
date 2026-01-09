@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(powershell -Command:*)",
+      "Bash(xargs:*)",
+      "Bash(cat:*)",
+      "Bash(git -C \"D:/Intelligent-Retrospection-Assistant-master\" status)",
+      "Bash(cd:*)"
+    ]
+  }
+}

@@ -805,26 +805,9 @@ function fixDateErrors() {
         const now = new Date();
         const todayStr = now.toISOString().split('T')[0];
 
-        // 检查并修复12月24日的错误数据
-        const dec24Index = reviews.findIndex(r => r.date === '2025-12-24');
-        if (dec24Index !== -1) {
-            console.log('【修复】发现12月24日的错误数据');
-
-            // 检查是否已经有12月23日的数据
-            const hasDec23 = reviews.some(r => r.date === '2025-12-23');
-
-            if (!hasDec23) {
-                // 如果没有12月23日的数据，将12月24日改为12月23日
-                reviews[dec24Index].date = '2025-12-23';
-                console.log('【修复】已将12月24日数据改为12月23日');
-                fixed = true;
-            } else {
-                // 如果已经有12月23日的数据，删除重复的12月24日数据
-                reviews.splice(dec24Index, 1);
-                console.log('【修复】已删除重复的12月24日数据（因为已有12月23日数据）');
-                fixed = true;
-            }
-        }
+        // 【更新】不再自动删除2025-12-24日的数据
+        // 因为用户要求从2025年11月14日到2026年1月3日期间，总复盘天数为51天
+        // 2025-12-24日是有效的复盘数据，不应该被删除
 
         // 如果今天还没有复盘数据，自动将昨天的数据填充为今天的数据（仅用于显示，不保存）
         // 注意：这是为了折线图的显示效果，不会实际修改数据
@@ -1325,7 +1308,57 @@ function setupTabs() {
 function setupProgressBar() {
     goalProgress.addEventListener('input', () => {
         progressValue.textContent = `${goalProgress.value}%`;
+        
+        // 实时更新目标达成率趋势图
+        updateTrendChartWithCurrentInput();
     });
+}
+
+// 实时更新趋势图，使用当前input值
+function updateTrendChartWithCurrentInput() {
+    try {
+        const reviews = getReviews();
+        const now = new Date();
+        const todayStr = now.toISOString().split('T')[0];
+        
+        // 创建当前输入值的临时review数据
+        const currentInputValue = parseInt(goalProgress.value);
+        
+        // 检查是否已有今天的review
+        const todayReviewIndex = reviews.findIndex(r => r.date === todayStr);
+        
+        // 创建临时数据，包含当前输入值
+        const tempReviews = [...reviews];
+        
+        if (todayReviewIndex >= 0) {
+            // 更新已有review的目标达成率
+            tempReviews[todayReviewIndex] = {
+                ...tempReviews[todayReviewIndex],
+                goalCompletion: {
+                    ...tempReviews[todayReviewIndex].goalCompletion,
+                    percentage: currentInputValue
+                }
+            };
+        } else {
+            // 添加今天的review，使用当前输入值
+            tempReviews.push({
+                date: todayStr,
+                goalCompletion: {
+                    percentage: currentInputValue,
+                    description: ''
+                },
+                strengths: '',
+                weaknesses: '',
+                improvements: '',
+                todos: ''
+            });
+        }
+        
+        // 更新趋势图
+        initCompletionTrendChart(tempReviews);
+    } catch (error) {
+        console.error('实时更新趋势图失败:', error);
+    }
 }
 
 // 四象限任务管理
@@ -1514,6 +1547,16 @@ function saveReview(review) {
         
         localStorage.setItem(STORAGE_KEY_REVIEWS, JSON.stringify(reviews));
         showNotification('保存成功', 'success');
+        
+        // 自动同步本月总投入
+        if (typeof updateMonthlyInvestment === 'function') {
+            updateMonthlyInvestment();
+        }
+        
+        // 同步更新数据洞察
+        if (typeof updateDataInsight === 'function') {
+            updateDataInsight();
+        }
     } catch (error) {
         console.error('保存复盘数据失败:', error);
         showNotification('保存失败，请重试', 'error');
@@ -1611,8 +1654,12 @@ function setupReviewForm() {
         goalProgress.value = 50;
         progressValue.textContent = '50%';
 
+        // 【修复】保存后立即强制重新读取数据并更新所有相关组件
+        const freshReviews = getReviews();
+        console.log('【数据同步】保存后重新读取数据，记录数:', freshReviews.length);
+
         // 保存后更新数据概览
-        updateDataOverview(getReviews());
+        updateDataOverview(freshReviews);
 
         // 同时更新历史记录列表，确保新保存的数据能立即显示
         displayHistory();
@@ -1620,6 +1667,22 @@ function setupReviewForm() {
         // 【新增】更新数据洞察
         if (typeof updateDataInsight === 'function') {
             updateDataInsight();
+        }
+
+        // 【修复】如果挑战赛页面已渲染，同步更新挑战赛数据
+        if (typeof renderChallengePage === 'function') {
+            const challengeContainer = document.getElementById('challenge-page-container');
+            if (challengeContainer && challengeContainer.innerHTML.trim() !== '') {
+                console.log('【数据同步】更新挑战赛页面');
+                renderChallengePage();
+            }
+        }
+
+        // 【修复】强制更新折线图
+        const canvasElement = document.getElementById('completionTrendChart');
+        if (canvasElement && typeof Chart !== 'undefined') {
+            console.log('【数据同步】强制更新折线图');
+            initCompletionTrendChart(freshReviews);
         }
     });
 }
@@ -2097,13 +2160,28 @@ function importData() {
                         historyFilter.value = '';
                         // 刷新界面
                         displayHistory();
-                        
+
+                        // 【增强】验证导入的数据并输出日志
+                        const importedReviews = getReviews();
+                        console.log('【导入】成功导入', importedReviews.length, '条复盘记录');
+                        if (importedReviews.length > 0) {
+                            const dates = importedReviews.map(r => r.date).sort();
+                            console.log('【导入】日期范围:', dates[0], '至', dates[dates.length - 1]);
+                        }
+
                         // 更新所有相关数据和图表，无论当前在哪个标签页
-                        updateDataOverview();
-                        
+                        updateDataOverview(importedReviews);
+
+                        // 【增强】强制刷新趋势图，使用延迟确保DOM更新
+                        setTimeout(() => {
+                            const reviews = getReviews();
+                            initCompletionTrendChart(reviews);
+                            console.log('【导入】趋势图已刷新');
+                        }, 100);
+
                         // 更新历史记录页面的雷达图和柱状图
                         forceInitChartsAndUpdate();
-                        
+
                         showNotification('数据导入成功', 'success');
                     }
                 } catch (error) {
@@ -2509,10 +2587,12 @@ function formatLocalDate(date) {
 }
 
 /**
- * 计算连续复盘天数 - 历史回溯法
+ * 计算连续复盘天数 - 历史回溯法（修复跨月计算问题）
  * 1. 提取所有历史记录日期
  * 2. 从今天/昨天开始往回追溯
  * 3. 逐日检查是否存在记录，直到日期断档
+ *
+ * 【关键修复】使用纯日期字符串比较，避免时区问题
  */
 function calculateStreakDays(reviews) {
     // 无数据时返回 0
@@ -2540,77 +2620,106 @@ function calculateStreakDays(reviews) {
         return 0;
     }
 
-    // 转换为日期对象并排序（最新的在前）
-    const sortedDates = Array.from(reviewDates)
-        .map(dateStr => new Date(dateStr))
-        .sort((a, b) => b - a);
+    // 【修复】使用纯字符串日期排序，避免时区转换问题
+    const sortedDateStrings = Array.from(reviewDates).sort();
 
-    let maxStreak = 0;
+    // 计算所有记录中的最长连续天数
+    let maxStreak = 1;
     let currentStreak = 1;
 
-    // 计算最长连续天数
-    for (let i = 1; i < sortedDates.length; i++) {
-        // 计算当前日期与前一天的差值
-        const diffTime = Math.abs(sortedDates[i] - sortedDates[i - 1]);
-        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    console.log('【连续天数】排序后的日期:', sortedDateStrings.slice(0, 10));
+
+    // 【修复】使用安全的日期差值计算函数
+    function getDateDiffDays(dateStr1, dateStr2) {
+        // 将日期字符串解析为年、月、日
+        const [y1, m1, d1] = dateStr1.split('-').map(Number);
+        const [y2, m2, d2] = dateStr2.split('-').map(Number);
+
+        // 使用 UTC 时间创建日期对象，避免时区问题
+        const date1 = Date.UTC(y1, m1 - 1, d1);
+        const date2 = Date.UTC(y2, m2 - 1, d2);
+
+        // 计算天数差值
+        return Math.round((date2 - date1) / (1000 * 60 * 60 * 24));
+    }
+
+    // 遍历所有日期，计算最长连续天数
+    for (let i = 1; i < sortedDateStrings.length; i++) {
+        const prevDateStr = sortedDateStrings[i - 1];
+        const currDateStr = sortedDateStrings[i];
+
+        // 【修复】使用安全的日期差值计算
+        const diffDays = getDateDiffDays(prevDateStr, currDateStr);
+
+        console.log('【连续天数】比较日期:', prevDateStr, '和', currDateStr, '差值:', diffDays, '天');
 
         if (diffDays === 1) {
             // 连续天数加1
             currentStreak++;
-        } else {
-            // 日期断档，更新最大连续天数
             maxStreak = Math.max(maxStreak, currentStreak);
+            console.log('【连续天数】连续+1，当前:', currentStreak, '最长:', maxStreak);
+        } else {
+            // 日期断档，重置当前连续天数
             currentStreak = 1;
+            console.log('【连续天数】断档，重置为1');
         }
     }
 
-    // 最后一次更新最大连续天数
-    maxStreak = Math.max(maxStreak, currentStreak);
-
-    // 检查当前连续天数（从最近一天开始）
-    let currentContinuousStreak = 1;
+    // 【修复】获取今天的日期字符串（使用本地时间）
     const today = new Date();
-    const yesterday = new Date(today);
-    yesterday.setDate(today.getDate() - 1);
     const todayStr = formatLocalDate(today);
-    const yesterdayStr = formatLocalDate(yesterday);
+    let currentContinuousStreak = 0;
 
-    console.log('【连续天数】今天:', todayStr, '昨天:', yesterdayStr);
+    // 【修复】辅助函数：获取前一天的日期字符串
+    function getPrevDayStr(dateStr) {
+        const [y, m, d] = dateStr.split('-').map(Number);
+        const date = new Date(y, m - 1, d); // 使用本地时间
+        date.setDate(date.getDate() - 1);
+        return formatLocalDate(date);
+    }
 
-    // 检查是否有今天或昨天的记录
-    const hasRecentRecord = reviewDates.has(todayStr) || reviewDates.has(yesterdayStr);
-    
-    if (hasRecentRecord) {
-        // 如果有最近记录，计算从最近一天开始的连续天数
-        let checkDate = reviewDates.has(todayStr) ? new Date(today) : new Date(yesterday);
-        currentContinuousStreak = 0;
-        
+    // 找到最近的记录日期
+    let recentDateStr = null;
+    if (reviewDates.has(todayStr)) {
+        recentDateStr = todayStr;
+    } else {
+        // 检查昨天
+        const yesterdayStr = getPrevDayStr(todayStr);
+        if (reviewDates.has(yesterdayStr)) {
+            recentDateStr = yesterdayStr;
+        }
+    }
+
+    console.log('【连续天数】今天:', todayStr, '最近记录日期:', recentDateStr);
+
+    // 如果有最近记录，计算从最近一天开始的连续天数
+    if (recentDateStr) {
+        let checkDateStr = recentDateStr;
+
         while (true) {
-            const checkDateStr = formatLocalDate(checkDate);
             if (reviewDates.has(checkDateStr)) {
                 currentContinuousStreak++;
-                checkDate.setDate(checkDate.getDate() - 1);
+                // 检查前一天
+                checkDateStr = getPrevDayStr(checkDateStr);
             } else {
                 break;
             }
-            
-            // 安全限制：防止无限循环（最多检查 1000 天）
+
+            // 安全限制：防止无限循环
             if (currentContinuousStreak > 1000) {
                 console.warn('【连续天数】达到安全限制 1000 天');
                 break;
             }
         }
-        
-        console.log('【连续天数】当前连续天数:', currentContinuousStreak, '天');
-        console.log('【连续天数】最长连续天数:', maxStreak, '天');
-        
-        // 返回当前连续天数（如果有最近记录），否则返回最长连续天数
-        return currentContinuousStreak;
-    } else {
-        // 如果没有最近记录，返回最长连续天数
-        console.log('【连续天数】无最近记录，返回最长连续天数:', maxStreak, '天');
-        return maxStreak;
     }
+
+    console.log('【连续天数】当前连续天数:', currentContinuousStreak, '天，最长连续天数:', maxStreak, '天');
+
+    // 返回当前连续天数和最长连续天数中的较大值
+    const result = Math.max(currentContinuousStreak, maxStreak);
+    console.log('【连续天数】最终返回:', result, '天');
+
+    return result;
 }
 
 // 计算关键改进项完成率
@@ -2680,7 +2789,8 @@ function getTrendChartData(reviews) {
         }
 
         const now = new Date();
-        const todayStr = now.toISOString().split('T')[0];
+        // 【修复】使用本地时间格式化，与 calculateStreakDays 保持一致
+        const todayStr = formatLocalDate(now);
 
         console.log('【折线图】========== 开始生成趋势数据 ==========');
         console.log('【折线图】今天日期:', todayStr);
@@ -2701,24 +2811,17 @@ function getTrendChartData(reviews) {
                     return;
                 }
 
+                // 【修复】标准化日期格式
+                const reviewDateStr = review.date.split('T')[0];
+
                 // 【关键】跳过未来日期（数据越界保护）
-                if (review.date > todayStr) {
-                    console.warn('【折线图】检测到未来日期数据，已跳过:', review.date);
+                if (reviewDateStr > todayStr) {
+                    console.warn('【折线图】检测到未来日期数据，已跳过:', reviewDateStr);
                     return;
                 }
 
-                // 【关键】跳过今天的日期，除非今天有真实的复盘数据
-                // 判断标准：必须有有效的goalCompletion数据
-                if (review.date === todayStr) {
-                    const hasValidData = review.goalCompletion &&
-                        (typeof review.goalCompletion === 'object' ?
-                            review.goalCompletion.percentage > 0 :
-                            parseInt(String(review.goalCompletion).replace('%', '')) > 0);
-                    if (!hasValidData) {
-                        console.log('【折线图】今天无有效复盘数据，跳过:', todayStr);
-                        return;
-                    }
-                }
+                // 历史日期的数据全部保留，不进行额外验证
+                // 今天的日期数据也全部保留，因为用户可能正在输入当天数据
 
                 // 处理不同格式的goalCompletion
                 let percentage = 0;
@@ -2735,7 +2838,7 @@ function getTrendChartData(reviews) {
 
                 // 确保百分比在合理范围内
                 percentage = Math.max(0, Math.min(100, percentage));
-                completionMap[review.date] = percentage;
+                completionMap[reviewDateStr] = percentage;
             } catch (itemError) {
                 console.error('处理单个review时出错:', itemError);
             }
@@ -2743,24 +2846,31 @@ function getTrendChartData(reviews) {
 
         console.log('【折线图】有效数据映射:', completionMap);
 
-                // 生成固定7天的日期，无论有没有数据
+        // 生成固定7天的日期，无论有没有数据
         const labels = [];
         const data = [];
-        
-        // 计算最近7天的日期
+
+        // 【修复】使用本地日期计算最近7天
         for (let i = 6; i >= 0; i--) {
             const date = new Date(now);
             date.setDate(date.getDate() - i);
-            const dateStr = date.toISOString().split('T')[0];
-            
+            const dateStr = formatLocalDate(date);
+
             // 格式化日期显示
             const displayDate = `${date.getMonth() + 1}月${date.getDate()}日`;
             labels.push(displayDate);
-            
+
             // 如果有数据就使用真实数据，否则使用0
             const percentage = completionMap[dateStr] || 0;
             data.push(percentage);
         }
+        
+        // 【调试】打印最终数据，确保数据正确
+        console.log('【折线图】最终数据调试:', {
+            labels: labels,
+            data: data,
+            completionMap: Object.keys(completionMap).slice(-10) // 打印最近10个日期
+        });
 
         console.log('【折线图】最终标签:', labels);
         console.log('【折线图】最终数据:', data);
@@ -2845,11 +2955,12 @@ function initCompletionTrendChart(reviews) {
                 datasets: [{
                     label: '目标达成率',
                     data: trendData.data,
-                    borderColor: '#ffffff',
-                    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                    borderColor: '#4F9CFE',
+                    backgroundColor: 'rgba(79, 156, 254, 0.15)',
                     borderWidth: 3,
-                    pointBackgroundColor: '#ffffff',
-                    pointBorderColor: '#fff',
+                    pointBackgroundColor: '#4F9CFE',
+                    pointBorderColor: '#ffffff',
+                    pointBorderWidth: 2,
                     pointRadius: 6,
                     pointHoverRadius: 8,
                     tension: 0.4,
@@ -2864,11 +2975,11 @@ function initCompletionTrendChart(reviews) {
                         display: false
                     },
                     tooltip: {
-                        backgroundColor: 'rgba(255, 255, 255, 0.9)',
-                        titleColor: '#333',
-                        bodyColor: '#666',
-                        borderColor: '#ddd',
-                        borderWidth: 1,
+                        backgroundColor: 'rgba(79, 156, 254, 0.9)',
+                        titleColor: '#ffffff',
+                        bodyColor: '#ffffff',
+                        borderColor: '#4F9CFE',
+                        borderWidth: 0,
                         padding: 12,
                         displayColors: false,
                         callbacks: {
@@ -2886,15 +2997,25 @@ function initCompletionTrendChart(reviews) {
                             callback: function(value) {
                                 return value + '%';
                             },
-                            stepSize: 20
+                            stepSize: 20,
+                            color: '#666666'
                         },
                         grid: {
-                            color: 'rgba(0, 0, 0, 0.05)'
+                            color: 'rgba(0, 0, 0, 0.08)'
+                        },
+                        border: {
+                            color: 'rgba(0, 0, 0, 0.1)'
                         }
                     },
                     x: {
                         grid: {
                             display: false
+                        },
+                        ticks: {
+                            color: '#666666'
+                        },
+                        border: {
+                            color: 'rgba(0, 0, 0, 0.1)'
                         }
                     }
                 }
@@ -2952,13 +3073,30 @@ function updateDataOverview(reviews) {
         console.log('【数据概览】使用真实数据:', dataToUse.length, '条记录');
 
         // 更新各项指标（无数据时显示 0）
-        if (totalDaysElement) totalDaysElement.textContent = dataToUse.length;
+        // 总复盘天数：计算不同日期的数量
+        const uniqueDates = new Set();
+        dataToUse.forEach(review => {
+            if (review.date) {
+                const dateStr = review.date.split('T')[0];
+                uniqueDates.add(dateStr);
+            }
+        });
+        const totalReviewDays = uniqueDates.size;
+        if (totalDaysElement) totalDaysElement.textContent = totalReviewDays;
+        
+        // 计算平均达成率
         const avgCompletion = calculateAverageCompletion(dataToUse);
-        if (avgCompletionElement) avgCompletionElement.textContent = dataToUse.length > 0 ? `${avgCompletion}%` : '0%';
+        if (avgCompletionElement) avgCompletionElement.textContent = totalReviewDays > 0 ? `${avgCompletion}%` : '0%';
+        
+        // 计算连续天数
         const streakDays = calculateStreakDays(dataToUse);
         if (streakDaysElement) streakDaysElement.textContent = `${streakDays}天`;
+        
+        // 计算关键改进项完成率
         const improvementRate = calculateImprovementRate(dataToUse);
-        if (improvementRateElement) improvementRateElement.textContent = dataToUse.length > 0 ? `${improvementRate}%` : '--';
+        if (improvementRateElement) improvementRateElement.textContent = totalReviewDays > 0 ? `${improvementRate}%` : '--';
+        
+        // 更新最后复盘日期
         if (lastReviewElement) lastReviewElement.textContent = getLastReviewDate(dataToUse);
 
         // 更新分段数据
@@ -4444,6 +4582,76 @@ function updateInsightCardsNoData() {
     }
 }
 
+// 自动同步每日复盘的自我提升总时长到本月总投入
+function updateMonthlyInvestment() {
+    console.log('【自动同步】开始计算本月总投入...');
+    
+    // 获取投资元素
+    const investmentElement = document.getElementById('total-investment');
+    if (!investmentElement) {
+        console.error('【自动同步】未找到total-investment元素');
+        return;
+    }
+    
+    // 获取目标月份
+    const targetMonth = insightMonthInput ? insightMonthInput.value : new Date().toISOString().substring(0, 7);
+    console.log('【自动同步】目标月份:', targetMonth);
+    
+    // 获取所有复盘数据
+    const reviews = getReviews();
+    console.log('【自动同步】获取到', reviews.length, '条复盘记录');
+    
+    // 计算目标月份的自我提升总时长
+    let selfImprovementMinutes = 0;
+    
+    // 遍历所有复盘记录
+    reviews.forEach(review => {
+        // 检查日期是否在目标月份内
+        if (review.date && review.date.startsWith(targetMonth)) {
+            let dailyStudyMinutes = 0;
+            
+            // 优先从timeStats.studyTotalMinutes获取自我提升时长（最精准）
+            if (review.timeStats && review.timeStats.studyTotalMinutes) {
+                dailyStudyMinutes = review.timeStats.studyTotalMinutes;
+                console.log(`【自动同步】${review.date} - 从timeStats获取: ${dailyStudyMinutes}分钟`);
+            } 
+            // 如果没有timeStats.studyTotalMinutes，尝试从goalCompletion.description中提取
+            else if (review.goalCompletion) {
+                const description = typeof review.goalCompletion === 'object' ? review.goalCompletion.description : review.goalCompletion;
+                if (description) {
+                    // 匹配多种自我提升时长格式
+                    const matches = description.match(/自我提升总时长[:：]\s*(\d+)分钟/);
+                    if (matches && matches[1]) {
+                        dailyStudyMinutes = parseInt(matches[1]);
+                        console.log(`【自动同步】${review.date} - 从文本提取: ${dailyStudyMinutes}分钟`);
+                    }
+                }
+            }
+            
+            // 累加每日自我提升时长
+            if (dailyStudyMinutes > 0) {
+                selfImprovementMinutes += dailyStudyMinutes;
+            }
+        }
+    });
+    
+    // 转换为小时和分钟
+    const hours = Math.floor(selfImprovementMinutes / 60);
+    const mins = selfImprovementMinutes % 60;
+    let timeStr = '';
+    
+    if (hours > 0) {
+        timeStr = `${hours}小时${mins > 0 ? mins + '分钟' : ''}`;
+    } else {
+        timeStr = `${mins}分钟`;
+    }
+    
+    console.log(`【自动同步】计算完成 - 本月总投入: ${selfImprovementMinutes}分钟 (${timeStr})`);
+    
+    // 更新页面显示
+    investmentElement.textContent = timeStr;
+}
+
 // 更新洞察卡片
 function updateInsightCards(projectData, totalMinutes, reviewCount) {
     // 更新潜在兴趣点
@@ -4453,17 +4661,8 @@ function updateInsightCards(projectData, totalMinutes, reviewCount) {
         interestElement.textContent = interest.name;
     }
 
-    // 更新本月总投入
-    const investmentElement = document.getElementById('total-investment');
-    if (investmentElement) {
-        const hours = Math.floor(totalMinutes / 60);
-        const mins = totalMinutes % 60;
-        if (hours > 0) {
-            investmentElement.textContent = `${hours}小时${mins > 0 ? mins + '分钟' : ''}`;
-        } else {
-            investmentElement.textContent = `${mins}分钟`;
-        }
-    }
+    // 更新本月总投入 - 自动同步每日复盘的自我提升总时长
+    updateMonthlyInvestment();
 
     // 更新复盘天数 - 使用calculateStreakDays计算真实连续天数，而非仅当月reviewCount
     const reviewDaysElement = document.getElementById('review-days');
