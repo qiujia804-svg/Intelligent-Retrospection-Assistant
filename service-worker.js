@@ -9,15 +9,15 @@ const DYNAMIC_CACHE = 'dynamic-v1.0.0';
 
 // 需要预缓存的静态资源
 const STATIC_ASSETS = [
-  '/',
-  '/index.html',
-  '/review-assistant.css',
-  '/mobile.css',
-  '/review-assistant.js',
-  '/data-storage.js',
-  '/commercial-system.js',
-  '/manifest.json',
-  '/offline.html',
+  './',
+  './index.html',
+  './review-assistant.css',
+  './mobile.css',
+  './review-assistant.js',
+  './data-storage.js',
+  './commercial-system.js',
+  './manifest.json',
+  './offline.html',
   // CDN 资源
   'https://cdn.jsdelivr.net/npm/chart.js',
   'https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js',

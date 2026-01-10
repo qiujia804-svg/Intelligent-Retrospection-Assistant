@@ -2,7 +2,7 @@
   "name": "智能复盘助手",
   "short_name": "复盘助手",
   "description": "每日复盘与成长管理，让每一天都有收获",
-  "start_url": "/index.html",
+  "start_url": "/",
   "display": "standalone",
   "orientation": "portrait",
   "background_color": "#667eea",
