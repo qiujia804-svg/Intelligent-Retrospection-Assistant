@@ -11,3 +11,4 @@ Thumbs.db
 
 # 依赖目录（如果有）
 node_modules/
+.vercel
