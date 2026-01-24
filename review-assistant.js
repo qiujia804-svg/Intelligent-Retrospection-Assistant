@@ -792,22 +792,39 @@ function initMembershipSystem() {
     if (savedUser) {
         currentUser = JSON.parse(savedUser);
         updateMemberUI();
-        
+
         // 为已注册但没有试用开始时间的用户设置试用时间
         if (!localStorage.getItem(TRIAL_CONFIG.storageKey)) {
             console.log('【VIP】为已注册用户设置试用开始时间');
             localStorage.setItem(TRIAL_CONFIG.storageKey, Date.now().toString());
         }
-        
+
         // 数据迁移（首次登录时执行一次）
         if (currentUser && currentUser.id) {
             migrateGlobalDataToUser(currentUser.id);
         }
+
+        // 重新显示历史记录，确保使用正确的用户存储键
+        console.log('【初始化】自动恢复用户数据，显示历史记录');
+        setTimeout(function() {
+            displayHistory();
+
+            // 更新数据洞察，确保月度时光分析显示正确数据
+            if (typeof updateDataInsight === 'function') {
+                updateDataInsight();
+            }
+
+            // 更新数据概览
+            if (typeof updateDataOverview === 'function') {
+                const reviews = getReviews();
+                updateDataOverview(reviews);
+            }
+        }, 100);
     }
-    
+
     // 绑定事件监听器
     bindMembershipEventListeners();
-    
+
     // 生成订阅计划
     generateSubscriptionPlans();
 }
