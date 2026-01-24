@@ -701,10 +701,13 @@ function generateUserIdFromEmail(email) {
 // 微信: images/wechat_code.png
 // 支付宝: images/alipay_code.png
 
-// 页面加载时初始化支付模态框
+// 页面加载时初始化所有系统
 document.addEventListener('DOMContentLoaded', function() {
     // 修复日期错误数据（在初始化其他系统之前先修复数据）
     fixDateErrors();
+
+    // 初始化会员系统（必须先调用，恢复currentUser）
+    initMembershipSystem();
 
     // 初始化支付Tab切换逻辑
     initPaymentTabSwitching();
@@ -2416,7 +2419,8 @@ function importData() {
 function setupHistoryControls() {
     clearHistoryBtn.addEventListener('click', () => {
         if (confirm('确定要清空所有复盘记录吗？此操作不可恢复。')) {
-            localStorage.removeItem(STORAGE_KEY_REVIEWS);
+            const reviewsStorageKey = getUserStorageKey(STORAGE_KEY_REVIEWS);
+            localStorage.removeItem(reviewsStorageKey);
             displayHistory();
         }
     });
