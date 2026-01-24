@@ -713,18 +713,135 @@
         // 检查锁定状态
         checkLockStatus() {
             if (this.isPremium) {
-                console.log('【商业化系统】用户是会员，无需锁定');
+                console.log('【商业化系统】用户是会员，解锁所有功能');
+                this.unrestrictFeatures();
                 return;
             }
 
             const elapsed = Date.now() - this.trialStartTime;
 
             if (elapsed > TRIAL_DURATION) {
-                console.log('【商业化系统】试用已过期，触发锁定');
-                this.lock();
+                console.log('【商业化系统】试用已过期，限制高级功能');
+                // 显示提示并限制高级功能
+                this.showSubscriptionModal(false);
+                this.restrictFeatures();
             } else {
                 console.log('【商业化系统】试用中，剩余:', this.getRemainingTimeText());
             }
+        }
+
+        // 限制高级功能
+        restrictFeatures() {
+            console.log('【商业化系统】开始限制高级功能');
+            
+            // 获取所有需要限制的功能元素
+            const elementsToRestrict = [
+                // 智能建议
+                { selector: '#generate-advice-btn', type: 'button' },
+                { selector: '.advice-content', type: 'content' },
+                // 导出数据
+                { selector: '#export-btn', type: 'button' },
+                // 复盘挑战赛
+                { selector: '.tab-btn[data-tab="challenge-content"]', type: 'button' },
+                // 数据洞察相关
+                { selector: '#insight-month', type: 'input' },
+                { selector: '#refresh-insight', type: 'button' },
+                { selector: '#radar-chart', type: 'content' },
+                { selector: '#bar-chart', type: 'content' },
+                { selector: '#interest-point', type: 'content' },
+                { selector: '#monthly-investment', type: 'content' },
+                { selector: '#review-days', type: 'content' },
+                { selector: '#growth-advice', type: 'content' }
+            ];
+            
+            // 遍历并限制每个元素
+            elementsToRestrict.forEach(item => {
+                const element = document.querySelector(item.selector);
+                if (element) {
+                    // 保存原始状态，以便后续解锁
+                    if (!element.dataset.originalState) {
+                        if (item.type === 'button') {
+                            element.dataset.originalDisabled = element.disabled;
+                            element.dataset.originalOnclick = element.onclick;
+                            element.dataset.originalText = element.textContent;
+                        } else if (item.type === 'content') {
+                            element.dataset.originalContent = element.innerHTML;
+                        } else if (item.type === 'input') {
+                            element.dataset.originalDisabled = element.disabled;
+                        }
+                    }
+                    
+                    // 限制功能
+                    if (item.type === 'button') {
+                        element.disabled = true;
+                        element.onclick = (e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            this.showSubscriptionModal(false);
+                        };
+                        element.textContent = '会员专享';
+                        element.style.opacity = '0.7';
+                    } else if (item.type === 'content') {
+                        element.innerHTML = '<div style="color: #ff4d4f; text-align: center; padding: 20px;">🔥 会员专享功能<br>点击会员中心解锁</div>';
+                    } else if (item.type === 'input') {
+                        element.disabled = true;
+                    }
+                }
+            });
+            
+            console.log('【商业化系统】高级功能已限制');
+        }
+
+        // 解锁高级功能
+        unrestrictFeatures() {
+            console.log('【商业化系统】开始解锁高级功能');
+            
+            // 获取所有需要解锁的功能元素
+            const elementsToUnrestrict = [
+                // 智能建议
+                { selector: '#generate-advice-btn', type: 'button' },
+                { selector: '.advice-content', type: 'content' },
+                // 导出数据
+                { selector: '#export-btn', type: 'button' },
+                // 复盘挑战赛
+                { selector: '.tab-btn[data-tab="challenge-content"]', type: 'button' },
+                // 数据洞察相关
+                { selector: '#insight-month', type: 'input' },
+                { selector: '#refresh-insight', type: 'button' },
+                { selector: '#radar-chart', type: 'content' },
+                { selector: '#bar-chart', type: 'content' },
+                { selector: '#interest-point', type: 'content' },
+                { selector: '#monthly-investment', type: 'content' },
+                { selector: '#review-days', type: 'content' },
+                { selector: '#growth-advice', type: 'content' }
+            ];
+            
+            // 遍历并解锁每个元素
+            elementsToUnrestrict.forEach(item => {
+                const element = document.querySelector(item.selector);
+                if (element && element.dataset.originalState !== undefined) {
+                    // 恢复原始状态
+                    if (item.type === 'button') {
+                        element.disabled = element.dataset.originalDisabled === 'true';
+                        element.onclick = element.dataset.originalOnclick ? eval(`(${element.dataset.originalOnclick})`) : null;
+                        element.textContent = element.dataset.originalText;
+                        element.style.opacity = '';
+                    } else if (item.type === 'content') {
+                        element.innerHTML = element.dataset.originalContent;
+                    } else if (item.type === 'input') {
+                        element.disabled = element.dataset.originalDisabled === 'true';
+                    }
+                    
+                    // 清除原始状态标记
+                    delete element.dataset.originalState;
+                    delete element.dataset.originalDisabled;
+                    delete element.dataset.originalOnclick;
+                    delete element.dataset.originalText;
+                    delete element.dataset.originalContent;
+                }
+            });
+            
+            console.log('【商业化系统】高级功能已解锁');
         }
 
         // 获取剩余时间
@@ -756,17 +873,18 @@
             }
         }
 
-        // 锁定页面
+        // 锁定页面（已废弃，不再使用）
         lock() {
             if (this.isLocked) return;
+            
+            console.warn('【商业化系统】lock() 方法已废弃，不再锁定页面');
+            
+            this.isLocked = false;
+            
+            // 只显示可关闭的提示，不锁定页面
+            this.showSubscriptionModal(false);
 
-            this.isLocked = true;
-            document.documentElement.classList.add('commercial-locked');
-
-            // 显示订阅弹窗
-            this.showSubscriptionModal(true);
-
-            console.log('【商业化系统】页面已锁定');
+            console.log('【商业化系统】已显示订阅提示，未锁定页面');
         }
 
         // 解锁页面
@@ -780,7 +898,10 @@
             // 更新状态指示器
             this.updateStatusIndicator();
 
-            console.log('【商业化系统】页面已解锁');
+            // 解锁所有高级功能
+            this.unrestrictFeatures();
+
+            console.log('【商业化系统】页面已解锁，所有功能已开放');
         }
 
         // 显示订阅弹窗
@@ -955,12 +1076,18 @@
             localStorage.setItem(STORAGE_KEYS.IS_PREMIUM, 'true');
             this.isPremium = true;
 
-            // 解锁页面
+            // 解锁页面并解锁所有功能
             this.unlock();
+            this.unrestrictFeatures();
 
             // 显示成功提示
             alert(`🎉 支付成功（模拟）！\n\n感谢您订阅${this.selectedPlan.name}！\n会员权益已全部解锁，祝您使用愉快！`);
 
+            // 刷新数据洞察，确保内容正确显示
+            if (typeof window.updateDataInsight === 'function') {
+                window.updateDataInsight();
+            }
+            
             console.log('【商业化系统】模拟支付完成，会员权益已解锁');
         }
 
