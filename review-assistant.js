@@ -682,6 +682,21 @@ window.debug_clearVipLock = function() {
 let currentUser = null;
 let currentPaymentPlan = null;
 
+// ========================================
+// 工具函数：基于邮箱生成唯一ID
+// ========================================
+function generateUserIdFromEmail(email) {
+    // 使用简单的哈希算法，确保相同邮箱始终生成相同的ID
+    let hash = 0;
+    for (let i = 0; i < email.length; i++) {
+        const char = email.charCodeAt(i);
+        hash = ((hash << 5) - hash) + char;
+        hash = hash & hash; // 转换为32位整数
+    }
+    // 确保ID为正数
+    return Math.abs(hash).toString();
+}
+
 // 收款码图片路径配置（在 index.html 中使用本地路径）
 // 微信: images/wechat_code.png
 // 支付宝: images/alipay_code.png
@@ -801,44 +816,77 @@ function initMembershipSystem() {
 function migrateGlobalDataToUser(userId) {
     try {
         console.log(`【数据迁移】开始为用户 ${userId} 迁移数据`);
-        
-        // 检查是否已经迁移过
-        const migrationKey = `migration_done_${userId}`;
-        if (localStorage.getItem(migrationKey)) {
-            console.log(`【数据迁移】用户 ${userId} 数据已迁移，跳过`);
-            return;
-        }
-        
+
         // 迁移复盘数据
         const globalReviewsKey = STORAGE_KEY_REVIEWS;
         const userReviewsKey = `${STORAGE_KEY_REVIEWS}_${userId}`;
-        
-        // 如果全局数据存在且用户数据不存在，则进行迁移
+
+        // 获取全局和用户数据
         const globalReviews = localStorage.getItem(globalReviewsKey);
         const userReviews = localStorage.getItem(userReviewsKey);
-        
-        if (globalReviews && !userReviews) {
-            console.log(`【数据迁移】将全局复盘数据迁移到用户 ${userId} 专属存储`);
-            localStorage.setItem(userReviewsKey, globalReviews);
-            console.log(`【数据迁移】复盘数据迁移完成`);
+
+        let needsMigration = false;
+
+        if (globalReviews) {
+            const globalData = JSON.parse(globalReviews);
+            let userData = userReviews ? JSON.parse(userReviews) : [];
+
+            // 合并数据：根据日期去重
+            const dateSet = new Set(userData.map(r => r.date));
+            let mergedCount = 0;
+
+            globalData.forEach(review => {
+                if (!dateSet.has(review.date)) {
+                    userData.push(review);
+                    dateSet.add(review.date);
+                    mergedCount++;
+                }
+            });
+
+            if (mergedCount > 0) {
+                console.log(`【数据迁移】合并了 ${mergedCount} 条复盘记录到用户 ${userId}`);
+                localStorage.setItem(userReviewsKey, JSON.stringify(userData));
+                needsMigration = true;
+            } else {
+                console.log(`【数据迁移】无需合并复盘记录，数据已存在`);
+            }
         }
-        
+
         // 迁移规划数据
         const globalPlansKey = 'smart_review_assistant_plans';
         const userPlansKey = `${globalPlansKey}_${userId}`;
-        
+
         const globalPlans = localStorage.getItem(globalPlansKey);
         const userPlans = localStorage.getItem(userPlansKey);
-        
-        if (globalPlans && !userPlans) {
-            console.log(`【数据迁移】将全局规划数据迁移到用户 ${userId} 专属存储`);
-            localStorage.setItem(userPlansKey, globalPlans);
-            console.log(`【数据迁移】规划数据迁移完成`);
+
+        if (globalPlans) {
+            const globalData = JSON.parse(globalPlans);
+            let userData = userPlans ? JSON.parse(userPlans) : [];
+
+            // 合并数据：根据ID去重
+            const idSet = new Set(userData.map(p => p.id));
+            let mergedCount = 0;
+
+            globalData.forEach(plan => {
+                if (!idSet.has(plan.id)) {
+                    userData.push(plan);
+                    idSet.add(plan.id);
+                    mergedCount++;
+                }
+            });
+
+            if (mergedCount > 0) {
+                console.log(`【数据迁移】合并了 ${mergedCount} 条规划记录到用户 ${userId}`);
+                localStorage.setItem(userPlansKey, JSON.stringify(userData));
+                needsMigration = true;
+            } else {
+                console.log(`【数据迁移】无需合并规划记录，数据已存在`);
+            }
         }
-        
-        // 标记迁移完成
-        localStorage.setItem(migrationKey, 'true');
-        console.log(`【数据迁移】用户 ${userId} 数据迁移完成`);
+
+        if (needsMigration) {
+            console.log(`【数据迁移】用户 ${userId} 数据迁移完成`);
+        }
     } catch (error) {
         console.error('【数据迁移】迁移失败:', error);
     }
@@ -972,23 +1020,28 @@ function handleLogin(e) {
     
     if (user) {
         currentUser = user;
-        
+
         // 无论是否勾选"记住我"，都将用户信息保存到localStorage中，确保登录状态持久化
         localStorage.setItem('currentUser', JSON.stringify(user));
-        
+
         // 同时保存到sessionStorage中，提高性能
         sessionStorage.setItem('currentUser', JSON.stringify(user));
-        
+
+        // 强制执行数据迁移，合并跨环境数据
+        if (currentUser && currentUser.id) {
+            migrateGlobalDataToUser(currentUser.id);
+        }
+
         updateMemberUI();
         closeModal(loginModal);
         alert('登录成功！');
-        
+
         // 登录后检查试用状态
         checkTrialStatus();
-        
+
         // 重新显示历史记录，确保使用正确的用户存储键
         displayHistory();
-        
+
         // 更新数据洞察，确保月度时光分析显示正确数据
         if (typeof updateDataInsight === 'function') {
             updateDataInsight();
@@ -1017,15 +1070,17 @@ function handleRegister(e) {
     const users = JSON.parse(localStorage.getItem('users')) || [];
     
     // 检查邮箱是否已存在
-    if (users.some(u => u.email === email)) {
+    const existingUser = users.find(u => u.email === email);
+    if (existingUser) {
         alert('该邮箱已被注册！');
         return;
     }
     
-    // 创建新用户
+    // 创建新用户 - 使用基于邮箱的唯一ID，确保跨环境一致性
+    const userId = generateUserIdFromEmail(email);
     const now = Date.now();
     const newUser = {
-        id: Date.now(),
+        id: userId,
         name: name,
         email: email,
         password: password,
