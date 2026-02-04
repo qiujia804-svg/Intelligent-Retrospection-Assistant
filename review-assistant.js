@@ -49,7 +49,7 @@ const paymentCloseBtn = document.getElementById('payment-modal-close');
 console.log('支付模块层级已修正，当前 z-index: 10001');
 
 // ========================================
-// VIP会员中心核心函数 - 呼吸感UI + 3天试用锁定
+// VIP会员中心核心函数 - 呼吸感UI + 7天试用锁定
 // ========================================
 
 // VIP订阅套餐配置（与昨晚确定的文案一致）
@@ -88,7 +88,7 @@ const VIP_PLANS = [
 
 // 试用期配置
 const TRIAL_CONFIG = {
-    duration: 3 * 24 * 60 * 60 * 1000, // 3天（毫秒）
+    duration: 7 * 24 * 60 * 60 * 1000, // 7天（毫秒）
     storageKey: 'vip_trial_start_time',
     premiumKey: 'is_premium'
 };
@@ -682,32 +682,14 @@ window.debug_clearVipLock = function() {
 let currentUser = null;
 let currentPaymentPlan = null;
 
-// ========================================
-// 工具函数：基于邮箱生成唯一ID
-// ========================================
-function generateUserIdFromEmail(email) {
-    // 使用简单的哈希算法，确保相同邮箱始终生成相同的ID
-    let hash = 0;
-    for (let i = 0; i < email.length; i++) {
-        const char = email.charCodeAt(i);
-        hash = ((hash << 5) - hash) + char;
-        hash = hash & hash; // 转换为32位整数
-    }
-    // 确保ID为正数
-    return Math.abs(hash).toString();
-}
-
 // 收款码图片路径配置（在 index.html 中使用本地路径）
 // 微信: images/wechat_code.png
 // 支付宝: images/alipay_code.png
 
-// 页面加载时初始化所有系统
+// 页面加载时初始化支付模态框
 document.addEventListener('DOMContentLoaded', function() {
     // 修复日期错误数据（在初始化其他系统之前先修复数据）
     fixDateErrors();
-
-    // 初始化会员系统（必须先调用，恢复currentUser）
-    initMembershipSystem();
 
     // 初始化支付Tab切换逻辑
     initPaymentTabSwitching();
@@ -789,127 +771,24 @@ let subscriptionPlans = [
 
 // 初始化会员系统
 function initMembershipSystem() {
-    // 检查本地存储中的用户信息（优先 localStorage，然后 sessionStorage）
-    // 这样即使用户关闭浏览器，登录状态也能保持
-    const savedUser = localStorage.getItem('currentUser') || sessionStorage.getItem('currentUser');
+    // 检查本地存储中的用户信息
+    const savedUser = localStorage.getItem('currentUser');
     if (savedUser) {
         currentUser = JSON.parse(savedUser);
         updateMemberUI();
-
+        
         // 为已注册但没有试用开始时间的用户设置试用时间
         if (!localStorage.getItem(TRIAL_CONFIG.storageKey)) {
             console.log('【VIP】为已注册用户设置试用开始时间');
             localStorage.setItem(TRIAL_CONFIG.storageKey, Date.now().toString());
         }
-
-        // 数据迁移（首次登录时执行一次）
-        if (currentUser && currentUser.id) {
-            migrateGlobalDataToUser(currentUser.id);
-        }
-
-        // 重新显示历史记录，确保使用正确的用户存储键
-        console.log('【初始化】自动恢复用户数据，显示历史记录');
-        setTimeout(function() {
-            displayHistory();
-
-            // 更新数据洞察，确保月度时光分析显示正确数据
-            if (typeof updateDataInsight === 'function') {
-                updateDataInsight();
-            }
-
-            // 更新数据概览
-            if (typeof updateDataOverview === 'function') {
-                const reviews = getReviews();
-                updateDataOverview(reviews);
-            }
-        }, 100);
     }
-
+    
     // 绑定事件监听器
     bindMembershipEventListeners();
-
+    
     // 生成订阅计划
     generateSubscriptionPlans();
-}
-
-// 数据迁移：将全局数据迁移到用户专属存储
-function migrateGlobalDataToUser(userId) {
-    try {
-        console.log(`【数据迁移】开始为用户 ${userId} 迁移数据`);
-
-        // 迁移复盘数据
-        const globalReviewsKey = STORAGE_KEY_REVIEWS;
-        const userReviewsKey = `${STORAGE_KEY_REVIEWS}_${userId}`;
-
-        // 获取全局和用户数据
-        const globalReviews = localStorage.getItem(globalReviewsKey);
-        const userReviews = localStorage.getItem(userReviewsKey);
-
-        let needsMigration = false;
-
-        if (globalReviews) {
-            const globalData = JSON.parse(globalReviews);
-            let userData = userReviews ? JSON.parse(userReviews) : [];
-
-            // 合并数据：根据日期去重
-            const dateSet = new Set(userData.map(r => r.date));
-            let mergedCount = 0;
-
-            globalData.forEach(review => {
-                if (!dateSet.has(review.date)) {
-                    userData.push(review);
-                    dateSet.add(review.date);
-                    mergedCount++;
-                }
-            });
-
-            if (mergedCount > 0) {
-                console.log(`【数据迁移】合并了 ${mergedCount} 条复盘记录到用户 ${userId}`);
-                localStorage.setItem(userReviewsKey, JSON.stringify(userData));
-                needsMigration = true;
-            } else {
-                console.log(`【数据迁移】无需合并复盘记录，数据已存在`);
-            }
-        }
-
-        // 迁移规划数据
-        const globalPlansKey = 'smart_review_assistant_plans';
-        const userPlansKey = `${globalPlansKey}_${userId}`;
-
-        const globalPlans = localStorage.getItem(globalPlansKey);
-        const userPlans = localStorage.getItem(userPlansKey);
-
-        if (globalPlans) {
-            const globalData = JSON.parse(globalPlans);
-            let userData = userPlans ? JSON.parse(userPlans) : [];
-
-            // 合并数据：根据ID去重
-            const idSet = new Set(userData.map(p => p.id));
-            let mergedCount = 0;
-
-            globalData.forEach(plan => {
-                if (!idSet.has(plan.id)) {
-                    userData.push(plan);
-                    idSet.add(plan.id);
-                    mergedCount++;
-                }
-            });
-
-            if (mergedCount > 0) {
-                console.log(`【数据迁移】合并了 ${mergedCount} 条规划记录到用户 ${userId}`);
-                localStorage.setItem(userPlansKey, JSON.stringify(userData));
-                needsMigration = true;
-            } else {
-                console.log(`【数据迁移】无需合并规划记录，数据已存在`);
-            }
-        }
-
-        if (needsMigration) {
-            console.log(`【数据迁移】用户 ${userId} 数据迁移完成`);
-        }
-    } catch (error) {
-        console.error('【数据迁移】迁移失败:', error);
-    }
 }
 
 // 自动修复日期错误数据
@@ -1040,32 +919,20 @@ function handleLogin(e) {
     
     if (user) {
         currentUser = user;
-
-        // 无论是否勾选"记住我"，都将用户信息保存到localStorage中，确保登录状态持久化
-        localStorage.setItem('currentUser', JSON.stringify(user));
-
-        // 同时保存到sessionStorage中，提高性能
-        sessionStorage.setItem('currentUser', JSON.stringify(user));
-
-        // 强制执行数据迁移，合并跨环境数据
-        if (currentUser && currentUser.id) {
-            migrateGlobalDataToUser(currentUser.id);
+        
+        // 记住密码
+        if (rememberMeCheckbox.checked) {
+            localStorage.setItem('currentUser', JSON.stringify(user));
+        } else {
+            sessionStorage.setItem('currentUser', JSON.stringify(user));
         }
-
+        
         updateMemberUI();
         closeModal(loginModal);
         alert('登录成功！');
-
+        
         // 登录后检查试用状态
         checkTrialStatus();
-
-        // 重新显示历史记录，确保使用正确的用户存储键
-        displayHistory();
-
-        // 更新数据洞察，确保月度时光分析显示正确数据
-        if (typeof updateDataInsight === 'function') {
-            updateDataInsight();
-        }
     } else {
         alert('邮箱或密码错误！');
     }
@@ -1090,17 +957,15 @@ function handleRegister(e) {
     const users = JSON.parse(localStorage.getItem('users')) || [];
     
     // 检查邮箱是否已存在
-    const existingUser = users.find(u => u.email === email);
-    if (existingUser) {
+    if (users.some(u => u.email === email)) {
         alert('该邮箱已被注册！');
         return;
     }
     
-    // 创建新用户 - 使用基于邮箱的唯一ID，确保跨环境一致性
-    const userId = generateUserIdFromEmail(email);
+    // 创建新用户
     const now = Date.now();
     const newUser = {
-        id: userId,
+        id: Date.now(),
         name: name,
         email: email,
         password: password,
@@ -1122,7 +987,7 @@ function handleRegister(e) {
     
     updateMemberUI();
     closeModal(registerModal);
-    alert('注册成功！\n\n您已获得3天免费试用权限，祝您使用愉快！');
+    alert('注册成功！\n\n您已获得7天免费试用权限，祝您使用愉快！');
     
     registerForm.reset();
 }
@@ -1340,58 +1205,11 @@ function confirmPayment() {
 
 // 更新本地存储中的用户信息
 function updateUserInStorage() {
-    if (!currentUser || !currentUser.id) {
-        console.error('【错误】无法更新用户信息：currentUser 无效');
-        return;
-    }
-    
-    // 检查当前用户存储在哪个位置（localStorage 或 sessionStorage）
-    let storedInLocal = false;
-    let storedInSession = false;
-    
-    // 检查 localStorage 中是否有匹配的用户
-    const localUserStr = localStorage.getItem('currentUser');
-    if (localUserStr) {
-        try {
-            const localUser = JSON.parse(localUserStr);
-            if (localUser.id === currentUser.id) {
-                storedInLocal = true;
-            }
-        } catch (e) {
-            console.warn('【警告】localStorage 中的用户数据解析失败:', e);
-        }
-    }
-    
-    // 检查 sessionStorage 中是否有匹配的用户
-    const sessionUserStr = sessionStorage.getItem('currentUser');
-    if (sessionUserStr) {
-        try {
-            const sessionUser = JSON.parse(sessionUserStr);
-            if (sessionUser.id === currentUser.id) {
-                storedInSession = true;
-            }
-        } catch (e) {
-            console.warn('【警告】sessionStorage 中的用户数据解析失败:', e);
-        }
-    }
-    
-    // 根据存储位置更新对应的存储
-    if (storedInLocal) {
+    // 更新当前用户信息
+    if (localStorage.getItem('currentUser')) {
         localStorage.setItem('currentUser', JSON.stringify(currentUser));
-        console.log('【用户信息】已更新 localStorage 中的用户信息');
-    } else if (storedInSession) {
+    } else if (sessionStorage.getItem('currentUser')) {
         sessionStorage.setItem('currentUser', JSON.stringify(currentUser));
-        console.log('【用户信息】已更新 sessionStorage 中的用户信息');
-    } else {
-        // 如果两个存储中都没有当前用户，根据“记住我”复选框决定存储位置
-        const rememberMe = rememberMeCheckbox ? rememberMeCheckbox.checked : false;
-        if (rememberMe) {
-            localStorage.setItem('currentUser', JSON.stringify(currentUser));
-            console.log('【用户信息】新用户信息已存储到 localStorage（记住我）');
-        } else {
-            sessionStorage.setItem('currentUser', JSON.stringify(currentUser));
-            console.log('【用户信息】新用户信息已存储到 sessionStorage（不记住）');
-        }
     }
     
     // 更新用户列表中的信息
@@ -1400,7 +1218,6 @@ function updateUserInStorage() {
     if (userIndex !== -1) {
         users[userIndex] = currentUser;
         localStorage.setItem('users', JSON.stringify(users));
-        console.log('【用户信息】已更新用户列表中的信息');
     }
 }
 
@@ -1677,15 +1494,6 @@ function setupRemoveTaskButton(btn) {
 const STORAGE_KEY_REVIEWS = 'smart_review_assistant_reviews';
 const STORAGE_KEY_PLANS = 'smart_review_assistant_plans';
 
-// 获取用户隔离的存储键
-function getUserStorageKey(baseKey) {
-    if (!currentUser || !currentUser.id) {
-        // 未登录用户使用全局存储键
-        return baseKey;
-    }
-    return `${baseKey}_${currentUser.id}`;
-}
-
 // 显示通知
 function showNotification(message, type = 'info') {
     // 创建通知元素
@@ -1714,8 +1522,7 @@ function showNotification(message, type = 'info') {
 
 function getReviews() {
     try {
-        const storageKey = getUserStorageKey(STORAGE_KEY_REVIEWS);
-        const reviews = localStorage.getItem(storageKey);
+        const reviews = localStorage.getItem(STORAGE_KEY_REVIEWS);
         const parsedReviews = reviews ? JSON.parse(reviews) : [];
         // 确保返回的是数组
         return Array.isArray(parsedReviews) ? parsedReviews : [];
@@ -1738,8 +1545,7 @@ function saveReview(review) {
             reviews.push(review);
         }
         
-        const storageKey = getUserStorageKey(STORAGE_KEY_REVIEWS);
-        localStorage.setItem(storageKey, JSON.stringify(reviews));
+        localStorage.setItem(STORAGE_KEY_REVIEWS, JSON.stringify(reviews));
         showNotification('保存成功', 'success');
         
         // 自动同步本月总投入
@@ -1758,8 +1564,7 @@ function saveReview(review) {
 }
 
 function getPlans() {
-    const storageKey = getUserStorageKey(STORAGE_KEY_PLANS);
-    const plans = localStorage.getItem(storageKey);
+    const plans = localStorage.getItem(STORAGE_KEY_PLANS);
     return plans ? JSON.parse(plans) : [];
 }
 
@@ -1773,8 +1578,7 @@ function savePlan(plan) {
         plans.push(plan);
     }
     
-    const storageKey = getUserStorageKey(STORAGE_KEY_PLANS);
-    localStorage.setItem(storageKey, JSON.stringify(plans));
+    localStorage.setItem(STORAGE_KEY_PLANS, JSON.stringify(plans));
 }
 
 // 复盘表单提交处理
@@ -1943,8 +1747,7 @@ function setupPlanForm() {
                 existingReview.goalCompletion.description = cleanDesc + '\n\n' + timeStatsText;
             }
 
-            const storageKey = getUserStorageKey(STORAGE_KEY_REVIEWS);
-            localStorage.setItem(storageKey, JSON.stringify(reviews));
+            localStorage.setItem(STORAGE_KEY_REVIEWS, JSON.stringify(reviews));
             console.log('【存】时间统计已同步到复盘记录:', existingReview.timeStats);
         }
 
@@ -2345,14 +2148,12 @@ function importData() {
                     
                     // 确认是否导入
                     if (confirm('确定要导入数据吗？这将会覆盖当前的数据。')) {
-                        // 保存数据到正确的存储键（考虑当前登录用户）
-                        const reviewsStorageKey = getUserStorageKey(STORAGE_KEY_REVIEWS);
-                        localStorage.setItem(reviewsStorageKey, JSON.stringify(importData.reviews));
+                        // 保存数据到localStorage
+                        localStorage.setItem(STORAGE_KEY_REVIEWS, JSON.stringify(importData.reviews));
                         
-                        // 如果有计划数据，也保存到正确的存储键
+                        // 如果有计划数据，也保存
                         if (importData.plans && Array.isArray(importData.plans)) {
-                            const plansStorageKey = getUserStorageKey(STORAGE_KEY_PLANS);
-                            localStorage.setItem(plansStorageKey, JSON.stringify(importData.plans));
+                            localStorage.setItem(STORAGE_KEY_PLANS, JSON.stringify(importData.plans));
                         }
                         
                         // 重置历史记录筛选器，确保新导入的数据能够显示
@@ -2381,17 +2182,6 @@ function importData() {
                         // 更新历史记录页面的雷达图和柱状图
                         forceInitChartsAndUpdate();
 
-                        // 【新增】通知DataStorage模块更新IndexedDB数据
-                        if (typeof window.DataStorage !== 'undefined' && window.DataStorage.init) {
-                            window.DataStorage.init().then(() => {
-                                console.log('【导入】DataStorage模块已重新初始化');
-                                // 触发数据完整性检查和修复
-                                if (window.DataStorage.checkDataIntegrity) {
-                                    window.DataStorage.checkDataIntegrity();
-                                }
-                            });
-                        }
-
                         showNotification('数据导入成功', 'success');
                     }
                 } catch (error) {
@@ -2419,8 +2209,7 @@ function importData() {
 function setupHistoryControls() {
     clearHistoryBtn.addEventListener('click', () => {
         if (confirm('确定要清空所有复盘记录吗？此操作不可恢复。')) {
-            const reviewsStorageKey = getUserStorageKey(STORAGE_KEY_REVIEWS);
-            localStorage.removeItem(reviewsStorageKey);
+            localStorage.removeItem(STORAGE_KEY_REVIEWS);
             displayHistory();
         }
     });
@@ -3451,14 +3240,25 @@ function generateTimeSlots() {
     // 清空容器
     scheduleItemsContainer.innerHTML = '';
     
-    // 生成5:00到22:00的时间段
+    // 生成5:00到22:00的时间段，每半小时一个
+    let slotIndex = 0;
     for (let hour = 5; hour < 22; hour++) {
-        const startTime = hour.toString().padStart(2, '0') + ':00';
-        const endTime = (hour + 1).toString().padStart(2, '0') + ':00';
-        // 只在第一行（5:00-6:00）显示示例数据
-        const isFirstRow = hour === 5;
-        const timeSlot = createTimeSlot(startTime, endTime, isFirstRow);
-        scheduleItemsContainer.appendChild(timeSlot);
+        // 生成00-30分钟的时间段
+        const startTime1 = hour.toString().padStart(2, '0') + ':00';
+        const endTime1 = hour.toString().padStart(2, '0') + ':30';
+        // 只在第一行（5:00-5:30）显示示例数据
+        const isFirstRow1 = slotIndex === 0;
+        const timeSlot1 = createTimeSlot(startTime1, endTime1, isFirstRow1);
+        scheduleItemsContainer.appendChild(timeSlot1);
+        slotIndex++;
+        
+        // 生成30-00分钟的时间段
+        const startTime2 = hour.toString().padStart(2, '0') + ':30';
+        const endTime2 = (hour + 1).toString().padStart(2, '0') + ':00';
+        const isFirstRow2 = false;
+        const timeSlot2 = createTimeSlot(startTime2, endTime2, isFirstRow2);
+        scheduleItemsContainer.appendChild(timeSlot2);
+        slotIndex++;
     }
 }
 
@@ -3468,7 +3268,7 @@ function createTimeSlot(startTime, endTime, isFirstRow = false) {
 
     // 根据是否为第一行设置默认值
     const taskValue = isFirstRow ? '工作' : '';
-    const durationValue = isFirstRow ? '60' : '';
+    const durationValue = isFirstRow ? '30' : '';
 
     // 时间段 + 任务输入 + 时长输入
     const timeSlotHtml = `
@@ -3659,8 +3459,8 @@ function updateTimeStatistics() {
 
         // 获取时间段信息
         const timeSlotValue = timeSelect ? timeSelect.value : '';
-        // 解析时间段，计算该时间段的总分钟数（通常为60分钟）
-        const timeSlotMinutes = 60; // 假设每个时间段都是60分钟
+        // 解析时间段，计算该时间段的总分钟数（现在为30分钟）
+        const timeSlotMinutes = 30; // 每个时间段都是30分钟
 
         // 获取任务名称 - 直接从 .task-input 获取
         const taskName = taskInput ? taskInput.value.trim() : '';
@@ -3731,10 +3531,10 @@ function getCurrentTimeStats() {
         return null;
     }
 
-    // 转换为数组格式 [{name: "学习AI", minutes: 540}, ...]，排除"休息放松"类别
+    // 转换为数组格式 [{name: "学习AI", minutes: 540}, ...]
     const timeStatsArray = [];
     for (const [name, minutes] of Object.entries(currentTimeStats.typeDurations)) {
-        if (minutes > 0 && name !== '休息放松') {
+        if (minutes > 0) {
             timeStatsArray.push({ name, minutes });
         }
     }
@@ -4064,12 +3864,11 @@ function init() {
         setupDetailModal();
         setupHistoryControls();
         setupAdviceGenerator();
+        displayHistory();
         setupDataOverview();
         setupStorageSync();
         initTimeManagement();
         initMembershipSystem();
-        initDataInsight();
-        displayHistory();
 
         // 设置默认选中当月
         const currentMonth = today.toISOString().substring(0, 7);
@@ -4410,24 +4209,21 @@ function extractTimeDataFromReviews(reviews, targetMonth) {
             dailyData.totalMinutes = 0;
         }
 
-        // ====== 累加到总数据（仅有效数据，排除"休息放松"类别） ======
+        // ====== 累加到总数据（仅有效数据） ======
         if (dailyData.isValid && dailyData.items.length > 0) {
             dailyData.items.forEach(item => {
-                // 排除"休息放松"类别
-                if (item.name !== '休息放松') {
-                    if (!projectData[item.name]) {
-                        projectData[item.name] = 0;
-                    }
-                    projectData[item.name] += item.minutes;
-                    totalMinutes += item.minutes;
+                if (!projectData[item.name]) {
+                    projectData[item.name] = 0;
                 }
+                projectData[item.name] += item.minutes;
+                totalMinutes += item.minutes;
             });
 
             // 控制台打印每日抓取结果
             console.log('今日抓取到的真实数据对象:', {
                 日期: dailyData.date,
                 数据源: dailyData.source,
-                项目: dailyData.items.filter(item => item.name !== '休息放松'),
+                项目: dailyData.items,
                 当日总时长: `${dailyData.totalMinutes}分钟 (${(dailyData.totalMinutes / 60).toFixed(1)}小时)`
             });
         }
@@ -4702,14 +4498,21 @@ function updateDataInsight() {
     };
     console.log('12月抓取结果汇总:', monthlyStats);
 
-    // 【数据真实性检查】只使用真实数据，即使数据为空
-    let hasRealData = true; // 总是使用真实数据，无论是否有数据
+    // 【数据真实性检查】若无真实数据，使用示例数据
+    let hasRealData = Object.keys(projectData).length > 0 && totalMinutes > 0;
 
-    if (Object.keys(projectData).length === 0 || totalMinutes === 0) {
-        console.log('【更新】⚠️ 暂无真实数据，显示空图表');
-        // 不使用示例数据，保持真实数据为空
-        projectData = {};
-        totalMinutes = 0;
+    if (!hasRealData) {
+        console.log('【更新】⚠️ 暂无真实数据，使用示例数据生成图表');
+        
+        // 使用示例数据
+        projectData = {
+            '看书': 155,
+            '学习AI': 480,
+            '学习营销': 240
+        };
+        totalMinutes = Object.values(projectData).reduce((sum, val) => sum + val, 0);
+        reviewCount = 5;
+        hasRealData = true;
     }
 
     // 更新洞察卡片
