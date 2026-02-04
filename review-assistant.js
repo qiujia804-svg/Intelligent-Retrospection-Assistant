@@ -1813,12 +1813,12 @@ function displayHistory() {
             ? review.goalCompletion.percentage
             : review.goalCompletion.replace('%', '');
 
-        // 【优化】简化时间统计显示，只显示学习总时长
+        // 【优化】简化时间统计显示，只显示自我提升时长
         let timeDescription = '';
-        if (review.timeStats && review.timeStats.totalMinutes) {
-            const hours = Math.floor(review.timeStats.totalMinutes / 60);
-            const mins = review.timeStats.totalMinutes % 60;
-            timeDescription = `学习总时长: ${hours}小时${mins > 0 ? mins + '分钟' : ''}`;
+        if (review.timeStats && review.timeStats.studyTotalMinutes) {
+            const hours = Math.floor(review.timeStats.studyTotalMinutes / 60);
+            const mins = review.timeStats.studyTotalMinutes % 60;
+            timeDescription = `自我提升时长: ${hours}小时${mins > 0 ? mins + '分钟' : ''}`;
         }
 
         const item = document.createElement('div');
@@ -1835,13 +1835,13 @@ function displayHistory() {
 
 // 【新增】获取时间统计摘要（用于历史列表卡片显示）
 function getTimeStatsSummary(review) {
-    // 优先从 timeStats 字段读取
+    // 优先从 timeStats 字段读取自我提升时长
     if (review.timeStats && review.timeStats.items && review.timeStats.items.length > 0) {
-        const totalMinutes = review.timeStats.totalMinutes;
-        const hours = Math.floor(totalMinutes / 60);
-        const mins = totalMinutes % 60;
+        const studyTotalMinutes = review.timeStats.studyTotalMinutes || 0;
+        const hours = Math.floor(studyTotalMinutes / 60);
+        const mins = studyTotalMinutes % 60;
         const topItems = review.timeStats.items.slice(0, 3).map(item => item.name).join('、');
-        return `学习时长: ${hours}小时${mins > 0 ? mins + '分钟' : ''} | 主要项目: ${topItems}`;
+        return `自我提升时长: ${hours}小时${mins > 0 ? mins + '分钟' : ''} | 主要项目: ${topItems}`;
     }
 
     // 兼容旧数据：从文本中提取
@@ -1850,13 +1850,13 @@ function getTimeStatsSummary(review) {
         : review.strengths;
 
     if (text) {
-        // 尝试匹配 "学习总时长：XXX分钟" 格式
-        const match = text.match(/学习总时长[：:]\s*(\d+)\s*分钟/);
+        // 尝试匹配 "自我提升总时长：XXX分钟" 格式
+        const match = text.match(/自我提升总时长[：:]\s*(\d+)\s*分钟/);
         if (match) {
-            const totalMinutes = parseInt(match[1]);
-            const hours = Math.floor(totalMinutes / 60);
-            const mins = totalMinutes % 60;
-            return `学习时长: ${hours}小时${mins > 0 ? mins + '分钟' : ''}`;
+            const studyTotalMinutes = parseInt(match[1]);
+            const hours = Math.floor(studyTotalMinutes / 60);
+            const mins = studyTotalMinutes % 60;
+            return `自我提升时长: ${hours}小时${mins > 0 ? mins + '分钟' : ''}`;
         }
     }
 
