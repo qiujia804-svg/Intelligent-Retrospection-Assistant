@@ -5683,7 +5683,12 @@ const TAG_MANAGER_CONFIG = {
     ],
     // 新用户默认预设标签
     defaultTags: [
-        { id: 'tag_2', name: '工作', color: '#722ed1' }
+        { id: 'tag_1', name: '洗漱、晨跑', color: '#13c2c2' },
+        { id: 'tag_2', name: '做家务、冥想', color: '#52c41a' },
+        { id: 'tag_3', name: '做饭、吃饭', color: '#faad14' },
+        { id: 'tag_4', name: '散步、遛狗', color: '#1890ff' },
+        { id: 'tag_5', name: '午休', color: '#888' },
+        { id: 'tag_6', name: '工作', color: '#722ed1' }
     ]
 };
 
