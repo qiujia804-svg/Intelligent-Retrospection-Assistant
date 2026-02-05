@@ -1738,17 +1738,42 @@ function setupPlanForm() {
             // 深拷贝时间统计数据
             existingReview.timeStats = JSON.parse(JSON.stringify(timeStats));
 
-            // 更新描述中的时间统计信息
-            const timeStatsText = formatTimeStatsText(timeStats);
+            // 【新增】计算自我提升占比并更新目标达成率进度条
+            const studyPercentage = timeStats.totalMinutes > 0
+                ? Math.round((timeStats.studyTotalMinutes / timeStats.totalMinutes) * 100)
+                : 0;
+
+            // 更新今日复盘界面的目标达成情况
+            const goalProgressInput = document.getElementById('goal-progress');
+            const progressValueSpan = document.getElementById('progress-value');
+            const goalCompletionTextarea = document.getElementById('goal-completion');
+
+            if (goalProgressInput) {
+                goalProgressInput.value = studyPercentage;
+                console.log('【同步】目标达成率进度条已更新为:', studyPercentage + '%');
+            }
+            if (progressValueSpan) {
+                progressValueSpan.textContent = studyPercentage + '%';
+            }
+
+            // 【新增】生成并同步时间分配详情到goal-completion文本框
+            const timeStatsText = formatTimeStatsForGoalCompletion(timeStats);
+            if (goalCompletionTextarea) {
+                goalCompletionTextarea.value = timeStatsText;
+                console.log('【同步】目标达成情况文本框已更新');
+            }
+
+            // 更新复盘记录中的goalCompletion
             if (typeof existingReview.goalCompletion === 'object') {
-                // 避免重复追加，先清除旧的时间统计文本
-                const oldDesc = existingReview.goalCompletion.description || '';
-                const cleanDesc = oldDesc.replace(/\n\n学习总时长[\s\S]*$/, '');
-                existingReview.goalCompletion.description = cleanDesc + '\n\n' + timeStatsText;
+                existingReview.goalCompletion.percentage = studyPercentage;
+                existingReview.goalCompletion.description = timeStatsText;
             }
 
             localStorage.setItem(STORAGE_KEY_REVIEWS, JSON.stringify(reviews));
             console.log('【存】时间统计已同步到复盘记录:', existingReview.timeStats);
+
+            // 【新增】实时更新折线图
+            updateTrendChartWithCurrentInput();
         }
 
         alert('明日规划已保存！');
@@ -3582,6 +3607,40 @@ function formatTimeStatsText(timeStats) {
         const mins = item.minutes % 60;
         const timeStr = hours > 0 ? `${hours}小时${mins > 0 ? mins + '分钟' : ''}` : `${mins}分钟`;
         lines.push(`- ${item.name}: ${timeStr}`);
+    });
+
+    return lines.join('\n');
+}
+
+// 【新增】格式化时间统计为目标达成情况文本（用于保存规划时同步）
+function formatTimeStatsForGoalCompletion(timeStats) {
+    if (!timeStats || !timeStats.items || timeStats.items.length === 0) {
+        return '';
+    }
+
+    const lines = [];
+    const totalHours = Math.floor(timeStats.totalMinutes / 60);
+    const totalMins = timeStats.totalMinutes % 60;
+
+    // 计算自我提升占比
+    const studyPercentage = timeStats.totalMinutes > 0
+        ? ((timeStats.studyTotalMinutes / timeStats.totalMinutes) * 100).toFixed(1)
+        : 0;
+
+    // 第一行：自我提升总时长
+    const studyHours = Math.floor(timeStats.studyTotalMinutes / 60);
+    const studyMins = timeStats.studyTotalMinutes % 60;
+    lines.push(`自我提升总时长:${timeStats.studyTotalMinutes}分钟(${studyHours}小时${studyMins > 0 ? studyMins + '分钟' : ''})，占比${studyPercentage}%`);
+
+    // 后续行：各项任务详情（只显示自我提升类任务，排除休息放松）
+    const excludeKeywords = ['休息放松', '休息', '放松'];
+    timeStats.items.forEach(item => {
+        // 跳过休息放松类任务
+        if (excludeKeywords.some(keyword => item.name.includes(keyword))) {
+            return;
+        }
+        const itemPercentage = ((item.minutes / timeStats.totalMinutes) * 100).toFixed(0);
+        lines.push(`${item.name}/${item.minutes}分钟/${itemPercentage}%`);
     });
 
     return lines.join('\n');
