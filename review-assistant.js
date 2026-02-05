@@ -4298,15 +4298,28 @@ function identifyInterestPoint(projectData) {
         };
     }
 
-    // 找到投入时间最长的项目
+    // 排除"休息放松"项目，找到投入时间最长的有效项目
+    const excludeKeywords = ['休息放松', '休息', '放松'];
     let maxProject = null;
     let maxMinutes = 0;
 
     for (const [project, minutes] of Object.entries(projectData)) {
+        // 跳过休息放松类项目
+        if (excludeKeywords.some(keyword => project.includes(keyword))) {
+            continue;
+        }
         if (minutes > maxMinutes) {
             maxMinutes = minutes;
             maxProject = project;
         }
+    }
+
+    // 如果排除后没有有效项目，返回提示
+    if (!maxProject) {
+        return {
+            name: '暂无有效数据',
+            advice: '记录更多学习或工作项目吧！'
+        };
     }
 
     // 生成建议
