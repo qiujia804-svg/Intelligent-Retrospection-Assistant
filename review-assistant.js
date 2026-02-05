@@ -3329,12 +3329,16 @@ function createTimeSlot(startTime, endTime, isFirstRow = false) {
             { name: '休息放松', color: '#52c41a' }
         ];
 
-        dropdownMenu.innerHTML = tags.map(tag => `
-            <div class="tag-dropdown-item" data-name="${tag.name}" data-color="${tag.color}">
-                <span class="tag-color-dot" style="background:${tag.color}"></span>
+        dropdownMenu.innerHTML = tags.map(tag => {
+            // 生活类标签不显示颜色（color为null时使用透明或灰色）
+            const colorStyle = tag.color ? `background:${tag.color}` : 'background:#ccc';
+            const colorDot = tag.color ? `<span class="tag-color-dot" style="${colorStyle}"></span>` : '<span class="tag-color-dot" style="background:#ccc;opacity:0.3"></span>';
+            return `
+            <div class="tag-dropdown-item" data-name="${tag.name}" data-color="${tag.color || ''}">
+                ${colorDot}
                 <span class="tag-name">${tag.name}</span>
             </div>
-        `).join('');
+        `}).join('');
 
         // 绑定点击事件
         dropdownMenu.querySelectorAll('.tag-dropdown-item').forEach(item => {
@@ -5682,12 +5686,13 @@ const TAG_MANAGER_CONFIG = {
         { name: '品红', value: '#eb2f96' }
     ],
     // 新用户默认预设标签
+    // 注：生活类标签不分配颜色（color: null），颜色留给自我提升类标签使用
     defaultTags: [
-        { id: 'tag_1', name: '洗漱、晨跑', color: '#13c2c2' },
-        { id: 'tag_2', name: '做家务、冥想', color: '#52c41a' },
-        { id: 'tag_3', name: '做饭、吃饭', color: '#faad14' },
-        { id: 'tag_4', name: '散步、遛狗', color: '#1890ff' },
-        { id: 'tag_5', name: '午休', color: '#888' },
+        { id: 'tag_1', name: '洗漱、晨跑', color: null },
+        { id: 'tag_2', name: '做家务、冥想', color: null },
+        { id: 'tag_3', name: '做饭、吃饭', color: null },
+        { id: 'tag_4', name: '散步、遛狗', color: null },
+        { id: 'tag_5', name: '午休', color: null },
         { id: 'tag_6', name: '工作', color: '#722ed1' }
     ]
 };
