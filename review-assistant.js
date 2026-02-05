@@ -3849,7 +3849,17 @@ function updatePieChart(typeDurations, totalMinutes) {
 
         // 计算百分比
         const percentage = Math.round((duration / totalMinutes) * 100);
-        externalLabels.push(`${type}/${duration}分钟/${percentage}%`);
+
+        // 判断是否为生活类标签（根据生活类关键词）
+        const lifeKeywords = ['洗漱', '晨跑', '家务', '冥想', '做饭', '吃饭', '散步', '遛狗', '午休', '午睡', '洗澡', '卫生', '购物', '买菜', '洗衣', '洗碗', '拖地', '擦桌子', '整理房间', '倒垃圾', '喂猫', '照顾孩子', '接孩子', '送孩子', '陪孩子', '生活', '休息', '睡觉', '瑜伽', '健身', '运动', '跑步', '通勤', '上班路上', '下班路上', '早餐', '午餐', '晚餐', '备餐', '收拾', '整理', '清洁', '护肤', '化妆', '更衣', '穿衣', '小憩'];
+        const isLifeTag = lifeKeywords.some(keyword => type.includes(keyword));
+
+        // 生活类标签只显示名称和时长，不显示百分比
+        if (isLifeTag) {
+            externalLabels.push(`${type}/${duration}分钟`);
+        } else {
+            externalLabels.push(`${type}/${duration}分钟/${percentage}%`);
+        }
     }
 
     // 更新图表数据
