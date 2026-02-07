@@ -1271,6 +1271,61 @@ main {
     box-shadow: 0 0 0 3px rgba(82, 196, 26, 0.1);
 }
 
+/* 邮箱验证样式 */
+.email-verify-group {
+    display: flex;
+    gap: 10px;
+}
+
+.email-verify-group input {
+    flex: 1;
+}
+
+.verify-btn {
+    padding: 10px 15px;
+    background-color: #1890ff;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 14px;
+    white-space: nowrap;
+    transition: background-color 0.3s ease;
+}
+
+.verify-btn:hover:not(:disabled) {
+    background-color: #40a9ff;
+}
+
+.verify-btn:disabled {
+    background-color: #d9d9d9;
+    cursor: not-allowed;
+}
+
+.verify-code-display {
+    margin-top: 10px;
+    padding: 12px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 8px;
+    text-align: center;
+    font-size: 24px;
+    font-weight: bold;
+    color: white;
+    letter-spacing: 8px;
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+}
+
+.verify-code-hint {
+    margin-top: 10px;
+    padding: 10px 12px;
+    background: linear-gradient(135deg, #52c41a 0%, #389e0d 100%);
+    border-radius: 8px;
+    text-align: center;
+    font-size: 14px;
+    color: white;
+    box-shadow: 0 4px 15px rgba(82, 196, 26, 0.3);
+}
+
 /* 表单验证提示 */
 .form-error {
     color: #ff4d4f;
@@ -3641,11 +3696,11 @@ footer {
 }
 
 .qrcode-frame {
-    width: 200px;
-    height: 200px;
+    width: 320px;
+    height: 320px;
     margin: 0 auto 12px;
-    padding: 10px;
-    background: white;
+    padding: 0;
+    background: transparent;
     border-radius: 16px;
     box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3);
     display: flex;
@@ -3656,9 +3711,9 @@ footer {
 
 /* 二维码图片 - 确保100%清晰可扫描 */
 .qrcode-img {
-    width: 100%;
-    height: 100%;
-    object-fit: contain;
+    width: 110%;
+    height: 110%;
+    object-fit: cover;
     /* 强制禁用所有可能影响扫描的效果 */
     filter: none !important;
     opacity: 1 !important;
@@ -3761,8 +3816,8 @@ footer {
     }
 
     .qrcode-frame {
-        width: 180px;
-        height: 180px;
+        width: 280px;
+        height: 280px;
     }
 
     .trial-badge {

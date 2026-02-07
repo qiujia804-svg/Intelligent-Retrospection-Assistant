@@ -36,6 +36,25 @@ const memberNameElement = document.getElementById('member-name');
 const memberEmailElement = document.getElementById('member-email');
 const memberLevelElement = document.getElementById('member-level');
 const memberExpiryElement = document.getElementById('member-expiry');
+
+// 邮箱验证状态
+let currentVerifyCode = null;
+let verifiedEmail = null;
+
+// 邮箱验证相关DOM元素（在bindMembershipEventListeners中初始化）
+let sendVerifyCodeBtn = null;
+let verifyCodeGroup = null;
+let verifyCodeInput = null;
+let verifyCodeHint = null;
+let registerSubmitBtn = null;
+let registerEmailInput = null;
+
+// SendCloud 配置
+const SENDCLOUD_CONFIG = {
+    apiUser: 'sc_akjvc_test_VlAetu',
+    apiKey: '82bb08ac6c8d8f56b1e9b0f454e16695',
+    templateName: 'verify_code_template'
+};
 const subscriptionPlansContainer = document.getElementById('subscription-plans');
 const paymentPlanNameElement = document.getElementById('payment-plan-name');
 const paymentAmountElement = document.getElementById('payment-amount-value');
@@ -833,6 +852,14 @@ function fixDateErrors() {
 
 // 绑定会员系统事件监听器
 function bindMembershipEventListeners() {
+    // 初始化邮箱验证相关DOM元素
+    sendVerifyCodeBtn = document.getElementById('send-verify-code');
+    verifyCodeGroup = document.getElementById('verify-code-group');
+    verifyCodeInput = document.getElementById('register-verify-code');
+    verifyCodeHint = document.getElementById('verify-code-hint');
+    registerSubmitBtn = document.getElementById('register-submit-btn');
+    registerEmailInput = document.getElementById('register-email');
+    
     // 模态框控制（添加空检查）
     if (loginBtn && loginModal) loginBtn.addEventListener('click', () => openModal(loginModal));
     if (registerBtn && registerModal) registerBtn.addEventListener('click', () => openModal(registerModal));
@@ -843,7 +870,12 @@ function bindMembershipEventListeners() {
     closeBtns.forEach(btn => {
         btn.addEventListener('click', () => {
             if (loginModal) closeModal(loginModal);
-            if (registerModal) closeModal(registerModal);
+            if (registerModal) {
+                closeModal(registerModal);
+                // 关闭注册模态框时重置邮箱验证状态
+                resetEmailVerification();
+                if (registerForm) registerForm.reset();
+            }
             if (paymentModal) closeModal(paymentModal);
         });
     });
@@ -892,6 +924,14 @@ function bindMembershipEventListeners() {
         });
     }
 
+    // 邮箱验证事件监听
+    if (sendVerifyCodeBtn) {
+        sendVerifyCodeBtn.addEventListener('click', handleSendVerifyCode);
+    }
+    if (verifyCodeInput) {
+        verifyCodeInput.addEventListener('input', handleVerifyCodeInput);
+    }
+
     // 表单提交
     if (loginForm) loginForm.addEventListener('submit', handleLogin);
     if (registerForm) registerForm.addEventListener('submit', handleRegister);
@@ -905,6 +945,110 @@ function openModal(modal) {
 // 关闭模态框
 function closeModal(modal) {
     if (modal) modal.style.display = 'none';
+}
+
+// 生成6位数字验证码
+function generateVerifyCode() {
+    return Math.floor(100000 + Math.random() * 900000).toString();
+}
+
+// 处理发送验证码
+function handleSendVerifyCode() {
+    const email = registerEmailInput.value.trim();
+    
+    if (!email) {
+        alert('请先输入邮箱地址！');
+        return;
+    }
+    
+    // 验证邮箱格式
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+        alert('请输入有效的邮箱地址！');
+        return;
+    }
+    
+    // 检查邮箱是否已被注册
+    const users = JSON.parse(localStorage.getItem('users')) || [];
+    if (users.some(u => u.email === email)) {
+        alert('该邮箱已被注册！');
+        return;
+    }
+    
+    // 生成验证码
+    currentVerifyCode = generateVerifyCode();
+    
+    // 使用 SendCloud 发送邮件
+    sendVerificationEmail(email, currentVerifyCode);
+    
+    // 显示验证码输入框
+    verifyCodeGroup.style.display = 'block';
+    
+    // 禁用发送按钮60秒
+    sendVerifyCodeBtn.disabled = true;
+    let countdown = 60;
+    sendVerifyCodeBtn.textContent = `${countdown}秒后重试`;
+    
+    const timer = setInterval(() => {
+        countdown--;
+        if (countdown > 0) {
+            sendVerifyCodeBtn.textContent = `${countdown}秒后重试`;
+        } else {
+            clearInterval(timer);
+            sendVerifyCodeBtn.disabled = false;
+            sendVerifyCodeBtn.textContent = '发送验证码';
+        }
+    }, 1000);
+}
+
+// 处理验证码输入
+function handleVerifyCodeInput() {
+    const inputCode = verifyCodeInput.value.trim();
+    
+    if (inputCode === currentVerifyCode) {
+        verifiedEmail = registerEmailInput.value.trim();
+        registerSubmitBtn.disabled = false;
+        verifyCodeInput.style.borderColor = '#52c41a';
+    } else {
+        registerSubmitBtn.disabled = true;
+        verifyCodeInput.style.borderColor = '#ff4d4f';
+    }
+}
+
+// 后端邮件服务配置
+const EMAIL_SERVER_URL = 'http://81.71.18.174:3000/api/send-email';
+
+// SendCloud 发送验证邮件（通过后端代理）
+function sendVerificationEmail(email, verifyCode) {
+    console.log('发送邮件请求:', { email, verifyCode });
+    
+    fetch(EMAIL_SERVER_URL, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            email: email,
+            verifyCode: verifyCode
+        })
+    })
+    .then(response => {
+        console.log('后端响应状态:', response.status);
+        return response.json();
+    })
+    .then(data => {
+        console.log('后端响应数据:', data);
+        if (data.success) {
+            alert('验证码已发送至您的邮箱，请查收！');
+        } else {
+            console.error('邮件发送失败:', data);
+            alert('邮件发送失败：' + (data.error || '未知错误') + '，模拟验证码：' + verifyCode);
+        }
+    })
+    .catch(error => {
+        console.error('请求失败:', error);
+        alert('邮件服务暂时不可用，模拟验证码：' + verifyCode);
+    });
 }
 
 // 处理登录
@@ -947,9 +1091,26 @@ function handleRegister(e) {
     const email = document.getElementById('register-email').value;
     const password = document.getElementById('register-password').value;
     const confirmPassword = document.getElementById('register-confirm-password').value;
+    const verifyCode = document.getElementById('register-verify-code').value;
     
     if (password !== confirmPassword) {
         alert('两次输入的密码不一致！');
+        return;
+    }
+    
+    // 检查邮箱是否已验证
+    if (!currentVerifyCode) {
+        alert('请先获取邮箱验证码！');
+        return;
+    }
+    
+    if (verifyCode !== currentVerifyCode) {
+        alert('验证码错误！');
+        return;
+    }
+    
+    if (email !== verifiedEmail) {
+        alert('邮箱地址与验证时不一致！');
         return;
     }
     
@@ -990,6 +1151,21 @@ function handleRegister(e) {
     alert('注册成功！\n\n您已获得7天免费试用权限，祝您使用愉快！');
     
     registerForm.reset();
+    
+    // 重置邮箱验证状态
+    resetEmailVerification();
+}
+
+// 重置邮箱验证状态
+function resetEmailVerification() {
+    currentVerifyCode = null;
+    verifiedEmail = null;
+    if (verifyCodeGroup) verifyCodeGroup.style.display = 'none';
+    if (verifyCodeInput) {
+        verifyCodeInput.value = '';
+        verifyCodeInput.style.borderColor = '';
+    }
+    if (registerSubmitBtn) registerSubmitBtn.disabled = true;
 }
 
 // 退出登录
@@ -1738,10 +1914,18 @@ function setupPlanForm() {
             // 深拷贝时间统计数据
             existingReview.timeStats = JSON.parse(JSON.stringify(timeStats));
 
-            // 【新增】计算自我提升占比并更新目标达成率进度条
-            const studyPercentage = timeStats.totalMinutes > 0
-                ? Math.round((timeStats.studyTotalMinutes / timeStats.totalMinutes) * 100)
-                : 0;
+            // 【新增】生成并同步时间分配详情到goal-completion文本框（先执行以获取准确的自我提升时长）
+            const timeStatsText = formatTimeStatsForGoalCompletion(timeStats);
+            
+            // 从生成的文本中提取自我提升总时长和占比
+            // 格式: 自我提升总时长:780分钟(13小时)，占比76.5%
+            let selfImprovementMinutes = 0;
+            let studyPercentage = 0;
+            const match = timeStatsText.match(/自我提升总时长:(\d+)分钟.*，占比([\d.]+)%/);
+            if (match) {
+                selfImprovementMinutes = parseInt(match[1]);
+                studyPercentage = Math.round(parseFloat(match[2]));
+            }
 
             // 更新今日复盘界面的目标达成情况
             const goalProgressInput = document.getElementById('goal-progress');
@@ -1756,8 +1940,7 @@ function setupPlanForm() {
                 progressValueSpan.textContent = studyPercentage + '%';
             }
 
-            // 【新增】生成并同步时间分配详情到goal-completion文本框
-            const timeStatsText = formatTimeStatsForGoalCompletion(timeStats);
+            // 同步时间分配详情到goal-completion文本框
             if (goalCompletionTextarea) {
                 goalCompletionTextarea.value = timeStatsText;
                 console.log('【同步】目标达成情况文本框已更新');
@@ -3271,29 +3454,58 @@ function generateTimeSlots() {
         // 生成00-30分钟的时间段
         const startTime1 = hour.toString().padStart(2, '0') + ':00';
         const endTime1 = hour.toString().padStart(2, '0') + ':30';
-        // 只在第一行（5:00-5:30）显示示例数据
-        const isFirstRow1 = slotIndex === 0;
-        const timeSlot1 = createTimeSlot(startTime1, endTime1, isFirstRow1);
+        // 获取该时间段的预设生活标签
+        const lifeTag1 = getLifeTagForTimeSlot(hour, 0);
+        const timeSlot1 = createTimeSlot(startTime1, endTime1, false, lifeTag1);
         scheduleItemsContainer.appendChild(timeSlot1);
         slotIndex++;
         
         // 生成30-00分钟的时间段
         const startTime2 = hour.toString().padStart(2, '0') + ':30';
         const endTime2 = (hour + 1).toString().padStart(2, '0') + ':00';
-        const isFirstRow2 = false;
-        const timeSlot2 = createTimeSlot(startTime2, endTime2, isFirstRow2);
+        // 获取该时间段的预设生活标签
+        const lifeTag2 = getLifeTagForTimeSlot(hour, 30);
+        const timeSlot2 = createTimeSlot(startTime2, endTime2, false, lifeTag2);
         scheduleItemsContainer.appendChild(timeSlot2);
         slotIndex++;
     }
 }
 
-function createTimeSlot(startTime, endTime, isFirstRow = false) {
+// 根据时间段获取对应的生活标签
+function getLifeTagForTimeSlot(hour, minute) {
+    // 早上 05:00-06:00：05:00-05:30洗漱、晨跑，05:30-06:00做家务、冥想（06:00-07:00 不自动填充，让用户自己选择）
+    if (hour >= 5 && hour < 6) {
+        if (hour === 5 && minute === 0) return { name: '洗漱、晨跑', duration: 30 };
+        if (hour === 5 && minute === 30) return { name: '做家务、冥想', duration: 30 };
+    }
+    
+    // 中午 12:00-14:00：做饭、吃饭，午休
+    if (hour >= 12 && hour < 14) {
+        if (hour === 12 && minute === 0) return { name: '做饭、吃饭', duration: 30 };
+        if (hour === 12 && minute === 30) return { name: '做饭、吃饭', duration: 30 };
+        if (hour === 13 && minute === 0) return { name: '午休', duration: 30 };
+        if (hour === 13 && minute === 30) return { name: '午休', duration: 30 };
+    }
+    
+    // 晚上 19:00-20:00：做饭、吃饭（20:00-21:00 不自动填充，让用户自己选择）
+    if (hour >= 19 && hour < 20) {
+        if (hour === 19 && minute === 0) return { name: '做饭、吃饭', duration: 30 };
+        if (hour === 19 && minute === 30) return { name: '做饭、吃饭', duration: 30 };
+    }
+    
+    return null;
+}
+
+function createTimeSlot(startTime, endTime, isFirstRow = false, lifeTag = null) {
     const row = document.createElement('div');
     row.className = 'schedule-item';
 
-    // 根据是否为第一行设置默认值
-    const taskValue = isFirstRow ? '工作' : '';
-    const durationValue = isFirstRow ? '30' : '';
+    // 根据是否为第一行或生活标签设置默认值
+    const taskValue = lifeTag ? lifeTag.name : (isFirstRow ? '工作' : '');
+    const durationValue = lifeTag ? lifeTag.duration : (isFirstRow ? '30' : '');
+
+    // 解析时间段小时，用于判断是否为生活时间段
+    const startHour = parseInt(startTime.split(':')[0]);
 
     // 时间段 + 任务输入 + 时长输入
     const timeSlotHtml = `
@@ -3321,6 +3533,12 @@ function createTimeSlot(startTime, endTime, isFirstRow = false) {
     const dropdownMenu = row.querySelector('.tag-dropdown-menu');
     const durationInput = row.querySelector('.duration-input');
 
+    // 判断是否为生活时间段（早上5-7点，中午12-14点，晚上19-21点）
+    // 下拉菜单显示生活标签的时间段
+    function isLifeTimeSlot(hour) {
+        return (hour >= 5 && hour < 7) || (hour >= 12 && hour < 14) || (hour >= 19 && hour < 21);
+    }
+
     // 填充标签下拉菜单
     function populateDropdown() {
         const tags = typeof getUserTags === 'function' ? getUserTags() : [
@@ -3329,7 +3547,11 @@ function createTimeSlot(startTime, endTime, isFirstRow = false) {
             { name: '休息放松', color: '#52c41a' }
         ];
 
-        dropdownMenu.innerHTML = tags.map(tag => {
+        // 根据时间段过滤标签
+        // 非生活时间段（8-12点，14-19点，21-22点）不显示生活类标签（color为null的标签）
+        const filteredTags = isLifeTimeSlot(startHour) ? tags : tags.filter(tag => tag.color !== null);
+
+        dropdownMenu.innerHTML = filteredTags.map(tag => {
             // 生活类标签不显示颜色（color为null时使用透明或灰色）
             const colorStyle = tag.color ? `background:${tag.color}` : 'background:#ccc';
             const colorDot = tag.color ? `<span class="tag-color-dot" style="${colorStyle}"></span>` : '<span class="tag-color-dot" style="background:#ccc;opacity:0.3"></span>';
@@ -3400,13 +3622,20 @@ function createTimeSlot(startTime, endTime, isFirstRow = false) {
 
     durationInput.addEventListener('input', updateTimeStatistics);
 
-    // 初始化第一行的颜色
-    if (isFirstRow && taskValue) {
-        const tags = typeof getUserTags === 'function' ? getUserTags() : [];
-        const matched = tags.find(t => t.name === taskValue);
-        if (matched) {
-            taskInput.style.borderColor = matched.color;
-            taskInput.style.boxShadow = `0 0 0 2px ${matched.color}33`;
+    // 初始化第一行或生活标签的颜色
+    if (taskValue) {
+        // 生活标签不分配颜色
+        if (lifeTag) {
+            // 生活标签不设置边框颜色
+            taskInput.style.borderColor = '#d9d9d9';
+            taskInput.style.boxShadow = 'none';
+        } else if (isFirstRow) {
+            const tags = typeof getUserTags === 'function' ? getUserTags() : [];
+            const matched = tags.find(t => t.name === taskValue);
+            if (matched && matched.color) {
+                taskInput.style.borderColor = matched.color;
+                taskInput.style.boxShadow = `0 0 0 2px ${matched.color}33`;
+            }
         }
     }
 
@@ -3623,27 +3852,50 @@ function formatTimeStatsForGoalCompletion(timeStats) {
     }
 
     const lines = [];
-    const totalHours = Math.floor(timeStats.totalMinutes / 60);
-    const totalMins = timeStats.totalMinutes % 60;
+    
+    // 按照17小时(1020分钟)计算占比
+    const BASE_MINUTES = 17 * 60; // 1020分钟
+    
+    // 娱乐任务关键词列表
+    const entertainmentKeywords = ['刷视频', '打游戏', '游戏', '视频', '追剧', '看剧', '观影', '电影', '电视剧', '综艺', '动漫', '直播', '抖音', '快手', 'B站', 'b站', '小红书', '社交', '聊天', '微博', '知乎', '贴吧', '论坛', '棋牌', '麻将', '扑克', '斗地主'];
+    
+    // 生活任务关键词列表
+    const lifeKeywords = ['做饭', '吃饭', '洗澡', '打扫卫生', '打扫', '卫生', '出门购物', '购物', '买菜', '洗衣', '洗碗', '拖地', '擦桌子', '整理房间', '倒垃圾', '遛狗', '喂猫', '照顾孩子', '接孩子', '送孩子', '陪孩子', '做家务', '家务', '生活', '休息', '睡觉', '晨跑', '洗漱', '午休', '午睡', '冥想', '瑜伽', '健身', '运动', '跑步', '散步', '通勤', '上班路上', '下班路上', '早餐', '午餐', '晚餐', '做饭', '备餐', '收拾', '整理', '清洁', '护肤', '化妆', '更衣', '穿衣', '小憩'];
+    
+    // 判断是否为娱乐类任务
+    function isEntertainmentTask(taskName) {
+        return entertainmentKeywords.some(keyword => taskName.includes(keyword));
+    }
+    
+    // 判断是否为生活类任务
+    function isLifeTask(taskName) {
+        return lifeKeywords.some(keyword => taskName.includes(keyword));
+    }
 
-    // 计算自我提升占比
-    const studyPercentage = timeStats.totalMinutes > 0
-        ? ((timeStats.studyTotalMinutes / timeStats.totalMinutes) * 100).toFixed(1)
-        : 0;
+    // 计算自我提升总时长（排除娱乐和生活类）
+    let selfImprovementTotalMinutes = 0;
+    timeStats.items.forEach(item => {
+        if (!isEntertainmentTask(item.name) && !isLifeTask(item.name)) {
+            selfImprovementTotalMinutes += item.minutes;
+        }
+    });
+
+    // 计算自我提升占比（基于17小时）
+    const studyPercentage = ((selfImprovementTotalMinutes / BASE_MINUTES) * 100).toFixed(1);
 
     // 第一行：自我提升总时长
-    const studyHours = Math.floor(timeStats.studyTotalMinutes / 60);
-    const studyMins = timeStats.studyTotalMinutes % 60;
-    lines.push(`自我提升总时长:${timeStats.studyTotalMinutes}分钟(${studyHours}小时${studyMins > 0 ? studyMins + '分钟' : ''})，占比${studyPercentage}%`);
+    const studyHours = Math.floor(selfImprovementTotalMinutes / 60);
+    const studyMins = selfImprovementTotalMinutes % 60;
+    lines.push(`自我提升总时长:${selfImprovementTotalMinutes}分钟(${studyHours}小时${studyMins > 0 ? studyMins + '分钟' : ''})，占比${studyPercentage}%`);
 
-    // 后续行：各项任务详情（只显示自我提升类任务，排除休息放松）
-    const excludeKeywords = ['休息放松', '休息', '放松'];
+    // 后续行：各项自我提升任务详情（排除娱乐和生活类任务）
     timeStats.items.forEach(item => {
-        // 跳过休息放松类任务
-        if (excludeKeywords.some(keyword => item.name.includes(keyword))) {
+        // 跳过娱乐类和生活类任务
+        if (isEntertainmentTask(item.name) || isLifeTask(item.name)) {
             return;
         }
-        const itemPercentage = ((item.minutes / timeStats.totalMinutes) * 100).toFixed(0);
+        // 按照17小时计算各项占比
+        const itemPercentage = ((item.minutes / BASE_MINUTES) * 100).toFixed(0);
         lines.push(`${item.name}/${item.minutes}分钟/${itemPercentage}%`);
     });
 
@@ -3797,7 +4049,20 @@ function updatePieChart(typeDurations, totalMinutes) {
         }
     }
 
+    // 生活任务关键词列表（用于过滤饼图图例中的生活类项目）
+    const lifeKeywords = ['做饭', '吃饭', '洗澡', '打扫卫生', '打扫', '卫生', '出门购物', '购物', '买菜', '洗衣', '洗碗', '拖地', '擦桌子', '整理房间', '倒垃圾', '遛狗', '喂猫', '照顾孩子', '接孩子', '送孩子', '陪孩子', '做家务', '家务', '生活', '休息', '睡觉', '晨跑', '洗漱', '午休', '午睡', '冥想', '瑜伽', '健身', '运动', '跑步', '散步', '通勤', '上班路上', '下班路上', '早餐', '午餐', '晚餐', '备餐', '收拾', '整理', '清洁', '护肤', '化妆', '更衣', '穿衣', '小憩'];
+
+    // 判断是否为生活类标签
+    function isLifeTag(tagName) {
+        return lifeKeywords.some(keyword => tagName.includes(keyword));
+    }
+
     for (const [type, duration] of Object.entries(filteredTypeDurations)) {
+        // 跳过生活类标签，不显示在饼图图例中
+        if (isLifeTag(type)) {
+            continue;
+        }
+
         labels.push(type);
         data.push(duration);
 
@@ -4777,7 +5042,7 @@ function updateRadarChart(projectData) {
     const originalDataCount = Object.keys(projectData).length;
 
     // 【黑名单过滤】雷达图仅用于分析"精力投入与兴趣分布"，排除非生产性/非兴趣投入项目
-    const radarBlacklist = ['休息', '放松', '娱乐', '睡觉', '打游戏', '游戏', '午休', '午睡', '小憩', '发呆', '摸鱼', '刷手机', '看视频', '看电视', '追剧'];
+    const radarBlacklist = ['休息', '放松', '娱乐', '睡觉', '打游戏', '游戏', '午休', '午睡', '小憩', '发呆', '摸鱼', '刷手机', '看视频', '看电视', '追剧', '刷视频'];
     const filteredProjectData = {};
     let filteredCount = 0;
     for (const [key, value] of Object.entries(projectData)) {
@@ -5241,10 +5506,12 @@ function initFeedbackWidget() {
         }
 
         const feedbackData = {
+            id: 'feedback_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9),
             type: feedbackType,
             content: feedbackContent,
             contact: feedbackContact,
-            timestamp: new Date().toISOString(),
+            time: new Date().toISOString(),
+            status: 'pending',
             userAgent: navigator.userAgent
         };
 

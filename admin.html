@@ -1,0 +1,1134 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>后台管理 - 用户反馈管理</title>
+    <link rel="stylesheet" href="review-assistant.css">
+    <style>
+        /* 后台管理页面专用样式 */
+        .admin-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            min-height: calc(100vh - 40px);
+        }
+
+        .admin-header {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            color: white;
+            padding: 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .admin-header h1 {
+            font-size: 28px;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .admin-header .back-link {
+            color: rgba(255, 255, 255, 0.8);
+            text-decoration: none;
+            padding: 10px 20px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .admin-header .back-link:hover {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+        }
+
+        /* 统计卡片区域 */
+        .admin-stats {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 20px;
+            padding: 30px;
+            background: #f8f9fa;
+        }
+
+        .stat-card {
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+        }
+
+        .stat-card .stat-icon {
+            font-size: 36px;
+            margin-bottom: 12px;
+        }
+
+        .stat-card .stat-value {
+            font-size: 32px;
+            font-weight: 700;
+            color: #333;
+            margin-bottom: 8px;
+        }
+
+        .stat-card .stat-label {
+            font-size: 14px;
+            color: #666;
+        }
+
+        .stat-card.total .stat-value { color: #667eea; }
+        .stat-card.pending .stat-value { color: #faad14; }
+        .stat-card.processed .stat-value { color: #52c41a; }
+        .stat-card.bug .stat-value { color: #ff4d4f; }
+
+        /* 筛选和搜索区域 */
+        .admin-controls {
+            padding: 20px 30px;
+            background: white;
+            border-bottom: 1px solid #e8e8e8;
+            display: flex;
+            gap: 16px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .search-box {
+            flex: 1;
+            min-width: 250px;
+            position: relative;
+        }
+
+        .search-box input {
+            width: 100%;
+            padding: 12px 16px 12px 44px;
+            border: 2px solid #e8e8e8;
+            border-radius: 10px;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+
+        .search-box input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .search-box::before {
+            content: "🔍";
+            position: absolute;
+            left: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 16px;
+        }
+
+        .filter-group {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+
+        .filter-group select {
+            padding: 12px 16px;
+            border: 2px solid #e8e8e8;
+            border-radius: 10px;
+            font-size: 14px;
+            background: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .filter-group select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .refresh-btn {
+            padding: 12px 24px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .refresh-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        /* 反馈列表 */
+        .feedback-list-container {
+            padding: 30px;
+            background: #f8f9fa;
+            min-height: 400px;
+        }
+
+        .feedback-list {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .feedback-item {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+            transition: all 0.3s ease;
+            border-left: 4px solid #667eea;
+        }
+
+        .feedback-item:hover {
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+            transform: translateX(4px);
+        }
+
+        .feedback-item.processed {
+            border-left-color: #52c41a;
+            opacity: 0.85;
+        }
+
+        .feedback-item.bug { border-left-color: #ff4d4f; }
+        .feedback-item.feature { border-left-color: #1890ff; }
+        .feedback-item.inquiry { border-left-color: #faad14; }
+        .feedback-item.other { border-left-color: #8c8c8c; }
+
+        .feedback-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 12px;
+        }
+
+        .feedback-meta {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .feedback-type {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .feedback-type.bug {
+            background: #fff1f0;
+            color: #cf1322;
+        }
+
+        .feedback-type.feature {
+            background: #e6f7ff;
+            color: #096dd9;
+        }
+
+        .feedback-type.inquiry {
+            background: #fff7e6;
+            color: #d46b08;
+        }
+
+        .feedback-type.other {
+            background: #f5f5f5;
+            color: #595959;
+        }
+
+        .feedback-time {
+            font-size: 13px;
+            color: #8c8c8c;
+        }
+
+        .feedback-status {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .feedback-status.pending {
+            background: #fff7e6;
+            color: #d46b08;
+        }
+
+        .feedback-status.processed {
+            background: #f6ffed;
+            color: #389e0d;
+        }
+
+        .feedback-content {
+            margin-bottom: 16px;
+        }
+
+        .feedback-content p {
+            margin: 0;
+            color: #333;
+            line-height: 1.6;
+            font-size: 14px;
+        }
+
+        .feedback-contact {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 14px;
+            background: #f5f5f5;
+            border-radius: 8px;
+            font-size: 13px;
+            color: #666;
+            margin-bottom: 16px;
+        }
+
+        .feedback-actions {
+            display: flex;
+            gap: 12px;
+            justify-content: flex-end;
+        }
+
+        .action-btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 8px;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .action-btn.process {
+            background: linear-gradient(135deg, #52c41a 0%, #389e0d 100%);
+            color: white;
+        }
+
+        .action-btn.process:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(82, 196, 26, 0.4);
+        }
+
+        .action-btn.delete {
+            background: #fff1f0;
+            color: #cf1322;
+            border: 1px solid #ffccc7;
+        }
+
+        .action-btn.delete:hover {
+            background: #ff4d4f;
+            color: white;
+        }
+
+        .action-btn.view {
+            background: #e6f7ff;
+            color: #096dd9;
+            border: 1px solid #91d5ff;
+        }
+
+        .action-btn.view:hover {
+            background: #1890ff;
+            color: white;
+        }
+
+        /* 空状态 */
+        .empty-state {
+            text-align: center;
+            padding: 80px 20px;
+            color: #8c8c8c;
+        }
+
+        .empty-state .empty-icon {
+            font-size: 64px;
+            margin-bottom: 20px;
+            opacity: 0.5;
+        }
+
+        .empty-state h3 {
+            font-size: 20px;
+            margin-bottom: 8px;
+            color: #333;
+        }
+
+        .empty-state p {
+            font-size: 14px;
+        }
+
+        /* 分页 */
+        .pagination {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #e8e8e8;
+        }
+
+        .pagination button {
+            padding: 8px 16px;
+            border: 1px solid #e8e8e8;
+            background: white;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 14px;
+        }
+
+        .pagination button:hover:not(:disabled) {
+            border-color: #667eea;
+            color: #667eea;
+        }
+
+        .pagination button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .pagination button.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-color: transparent;
+        }
+
+        .pagination .page-info {
+            font-size: 14px;
+            color: #666;
+            margin: 0 16px;
+        }
+
+        /* 详情弹窗 */
+        .detail-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(5px);
+            z-index: 10000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .detail-modal.show {
+            display: flex;
+        }
+
+        .detail-modal-content {
+            background: white;
+            border-radius: 16px;
+            width: 90%;
+            max-width: 600px;
+            max-height: 80vh;
+            overflow-y: auto;
+            animation: modalSlideUp 0.3s ease;
+        }
+
+        @keyframes modalSlideUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .detail-modal-header {
+            padding: 24px;
+            border-bottom: 1px solid #e8e8e8;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .detail-modal-header h3 {
+            margin: 0;
+            font-size: 20px;
+        }
+
+        .detail-modal-close {
+            width: 36px;
+            height: 36px;
+            border: none;
+            background: #f5f5f5;
+            border-radius: 50%;
+            font-size: 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .detail-modal-close:hover {
+            background: #e8e8e8;
+            transform: rotate(90deg);
+        }
+
+        .detail-modal-body {
+            padding: 24px;
+        }
+
+        .detail-row {
+            margin-bottom: 20px;
+        }
+
+        .detail-row:last-child {
+            margin-bottom: 0;
+        }
+
+        .detail-label {
+            font-size: 13px;
+            color: #8c8c8c;
+            margin-bottom: 8px;
+            display: block;
+        }
+
+        .detail-value {
+            font-size: 15px;
+            color: #333;
+            line-height: 1.6;
+            padding: 12px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+
+        .detail-modal-footer {
+            padding: 20px 24px;
+            border-top: 1px solid #e8e8e8;
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+        }
+
+        /* 响应式设计 */
+        @media (max-width: 1024px) {
+            .admin-stats {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .admin-header {
+                flex-direction: column;
+                gap: 20px;
+                text-align: center;
+            }
+
+            .admin-stats {
+                grid-template-columns: 1fr;
+                padding: 20px;
+            }
+
+            .admin-controls {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .search-box {
+                min-width: auto;
+            }
+
+            .filter-group {
+                flex-direction: column;
+                width: 100%;
+            }
+
+            .filter-group select {
+                width: 100%;
+            }
+
+            .feedback-list-container {
+                padding: 20px;
+            }
+
+            .feedback-header {
+                flex-direction: column;
+                gap: 12px;
+            }
+
+            .feedback-actions {
+                flex-wrap: wrap;
+                justify-content: flex-start;
+            }
+        }
+
+        /* Toast 提示 */
+        .toast {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 16px 24px;
+            border-radius: 10px;
+            color: white;
+            font-size: 14px;
+            z-index: 10001;
+            animation: toastSlideIn 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        @keyframes toastSlideIn {
+            from {
+                opacity: 0;
+                transform: translateX(100px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .toast.success {
+            background: linear-gradient(135deg, #52c41a 0%, #389e0d 100%);
+        }
+
+        .toast.error {
+            background: linear-gradient(135deg, #ff4d4f 0%, #cf1322 100%);
+        }
+
+        .toast.info {
+            background: linear-gradient(135deg, #1890ff 0%, #096dd9 100%);
+        }
+    </style>
+</head>
+<body>
+    <div class="admin-container">
+        <!-- 头部 -->
+        <header class="admin-header">
+            <h1>
+                <span>⚙️</span>
+                后台管理 - 用户反馈管理
+            </h1>
+            <a href="index.html" class="back-link">← 返回首页</a>
+        </header>
+
+        <!-- 统计卡片 -->
+        <div class="admin-stats">
+            <div class="stat-card total">
+                <div class="stat-icon">📊</div>
+                <div class="stat-value" id="total-count">0</div>
+                <div class="stat-label">总反馈数</div>
+            </div>
+            <div class="stat-card pending">
+                <div class="stat-icon">⏳</div>
+                <div class="stat-value" id="pending-count">0</div>
+                <div class="stat-label">待处理</div>
+            </div>
+            <div class="stat-card processed">
+                <div class="stat-icon">✅</div>
+                <div class="stat-value" id="processed-count">0</div>
+                <div class="stat-label">已处理</div>
+            </div>
+            <div class="stat-card bug">
+                <div class="stat-icon">🐛</div>
+                <div class="stat-value" id="bug-count">0</div>
+                <div class="stat-label">Bug报告</div>
+            </div>
+        </div>
+
+        <!-- 筛选和搜索 -->
+        <div class="admin-controls">
+            <div class="search-box">
+                <input type="text" id="search-input" placeholder="搜索反馈内容、联系方式...">
+            </div>
+            <div class="filter-group">
+                <select id="type-filter">
+                    <option value="">全部类型</option>
+                    <option value="bug">Bug报告</option>
+                    <option value="feature">功能建议</option>
+                    <option value="inquiry">使用咨询</option>
+                    <option value="other">其他问题</option>
+                </select>
+                <select id="status-filter">
+                    <option value="">全部状态</option>
+                    <option value="pending">待处理</option>
+                    <option value="processed">已处理</option>
+                </select>
+            </div>
+            <button class="refresh-btn" onclick="refreshData()">
+                <span>🔄</span>
+                刷新数据
+            </button>
+        </div>
+
+        <!-- 反馈列表 -->
+        <div class="feedback-list-container">
+            <div class="feedback-list" id="feedback-list">
+                <!-- 反馈项将在这里动态生成 -->
+            </div>
+
+            <!-- 空状态 -->
+            <div class="empty-state" id="empty-state" style="display: none;">
+                <div class="empty-icon">📭</div>
+                <h3>暂无反馈数据</h3>
+                <p>当用户提交反馈后，这里将显示反馈列表</p>
+            </div>
+
+            <!-- 分页 -->
+            <div class="pagination" id="pagination" style="display: none;">
+                <button onclick="goToPage(1)" id="first-page">首页</button>
+                <button onclick="goToPage(currentPage - 1)" id="prev-page">上一页</button>
+                <span class="page-info">
+                    第 <span id="current-page">1</span> / <span id="total-pages">1</span> 页
+                </span>
+                <button onclick="goToPage(currentPage + 1)" id="next-page">下一页</button>
+                <button onclick="goToPage(totalPages)" id="last-page">末页</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 详情弹窗 -->
+    <div class="detail-modal" id="detail-modal">
+        <div class="detail-modal-content">
+            <div class="detail-modal-header">
+                <h3>反馈详情</h3>
+                <button class="detail-modal-close" onclick="closeDetailModal()">&times;</button>
+            </div>
+            <div class="detail-modal-body" id="detail-body">
+                <!-- 详情内容将在这里动态生成 -->
+            </div>
+            <div class="detail-modal-footer">
+                <button class="action-btn delete" onclick="deleteCurrentFeedback()">
+                    <span>🗑️</span>
+                    删除
+                </button>
+                <button class="action-btn process" id="detail-process-btn" onclick="processCurrentFeedback()">
+                    <span>✓</span>
+                    标记为已处理
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script src="data-storage.js"></script>
+    <script>
+        // 全局变量
+        let allFeedbacks = [];
+        let filteredFeedbacks = [];
+        let currentPage = 1;
+        let totalPages = 1;
+        let currentDetailId = null;
+        const itemsPerPage = 10;
+
+        // 类型映射
+        const typeMap = {
+            bug: { label: 'Bug报告', class: 'bug' },
+            feature: { label: '功能建议', class: 'feature' },
+            inquiry: { label: '使用咨询', class: 'inquiry' },
+            other: { label: '其他问题', class: 'other' }
+        };
+
+        // 状态映射
+        const statusMap = {
+            pending: { label: '待处理', class: 'pending' },
+            processed: { label: '已处理', class: 'processed' }
+        };
+
+        // 初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            loadFeedbacks();
+            setupEventListeners();
+        });
+
+        // 设置事件监听
+        function setupEventListeners() {
+            // 搜索
+            document.getElementById('search-input').addEventListener('input', debounce(function() {
+                currentPage = 1;
+                applyFilters();
+            }, 300));
+
+            // 类型筛选
+            document.getElementById('type-filter').addEventListener('change', function() {
+                currentPage = 1;
+                applyFilters();
+            });
+
+            // 状态筛选
+            document.getElementById('status-filter').addEventListener('change', function() {
+                currentPage = 1;
+                applyFilters();
+            });
+
+            // 点击遮罩关闭弹窗
+            document.getElementById('detail-modal').addEventListener('click', function(e) {
+                if (e.target === this) {
+                    closeDetailModal();
+                }
+            });
+        }
+
+        // 防抖函数
+        function debounce(func, wait) {
+            let timeout;
+            return function executedFunction(...args) {
+                const later = () => {
+                    clearTimeout(timeout);
+                    func(...args);
+                };
+                clearTimeout(timeout);
+                timeout = setTimeout(later, wait);
+            };
+        }
+
+        // 加载反馈数据
+        function loadFeedbacks() {
+            // 从 localStorage 获取反馈数据
+            const stored = localStorage.getItem('user_feedbacks');
+            if (stored) {
+                try {
+                    allFeedbacks = JSON.parse(stored);
+                    // 为旧数据添加缺失的字段
+                    allFeedbacks = allFeedbacks.map((f, index) => ({
+                        id: f.id || `feedback_${Date.now()}_${index}`,
+                        type: f.type || 'other',
+                        content: f.content || '',
+                        contact: f.contact || '',
+                        time: f.time || f.timestamp || new Date().toISOString(),
+                        status: f.status || 'pending',
+                        userAgent: f.userAgent || ''
+                    }));
+                    // 保存规范化后的数据
+                    saveFeedbacks();
+                    // 按时间倒序排列
+                    allFeedbacks.sort((a, b) => new Date(b.time) - new Date(a.time));
+                } catch (e) {
+                    console.error('解析反馈数据失败:', e);
+                    allFeedbacks = [];
+                }
+            }
+
+            // 更新统计
+            updateStats();
+
+            // 应用筛选并渲染
+            applyFilters();
+        }
+
+        // 更新统计数据
+        function updateStats() {
+            const total = allFeedbacks.length;
+            const pending = allFeedbacks.filter(f => f.status === 'pending').length;
+            const processed = allFeedbacks.filter(f => f.status === 'processed').length;
+            const bugs = allFeedbacks.filter(f => f.type === 'bug').length;
+
+            document.getElementById('total-count').textContent = total;
+            document.getElementById('pending-count').textContent = pending;
+            document.getElementById('processed-count').textContent = processed;
+            document.getElementById('bug-count').textContent = bugs;
+        }
+
+        // 应用筛选
+        function applyFilters() {
+            const searchTerm = document.getElementById('search-input').value.toLowerCase().trim();
+            const typeFilter = document.getElementById('type-filter').value;
+            const statusFilter = document.getElementById('status-filter').value;
+
+            filteredFeedbacks = allFeedbacks.filter(feedback => {
+                // 搜索筛选 - 如果有搜索词，需要匹配内容或联系方式
+                let matchesSearch = true;
+                if (searchTerm) {
+                    const contentMatch = feedback.content && feedback.content.toLowerCase().includes(searchTerm);
+                    const contactMatch = feedback.contact && feedback.contact.toLowerCase().includes(searchTerm);
+                    matchesSearch = contentMatch || contactMatch;
+                }
+
+                // 类型筛选
+                const matchesType = !typeFilter || feedback.type === typeFilter;
+
+                // 状态筛选
+                const matchesStatus = !statusFilter || feedback.status === statusFilter;
+
+                return matchesSearch && matchesType && matchesStatus;
+            });
+
+            renderFeedbacks();
+        }
+
+        // 渲染反馈列表
+        function renderFeedbacks() {
+            const listContainer = document.getElementById('feedback-list');
+            const emptyState = document.getElementById('empty-state');
+            const pagination = document.getElementById('pagination');
+
+            if (filteredFeedbacks.length === 0) {
+                listContainer.innerHTML = '';
+                emptyState.style.display = 'block';
+                pagination.style.display = 'none';
+                return;
+            }
+
+            emptyState.style.display = 'none';
+
+            // 计算分页
+            totalPages = Math.ceil(filteredFeedbacks.length / itemsPerPage);
+            const start = (currentPage - 1) * itemsPerPage;
+            const end = start + itemsPerPage;
+            const pageItems = filteredFeedbacks.slice(start, end);
+
+            // 渲染列表
+            listContainer.innerHTML = pageItems.map(feedback => createFeedbackItem(feedback)).join('');
+
+            // 渲染分页
+            renderPagination();
+        }
+
+        // 创建反馈项 HTML
+        function createFeedbackItem(feedback) {
+            const typeInfo = typeMap[feedback.type] || typeMap.other;
+            const statusInfo = statusMap[feedback.status] || statusMap.pending;
+            const timeStr = formatTime(feedback.time);
+
+            return `
+                <div class="feedback-item ${feedback.type} ${feedback.status}" data-id="${feedback.id}">
+                    <div class="feedback-header">
+                        <div class="feedback-meta">
+                            <span class="feedback-type ${typeInfo.class}">${typeInfo.label}</span>
+                            <span class="feedback-time">${timeStr}</span>
+                        </div>
+                        <span class="feedback-status ${statusInfo.class}">${statusInfo.label}</span>
+                    </div>
+                    <div class="feedback-content">
+                        <p>${escapeHtml(feedback.content)}</p>
+                    </div>
+                    ${feedback.contact ? `
+                        <div class="feedback-contact">
+                            <span>📧</span>
+                            <span>${escapeHtml(feedback.contact)}</span>
+                        </div>
+                    ` : ''}
+                    <div class="feedback-actions">
+                        <button class="action-btn view" onclick="viewDetail('${feedback.id}')">
+                            <span>👁️</span>
+                            查看详情
+                        </button>
+                        ${feedback.status === 'pending' ? `
+                            <button class="action-btn process" onclick="processFeedback('${feedback.id}')">
+                                <span>✓</span>
+                                标记已处理
+                            </button>
+                        ` : ''}
+                        <button class="action-btn delete" onclick="deleteFeedback('${feedback.id}')">
+                            <span>🗑️</span>
+                            删除
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+
+        // 渲染分页
+        function renderPagination() {
+            const pagination = document.getElementById('pagination');
+
+            if (totalPages <= 1) {
+                pagination.style.display = 'none';
+                return;
+            }
+
+            pagination.style.display = 'flex';
+            document.getElementById('current-page').textContent = currentPage;
+            document.getElementById('total-pages').textContent = totalPages;
+
+            document.getElementById('first-page').disabled = currentPage === 1;
+            document.getElementById('prev-page').disabled = currentPage === 1;
+            document.getElementById('next-page').disabled = currentPage === totalPages;
+            document.getElementById('last-page').disabled = currentPage === totalPages;
+        }
+
+        // 跳转到指定页
+        function goToPage(page) {
+            if (page < 1 || page > totalPages || page === currentPage) return;
+            currentPage = page;
+            renderFeedbacks();
+            document.querySelector('.feedback-list-container').scrollTop = 0;
+        }
+
+        // 查看详情
+        function viewDetail(id) {
+            const feedback = allFeedbacks.find(f => f.id === id);
+            if (!feedback) return;
+
+            currentDetailId = id;
+            const typeInfo = typeMap[feedback.type] || typeMap.other;
+            const statusInfo = statusMap[feedback.status] || statusMap.pending;
+
+            const detailBody = document.getElementById('detail-body');
+            detailBody.innerHTML = `
+                <div class="detail-row">
+                    <span class="detail-label">反馈类型</span>
+                    <div class="detail-value">
+                        <span class="feedback-type ${typeInfo.class}" style="display: inline-block;">${typeInfo.label}</span>
+                    </div>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">处理状态</span>
+                    <div class="detail-value">
+                        <span class="feedback-status ${statusInfo.class}" style="display: inline-block;">${statusInfo.label}</span>
+                    </div>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">提交时间</span>
+                    <div class="detail-value">${formatTime(feedback.time)}</div>
+                </div>
+                ${feedback.contact ? `
+                    <div class="detail-row">
+                        <span class="detail-label">联系方式</span>
+                        <div class="detail-value">${escapeHtml(feedback.contact)}</div>
+                    </div>
+                ` : ''}
+                <div class="detail-row">
+                    <span class="detail-label">问题描述</span>
+                    <div class="detail-value" style="white-space: pre-wrap;">${escapeHtml(feedback.content)}</div>
+                </div>
+            `;
+
+            // 更新按钮状态
+            const processBtn = document.getElementById('detail-process-btn');
+            if (feedback.status === 'processed') {
+                processBtn.style.display = 'none';
+            } else {
+                processBtn.style.display = 'flex';
+            }
+
+            document.getElementById('detail-modal').classList.add('show');
+        }
+
+        // 关闭详情弹窗
+        function closeDetailModal() {
+            document.getElementById('detail-modal').classList.remove('show');
+            currentDetailId = null;
+        }
+
+        // 处理当前查看的反馈
+        function processCurrentFeedback() {
+            if (currentDetailId) {
+                processFeedback(currentDetailId);
+                closeDetailModal();
+            }
+        }
+
+        // 删除当前查看的反馈
+        function deleteCurrentFeedback() {
+            if (currentDetailId) {
+                deleteFeedback(currentDetailId);
+                closeDetailModal();
+            }
+        }
+
+        // 标记反馈为已处理
+        function processFeedback(id) {
+            const feedback = allFeedbacks.find(f => f.id === id);
+            if (!feedback || feedback.status === 'processed') return;
+
+            feedback.status = 'processed';
+            saveFeedbacks();
+            updateStats();
+            applyFilters();
+            showToast('已标记为已处理', 'success');
+        }
+
+        // 删除反馈
+        function deleteFeedback(id) {
+            if (!confirm('确定要删除这条反馈吗？此操作不可恢复。')) return;
+
+            allFeedbacks = allFeedbacks.filter(f => f.id !== id);
+            saveFeedbacks();
+            updateStats();
+            applyFilters();
+            showToast('反馈已删除', 'success');
+        }
+
+        // 保存反馈数据
+        function saveFeedbacks() {
+            localStorage.setItem('user_feedbacks', JSON.stringify(allFeedbacks));
+        }
+
+        // 刷新数据
+        function refreshData() {
+            loadFeedbacks();
+            showToast('数据已刷新', 'info');
+        }
+
+        // 格式化时间
+        function formatTime(timeStr) {
+            if (!timeStr) return '未知时间';
+            const date = new Date(timeStr);
+            const now = new Date();
+            const diff = now - date;
+
+            // 小于1分钟
+            if (diff < 60000) {
+                return '刚刚';
+            }
+            // 小于1小时
+            if (diff < 3600000) {
+                return Math.floor(diff / 60000) + '分钟前';
+            }
+            // 小于24小时
+            if (diff < 86400000) {
+                return Math.floor(diff / 3600000) + '小时前';
+            }
+            // 小于7天
+            if (diff < 604800000) {
+                return Math.floor(diff / 86400000) + '天前';
+            }
+
+            return date.toLocaleString('zh-CN', {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        }
+
+        // HTML 转义
+        function escapeHtml(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // 显示 Toast 提示
+        function showToast(message, type = 'info') {
+            const existing = document.querySelector('.toast');
+            if (existing) existing.remove();
+
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+
+            const icon = type === 'success' ? '✓' : type === 'error' ? '✕' : 'ℹ';
+            toast.innerHTML = `<span>${icon}</span><span>${message}</span>`;
+
+            document.body.appendChild(toast);
+
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transform = 'translateX(100px)';
+                setTimeout(() => toast.remove(), 300);
+            }, 2500);
+        }
+    </script>
+</body>
+</html>
