@@ -1015,8 +1015,8 @@ function handleVerifyCodeInput() {
     }
 }
 
-// 后端邮件服务配置
-const EMAIL_SERVER_URL = 'http://81.71.18.174:3000/api/send-email';
+// 后端邮件服务配置 - 使用相对路径，自动适配当前域名
+const EMAIL_SERVER_URL = '/api/send-email';
 
 // SendCloud 发送验证邮件（通过后端代理）
 function sendVerificationEmail(email, verifyCode) {
