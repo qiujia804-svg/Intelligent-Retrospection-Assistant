@@ -1223,6 +1223,40 @@
         </div>
     </div>
 
+    <!-- 强制缓存清除脚本 -->
+    <script>
+    (function() {
+        'use strict';
+        
+        // 版本检测与缓存清除
+        const CURRENT_VERSION = 'v1.0.1';
+        const storedVersion = localStorage.getItem('app_version');
+        
+        if (storedVersion !== CURRENT_VERSION) {
+            console.log('[版本更新] 检测到新版本:', CURRENT_VERSION, '旧版本:', storedVersion);
+            
+            // 清除所有缓存
+            if ('caches' in window) {
+                caches.keys().then(function(names) {
+                    names.forEach(function(name) {
+                        console.log('[缓存清除] 删除:', name);
+                        caches.delete(name);
+                    });
+                });
+            }
+            
+            // 存储新版本号
+            localStorage.setItem('app_version', CURRENT_VERSION);
+            console.log('[版本更新] 缓存已清除，页面将刷新以加载新版本');
+            
+            // 强制刷新页面（使用 true 跳过缓存）
+            setTimeout(function() {
+                window.location.reload(true);
+            }, 100);
+        }
+    })();
+    </script>
+
     <!-- 移动端初始化脚本 -->
     <script>
     (function() {

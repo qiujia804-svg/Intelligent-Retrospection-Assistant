@@ -29,21 +29,33 @@ const OFFLINE_PAGE = '/offline.html';
 
 // 安装事件 - 预缓存静态资源
 self.addEventListener('install', (event) => {
-  console.log('[SW] Installing Service Worker...');
+  console.log('[SW] Installing Service Worker v1.0.1...');
 
   event.waitUntil(
-    caches.open(STATIC_CACHE)
-      .then((cache) => {
-        console.log('[SW] Pre-caching static assets');
-        return cache.addAll(STATIC_ASSETS);
-      })
-      .then(() => {
-        console.log('[SW] Static assets cached successfully');
-        return self.skipWaiting(); // 立即激活新版本
-      })
-      .catch((error) => {
-        console.error('[SW] Pre-caching failed:', error);
-      })
+    // 先清除所有旧缓存
+    caches.keys().then((cacheNames) => {
+      return Promise.all(
+        cacheNames.map((name) => {
+          console.log('[SW] Deleting old cache:', name);
+          return caches.delete(name);
+        })
+      );
+    })
+    .then(() => {
+      console.log('[SW] All old caches cleared');
+      return caches.open(STATIC_CACHE);
+    })
+    .then((cache) => {
+      console.log('[SW] Pre-caching static assets');
+      return cache.addAll(STATIC_ASSETS);
+    })
+    .then(() => {
+      console.log('[SW] Static assets cached successfully');
+      return self.skipWaiting(); // 立即激活新版本
+    })
+    .catch((error) => {
+      console.error('[SW] Pre-caching failed:', error);
+    })
   );
 });
 
