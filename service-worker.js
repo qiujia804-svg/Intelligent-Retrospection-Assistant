@@ -3,9 +3,9 @@
  * 提供离线缓存和后台同步功能
  */
 
-const CACHE_NAME = 'retrospection-assistant-v1.0.1';
-const STATIC_CACHE = 'static-v1.0.1';
-const DYNAMIC_CACHE = 'dynamic-v1.0.1';
+const CACHE_NAME = 'retrospection-assistant-v1.0.3';
+const STATIC_CACHE = 'static-v1.0.3';
+const DYNAMIC_CACHE = 'dynamic-v1.0.3';
 
 // 需要预缓存的静态资源
 const STATIC_ASSETS = [
@@ -29,7 +29,7 @@ const OFFLINE_PAGE = '/offline.html';
 
 // 安装事件 - 预缓存静态资源
 self.addEventListener('install', (event) => {
-  console.log('[SW] Installing Service Worker v1.0.1...');
+  console.log('[SW] Installing Service Worker v1.0.3...');
 
   event.waitUntil(
     // 先清除所有旧缓存
