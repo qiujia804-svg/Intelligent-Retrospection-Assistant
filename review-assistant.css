@@ -5495,3 +5495,187 @@ footer {
     transform: translateY(-2px);
     box-shadow: 0 4px 12px rgba(82, 196, 26, 0.4);
 }
+
+/* ==================== 挑战赛通知样式 ==================== */
+
+/* 通知基础样式 */
+.challenge-notification {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    max-width: 400px;
+    z-index: 99999;
+    border-radius: 12px;
+    padding: 16px 20px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    animation: slideInRight 0.3s ease;
+}
+
+.challenge-notification.warning {
+    background: #fff3cd;
+    border: 1px solid #ffc107;
+}
+
+.challenge-notification.success {
+    background: #d4edda;
+    border: 1px solid #28a745;
+}
+
+.challenge-notification.info {
+    background: #d1ecf1;
+    border: 1px solid #17a2b8;
+}
+
+/* 通知头部 */
+.challenge-notification .notification-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+    font-weight: 600;
+}
+
+.challenge-notification.warning .notification-header {
+    color: #856404;
+}
+
+.challenge-notification.success .notification-header {
+    color: #155724;
+}
+
+.challenge-notification.info .notification-header {
+    color: #0c5460;
+}
+
+.challenge-notification .notification-icon {
+    font-size: 18px;
+}
+
+.challenge-notification .notification-title {
+    font-size: 16px;
+}
+
+/* 通知内容 */
+.challenge-notification .notification-body {
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+.challenge-notification.warning .notification-body {
+    color: #856404;
+}
+
+.challenge-notification.success .notification-body {
+    color: #155724;
+}
+
+.challenge-notification.info .notification-body {
+    color: #0c5460;
+}
+
+/* 滑入动画 */
+@keyframes slideInRight {
+    from {
+        opacity: 0;
+        transform: translateX(100%);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+/* 滑出动画 */
+@keyframes slideOutRight {
+    from {
+        opacity: 1;
+        transform: translateX(0);
+    }
+    to {
+        opacity: 0;
+        transform: translateX(100%);
+    }
+}
+
+/* ==================== 挑战赛次数徽章样式 ==================== */
+
+.challenge-attempts-info {
+    margin-top: 12px;
+    text-align: center;
+}
+
+.attempts-badge {
+    display: inline-block;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 600;
+    box-shadow: 0 4px 10px rgba(102, 126, 234, 0.3);
+}
+
+/* ==================== 资格状态卡片增强样式 ==================== */
+
+.eligibility-banner {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 16px 20px;
+    border-radius: 12px;
+    margin-bottom: 20px;
+}
+
+.eligibility-banner.eligible {
+    background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
+    border: 1px solid #28a745;
+}
+
+.eligibility-banner.warning {
+    background: linear-gradient(135deg, #fff3cd 0%, #ffeeba 100%);
+    border: 1px solid #ffc107;
+}
+
+.eligibility-banner.locked {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border: 1px solid #6c757d;
+}
+
+.eligibility-banner .status-icon {
+    font-size: 24px;
+    flex-shrink: 0;
+}
+
+.eligibility-banner .status-text {
+    flex: 1;
+}
+
+.eligibility-banner .status-text strong {
+    display: block;
+    font-size: 16px;
+    margin-bottom: 4px;
+}
+
+.eligibility-banner .status-text span {
+    font-size: 14px;
+    opacity: 0.9;
+}
+
+.eligibility-banner .upgrade-btn {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    flex-shrink: 0;
+}
+
+.eligibility-banner .upgrade-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 15px rgba(102, 126, 234, 0.4);
+}
+
+/* ==================== 挑战赛押金机制样式结束 ==================== */

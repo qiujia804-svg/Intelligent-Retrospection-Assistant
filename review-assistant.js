@@ -164,20 +164,55 @@ function checkTrialStatus() {
     };
 }
 
-// 渲染VIP会员中心 - 浅紫色背景匹配网站风格
+// 渲染VIP会员中心 - 重新设计布局，支持滚动和正常退出
 function renderVipCenter(isForced = false, days = 3, hours = 0, minutes = 0) {
-    // 1. 浅紫色半透明背景，匹配网站风格
+    // 1. 浅紫色半透明背景，支持滚动
     const overlayStyle = `
-        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+        position: fixed; 
+        top: 0; 
+        left: 0; 
+        width: 100%; 
+        height: 100%;
         background: rgba(139, 92, 246, 0.95);
-        z-index: 10000; display: flex; justify-content: center; align-items: center;
+        z-index: 10000; 
+        display: flex; 
+        justify-content: center; 
+        align-items: flex-start;
         backdrop-filter: blur(10px);
+        overflow-y: auto;
+        padding: 20px 0;
     `;
 
-    // 2. 始终显示关闭按钮，允许用户退出会员中心
-    const closeBtn = `<button onclick="closeVipCenter()" style="position:absolute; top:20px; right:20px; background:rgba(255,255,255,0.2); border:none; color:#fff; width:36px; height:36px; border-radius:50%; cursor:pointer; font-size: 20px; transition: 0.3s;" onmouseover="this.style.background='rgba(255,255,255,0.4)'" onmouseout="this.style.background='rgba(255,255,255,0.2)'">×</button>`;
+    // 2. 关闭按钮 - 固定在右上角
+    const closeBtn = `
+        <button onclick="closeVipCenter()" 
+            style="
+                position: fixed; 
+                top: 20px; 
+                right: 20px; 
+                background: rgba(255,255,255,0.9); 
+                border: none; 
+                color: #667eea; 
+                width: 44px; 
+                height: 44px; 
+                border-radius: 50%; 
+                cursor: pointer; 
+                font-size: 24px; 
+                font-weight: bold;
+                transition: all 0.3s;
+                box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+                z-index: 10001;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            " 
+            onmouseover="this.style.transform='scale(1.1)'; this.style.boxShadow='0 6px 20px rgba(0,0,0,0.3)';" 
+            onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='0 4px 15px rgba(0,0,0,0.2)';">
+            ×
+        </button>
+    `;
 
-    // 3. 顶部状态栏 - 试用标签（左）+ 唯一有效期容器（右，默认隐藏）
+    // 3. 顶部状态栏
     const topStatusBar = `
         <div style="display: flex; align-items: center; justify-content: center; gap: 12px; margin-top: 15px; flex-wrap: wrap;">
             <div style="background: linear-gradient(90deg, #f59e0b, #ef4444); color: #fff; padding: 8px 20px; border-radius: 25px; font-weight: bold; font-size: 0.95em; box-shadow: 0 4px 15px rgba(245, 158, 11, 0.4);">
@@ -189,80 +224,177 @@ function renderVipCenter(isForced = false, days = 3, hours = 0, minutes = 0) {
         </div>
     `;
 
+    // 4. 卡片样式 - 统一尺寸
+    const cardStyle = `
+        background: #fff; 
+        padding: 28px 20px; 
+        border-radius: 20px; 
+        width: 260px; 
+        text-align: center; 
+        display: flex; 
+        flex-direction: column; 
+        justify-content: space-between;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+        transition: transform 0.3s, box-shadow 0.3s;
+    `;
+
+    const cardHoverStyle = `onmouseover="this.style.transform='translateY(-5px)'; this.style.boxShadow='0 15px 40px rgba(0,0,0,0.2)';" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 10px 30px rgba(0,0,0,0.15)';"`;
+
+    // 5. 按钮样式
+    const btnStylePrimary = `
+        width: 100%; 
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
+        color: #fff; 
+        border: none; 
+        padding: 12px; 
+        border-radius: 12px; 
+        cursor: pointer; 
+        font-weight: bold; 
+        margin-top: 20px;
+        transition: all 0.3s;
+        font-size: 1em;
+    `;
+
+    const btnStyleHighlight = `
+        width: 100%; 
+        background: linear-gradient(135deg, #f59e0b 0%, #ef4444 100%); 
+        color: #fff; 
+        border: none; 
+        padding: 14px; 
+        border-radius: 12px; 
+        cursor: pointer; 
+        font-weight: bold; 
+        margin-top: 20px;
+        transition: all 0.3s;
+        font-size: 1.05em;
+    `;
+
     return `
     <div id="vip-center-overlay" style="${overlayStyle}">
-        <div style="background: rgba(255,255,255,0.05); padding: 40px; border-radius: 24px; width: 90%; max-width: 1100px; text-align: center; position: relative; border: 1px solid rgba(255,255,255,0.1); box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);">
-            ${closeBtn}
-
-            <div style="margin-bottom: 35px;">
-                <h2 style="color: #fff; margin: 0 0 10px 0; font-size: 2.5em; text-shadow: 0 4px 10px rgba(0,0,0,0.3);">会员中心</h2>
-                <p style="color: rgba(255,255,255,0.7); font-size: 1.1em;">解锁全部高级功能，让复盘更高效</p>
+        ${closeBtn}
+        
+        <div style="
+            background: rgba(255,255,255,0.08); 
+            padding: 40px 30px; 
+            border-radius: 24px; 
+            width: 90%; 
+            max-width: 1200px; 
+            text-align: center; 
+            position: relative; 
+            border: 1px solid rgba(255,255,255,0.15); 
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            margin: 20px auto;
+            min-height: fit-content;
+        ">
+            <div style="margin-bottom: 40px;">
+                <h2 style="color: #fff; margin: 0 0 10px 0; font-size: 2.2em; text-shadow: 0 4px 10px rgba(0,0,0,0.3);">会员中心</h2>
+                <p style="color: rgba(255,255,255,0.8); font-size: 1.1em;">解锁全部高级功能，让复盘更高效</p>
                 ${topStatusBar}
             </div>
 
-            <div style="display: flex; gap: 20px; justify-content: center; align-items: stretch; flex-wrap: wrap;">
-
-                <div style="background: #fff; padding: 30px 20px; border-radius: 20px; width: 260px; text-align: center; display:flex; flex-direction:column; justify-content:space-between;">
+            <!-- 2x2 网格布局 -->
+            <div style="
+                display: grid; 
+                grid-template-columns: repeat(2, 1fr); 
+                gap: 25px; 
+                max-width: 600px; 
+                margin: 0 auto 30px auto;
+            ">
+                <!-- 卡片1：月度会员 -->
+                <div style="${cardStyle}" ${cardHoverStyle}>
                     <div>
-                        <h3 style="color: #333; margin-bottom: 10px; font-size: 1.2em;">月度会员</h3>
-                        <div style="font-size: 2.5em; color: #4338ca; font-weight: 800; margin: 10px 0;">¥19.9 <span style="font-size: 0.4em; color: #666; font-weight:normal">/月</span></div>
-                        <div style="color: #999; text-decoration: line-through; font-size: 0.9em;">¥29.9</div>
-                        <ul style="list-style: none; padding: 0; margin: 15px 0 0 0; color: #555; text-align: left; font-size: 0.95em; line-height: 2.2;">
-                            <li>✅ 无限复盘记录</li>
-                            <li>✅ AI智能分析</li>
-                            <li>✅ 数据图表导出</li>
-                            <li>✅ 优先客服支持</li>
+                        <h3 style="color: #333; margin-bottom: 8px; font-size: 1.2em; font-weight: 600;">月度会员</h3>
+                        <div style="font-size: 2.2em; color: #667eea; font-weight: 800; margin: 8px 0;">¥19.9 <span style="font-size: 0.4em; color: #666; font-weight: 500;">/月</span></div>
+                        <div style="color: #999; text-decoration: line-through; font-size: 0.85em; margin-bottom: 12px;">¥29.9</div>
+                        <ul style="list-style: none; padding: 0; margin: 0; color: #555; text-align: left; font-size: 0.9em; line-height: 2;">
+                            <li style="display: flex; align-items: center; gap: 6px;"><span style="color: #667eea;">✓</span> 无限复盘记录</li>
+                            <li style="display: flex; align-items: center; gap: 6px;"><span style="color: #667eea;">✓</span> AI智能分析</li>
+                            <li style="display: flex; align-items: center; gap: 6px;"><span style="color: #667eea;">✓</span> 数据图表导出</li>
+                            <li style="display: flex; align-items: center; gap: 6px;"><span style="color: #667eea;">✓</span> 优先客服支持</li>
                         </ul>
                     </div>
-                    <button onclick="handleSubscribeWithExpiry('monthly')" style="width: 100%; background: #6366f1; color: #fff; border: none; padding: 12px; border-radius: 12px; cursor: pointer; font-weight: bold; margin-top: 20px; transition: 0.3s;">立即订阅</button>
+                    <button onclick="handleSubscribeWithExpiry('monthly')" style="${btnStylePrimary}" 
+                        onmouseover="this.style.transform='scale(1.02)'; this.style.boxShadow='0 6px 20px rgba(102,126,234,0.4)';" 
+                        onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='none';">立即订阅</button>
                 </div>
 
-                <div style="background: #fff; padding: 40px 25px; border-radius: 20px; width: 280px; text-align: center; transform: scale(1.05); border: 3px solid #f59e0b; position: relative; display:flex; flex-direction:column; justify-content:space-between; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);">
-                    <div style="position: absolute; top: -15px; left: 50%; transform: translateX(-50%); background: #f59e0b; color: #000; padding: 6px 16px; border-radius: 20px; font-weight: bold; font-size: 0.9em; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">🏆 最受欢迎</div>
+                <!-- 卡片2：年度会员 -->
+                <div style="${cardStyle}" ${cardHoverStyle}>
                     <div>
-                        <h3 style="color: #333; margin-bottom: 10px; font-size: 1.4em; font-weight:bold;">年度会员</h3>
-                        <div style="font-size: 3em; color: #4338ca; font-weight: 800; margin: 10px 0;">¥199 <span style="font-size: 0.4em; color: #666; font-weight:normal">/年</span></div>
-                        <div style="color: #999; text-decoration: line-through; font-size: 0.9em;">¥358</div>
-                        <ul style="list-style: none; padding: 0; margin: 15px 0 0 0; color: #333; text-align: left; font-size: 0.95em; line-height: 2.2;">
-                            <li>✅ <b>月度会员全部权益</b></li>
-                            <li>✅ 年度成长报告</li>
-                            <li>✅ 专属成长导师</li>
-                            <li>✅ 7折续费优惠</li>
+                        <h3 style="color: #333; margin-bottom: 8px; font-size: 1.2em; font-weight: 600;">年度会员</h3>
+                        <div style="font-size: 2.2em; color: #667eea; font-weight: 800; margin: 8px 0;">¥199 <span style="font-size: 0.4em; color: #666; font-weight: 500;">/年</span></div>
+                        <div style="color: #999; text-decoration: line-through; font-size: 0.85em; margin-bottom: 12px;">¥358</div>
+                        <ul style="list-style: none; padding: 0; margin: 0; color: #555; text-align: left; font-size: 0.9em; line-height: 2;">
+                            <li style="display: flex; align-items: center; gap: 6px;"><span style="color: #667eea;">✓</span> 月度会员全部权益</li>
+                            <li style="display: flex; align-items: center; gap: 6px;"><span style="color: #667eea;">✓</span> 年度成长报告</li>
+                            <li style="display: flex; align-items: center; gap: 6px;"><span style="color: #667eea;">✓</span> 专属成长导师</li>
+                            <li style="display: flex; align-items: center; gap: 6px;"><span style="color: #667eea;">✓</span> 7折续费优惠</li>
                         </ul>
                     </div>
-                    <button onclick="handleSubscribeWithExpiry('yearly')" style="width: 100%; background: #f59e0b; color: #000; border: none; padding: 14px; border-radius: 12px; cursor: pointer; font-weight: bold; margin-top: 20px; font-size: 1.1em;">立即订阅</button>
+                    <button onclick="handleSubscribeWithExpiry('yearly')" style="${btnStylePrimary}" 
+                        onmouseover="this.style.transform='scale(1.02)'; this.style.boxShadow='0 6px 20px rgba(102,126,234,0.4)';" 
+                        onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='none';">立即订阅</button>
                 </div>
 
-                <div style="background: #fff; padding: 30px 20px; border-radius: 20px; width: 260px; text-align: center; display:flex; flex-direction:column; justify-content:space-between;">
-                    <div style="position: relative;">
-                        <span style="position: absolute; top: -40px; right: -20px; background: #ef4444; color: white; padding: 4px 10px; border-radius: 10px 0 10px 0; font-size: 0.8em;">超值</span>
-                        <h3 style="color: #333; margin-bottom: 10px; font-size: 1.2em;">终身会员</h3>
-                        <div style="font-size: 2.5em; color: #4338ca; font-weight: 800; margin: 10px 0;">¥399 <span style="font-size: 0.4em; color: #666; font-weight:normal">/永久</span></div>
-                        <div style="color: #999; text-decoration: line-through; font-size: 0.9em;">¥999</div>
-                        <ul style="list-style: none; padding: 0; margin: 15px 0 0 0; color: #555; text-align: left; font-size: 0.95em; line-height: 2.2;">
-                            <li>✅ 所有高级功能</li>
-                            <li>✅ 终身免费更新</li>
-                            <li>✅ VIP专属群</li>
-                            <li>✅ 一对一咨询</li>
+                <!-- 卡片3：年度会员+挑战（高亮） -->
+                <div style="${cardStyle.replace('box-shadow: 0 10px 30px rgba(0,0,0,0.15)', 'border: 3px solid #f59e0b; box-shadow: 0 10px 30px rgba(245,158,11,0.25)')}; position: relative;" ${cardHoverStyle}>
+                    <div style="position: absolute; top: -12px; left: 50%; transform: translateX(-50%); background: linear-gradient(135deg, #f59e0b 0%, #ef4444 100%); color: #fff; padding: 5px 14px; border-radius: 15px; font-weight: bold; font-size: 0.8em; box-shadow: 0 4px 10px rgba(245,158,11,0.3);">🏆 挑战版</div>
+                    <div>
+                        <h3 style="color: #333; margin-bottom: 8px; font-size: 1.2em; font-weight: 600; margin-top: 5px;">年度会员+挑战</h3>
+                        <div style="font-size: 2.2em; color: #f59e0b; font-weight: 800; margin: 8px 0;">¥299 <span style="font-size: 0.4em; color: #666; font-weight: 500;">/年</span></div>
+                        <div style="color: #999; text-decoration: line-through; font-size: 0.85em; margin-bottom: 12px;">¥458</div>
+                        <ul style="list-style: none; padding: 0; margin: 0; color: #555; text-align: left; font-size: 0.9em; line-height: 2;">
+                            <li style="display: flex; align-items: center; gap: 6px;"><span style="color: #f59e0b; font-weight: bold;">✓</span> <b>年度会员全部权益</b></li>
+                            <li style="display: flex; align-items: center; gap: 6px;"><span style="color: #f59e0b; font-weight: bold;">✓</span> <b>4次90天挑战机会</b></li>
+                            <li style="display: flex; align-items: center; gap: 6px;"><span style="color: #f59e0b;">✓</span> 达成赢¥299现金</li>
+                            <li style="display: flex; align-items: center; gap: 6px;"><span style="color: #f59e0b;">✓</span> 失败得1.5年会员</li>
                         </ul>
                     </div>
-                    <button onclick="handleSubscribeWithExpiry('lifetime')" style="width: 100%; background: #6366f1; color: #fff; border: none; padding: 12px; border-radius: 12px; cursor: pointer; font-weight: bold; margin-top: 20px;">立即订阅</button>
+                    <button onclick="handleSubscribeWithExpiry('yearly_challenge')" style="${btnStyleHighlight}" 
+                        onmouseover="this.style.transform='scale(1.02)'; this.style.boxShadow='0 6px 20px rgba(245,158,11,0.4)';" 
+                        onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='none';">立即订阅</button>
+                </div>
+
+                <!-- 卡片4：终身会员 -->
+                <div style="${cardStyle}; position: relative;" ${cardHoverStyle}>
+                    <div style="position: absolute; top: -12px; right: 10px; background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); color: #fff; padding: 4px 10px; border-radius: 10px; font-weight: bold; font-size: 0.75em; box-shadow: 0 4px 10px rgba(239,68,68,0.3);">超值</div>
+                    <div>
+                        <h3 style="color: #333; margin-bottom: 8px; font-size: 1.2em; font-weight: 600; margin-top: 5px;">终身会员</h3>
+                        <div style="font-size: 2.2em; color: #667eea; font-weight: 800; margin: 8px 0;">¥399 <span style="font-size: 0.4em; color: #666; font-weight: 500;">/永久</span></div>
+                        <div style="color: #999; text-decoration: line-through; font-size: 0.85em; margin-bottom: 12px;">¥999</div>
+                        <ul style="list-style: none; padding: 0; margin: 0; color: #555; text-align: left; font-size: 0.9em; line-height: 2;">
+                            <li style="display: flex; align-items: center; gap: 6px;"><span style="color: #667eea;">✓</span> 所有高级功能</li>
+                            <li style="display: flex; align-items: center; gap: 6px;"><span style="color: #667eea;">✓</span> 终身免费更新</li>
+                            <li style="display: flex; align-items: center; gap: 6px;"><span style="color: #667eea;">✓</span> VIP专属群</li>
+                            <li style="display: flex; align-items: center; gap: 6px;"><span style="color: #667eea;">✓</span> 一对一咨询</li>
+                        </ul>
+                    </div>
+                    <button onclick="handleSubscribeWithExpiry('lifetime')" style="${btnStylePrimary}" 
+                        onmouseover="this.style.transform='scale(1.02)'; this.style.boxShadow='0 6px 20px rgba(102,126,234,0.4)';" 
+                        onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='none';">立即订阅</button>
                 </div>
             </div>
 
-            <div style="margin-top: 30px; display: flex; justify-content: center; gap: 30px; color: rgba(255,255,255,0.6); font-size: 0.85em;">
-                <span>🛡️ 7天无理由退款</span>
-                <span>🔒 数据本地存储安全</span>
-                <span>⚡ 即时开通使用</span>
+            <!-- 底部保障信息 -->
+            <div style="display: flex; justify-content: center; gap: 30px; color: rgba(255,255,255,0.7); font-size: 0.9em; flex-wrap: wrap; padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.1);">
+                <span style="display: flex; align-items: center; gap: 6px;">🛡️ 7天无理由退款</span>
+                <span style="display: flex; align-items: center; gap: 6px;">🔒 数据本地存储安全</span>
+                <span style="display: flex; align-items: center; gap: 6px;">⚡ 即时开通使用</span>
             </div>
         </div>
     </div>
     `;
 }
 
-// 【新增】动态更新有效期标签 - 事件驱动逻辑
+// 【新增】动态更新有效期标签 - 事件驱动逻辑（支持挑战版套餐）
 function handleSubscribeWithExpiry(planType) {
     console.log('【VIP】用户点击订阅:', planType);
+
+    // 处理挑战版套餐
+    if (planType === 'yearly_challenge') {
+        handleChallengePlanSubscribe();
+        return;
+    }
 
     // 【动态日期计算】100%实时，禁止硬编码
     const today = new Date();
@@ -315,10 +447,53 @@ function handleSubscribeWithExpiry(planType) {
     handleSubscribe(planType);
 }
 
+/**
+ * 处理挑战版套餐订阅
+ */
+function handleChallengePlanSubscribe() {
+    console.log('【VIP】用户选择挑战版套餐');
+
+    // 更新支付弹窗信息
+    const vipPaymentOverlay = document.getElementById('vip-payment-modal');
+    const planInfoEl = document.getElementById('vip-payment-plan-info');
+    const amountEl = document.getElementById('vip-payment-amount');
+    const periodEl = document.getElementById('vip-payment-period');
+
+    if (planInfoEl) planInfoEl.textContent = '年度会员+挑战押金';
+    if (amountEl) amountEl.textContent = '299';
+    if (periodEl) periodEl.textContent = '';
+
+    // 存储当前选择的套餐（挑战版）
+    window.currentSelectedPlan = {
+        id: 'yearly_challenge',
+        name: '年度会员+挑战',
+        price: 299,
+        period: '年',
+        isChallengePlan: true // 标记为挑战版套餐
+    };
+
+    // 显示支付弹窗
+    if (vipPaymentOverlay) {
+        vipPaymentOverlay.classList.add('show');
+        console.log('【VIP】挑战版套餐支付弹窗已显示');
+    }
+}
+
 // 关闭VIP中心
+// 关闭VIP会员中心
 function closeVipCenter() {
+    console.log('【VIP】关闭会员中心');
     const overlay = document.getElementById('vip-center-overlay');
-    if (overlay) overlay.remove();
+    if (overlay) {
+        overlay.style.opacity = '0';
+        overlay.style.transition = 'opacity 0.3s ease';
+        setTimeout(() => {
+            overlay.remove();
+        }, 300);
+    }
+    
+    // 确保页面滚动恢复
+    document.body.style.overflow = '';
 }
 
 // 处理订阅 - 从VIP会员中心调用，打开支付弹窗
@@ -393,7 +568,7 @@ function closeVipPaymentModal() {
     }
 }
 
-// 确认支付 - 解锁会员
+// 确认支付 - 解锁会员（支持押金支付和挑战版套餐）
 function confirmVipPayment() {
     const plan = window.currentSelectedPlan;
     if (!plan) {
@@ -401,8 +576,59 @@ function confirmVipPayment() {
         return;
     }
 
-    // 设置会员状态
+    // 判断是否为押金支付（单独支付押金）
+    if (plan.isDeposit) {
+        // 押金支付处理
+        initChallengeData(false); // 初始化挑战数据
+        closeVipPaymentModal();
+        alert(`🎉 押金支付成功！\n\n您已获得${CHALLENGE_CONFIG.MAX_ATTEMPTS}次90天挑战机会！\n达成挑战可赢取¥${CHALLENGE_CONFIG.REWARD_AMOUNT}现金奖励！`);
+        console.log('【挑战赛】押金支付完成，挑战数据已初始化');
+        
+        // 刷新挑战赛页面
+        renderChallengePage();
+        return;
+    }
+
+    // 判断是否为挑战版套餐（年付199+押金100）
+    if (plan.isChallengePlan) {
+        // 挑战版套餐支付处理
+        localStorage.setItem(TRIAL_CONFIG.premiumKey, 'true');
+        localStorage.setItem('vip_type', 'yearly'); // 设置为年付会员
+        
+        // 初始化挑战数据
+        initChallengeData(false);
+        
+        closeVipPaymentModal();
+        
+        // 关闭会员中心弹窗
+        const memberCenterModal = document.getElementById('member-center-modal');
+        if (memberCenterModal) {
+            memberCenterModal.style.display = 'none';
+        }
+        
+        // 解除页面锁定
+        document.body.classList.remove('app-locked');
+        const lockOverlay = document.querySelector('.vip-lock-overlay');
+        if (lockOverlay) lockOverlay.remove();
+        
+        // 更新商业化系统状态（如果存在）
+        if (window.commercialSystem) {
+            window.commercialSystem.isPremium = true;
+            window.commercialSystem.unlock();
+        }
+        
+        alert(`🎉 支付成功！\n\n感谢您订阅年度会员+挑战套餐！\n您已获得${CHALLENGE_CONFIG.MAX_ATTEMPTS}次90天挑战机会！\n达成挑战可赢取¥${CHALLENGE_CONFIG.REWARD_AMOUNT}现金奖励！`);
+        console.log('【VIP+挑战赛】挑战版套餐支付完成');
+        
+        // 刷新会员中心显示
+        const status = checkTrialStatus();
+        renderVipCenter(false, status.remainingDays, status.remainingHours, status.remainingMinutes);
+        return;
+    }
+
+    // 普通会员套餐支付
     localStorage.setItem(TRIAL_CONFIG.premiumKey, 'true');
+    localStorage.setItem('vip_type', plan.id); // 保存会员类型
 
     // 关闭支付弹窗
     closeVipPaymentModal();
@@ -1852,6 +2078,20 @@ function setupReviewForm() {
                 console.log('【数据同步】更新挑战赛页面');
                 renderChallengePage();
             }
+        }
+
+        // 【挑战赛】检查挑战进度（如果用户已参与挑战）
+        if (typeof checkChallengeProgress === 'function') {
+            console.log('【挑战赛】检查挑战进度');
+            checkChallengeProgress();
+        }
+
+        // 【挑战赛】检查是否需要发送提醒或延长会员
+        if (typeof checkAndSendReminder === 'function') {
+            checkAndSendReminder();
+        }
+        if (typeof checkAndExtendMembership === 'function') {
+            checkAndExtendMembership();
         }
 
         // 【修复】强制更新折线图
@@ -4204,8 +4444,8 @@ function init() {
             historyFilter.value = currentMonth;
         }
 
-        // 添加页面加载完成提示
-        showNotification('智能复盘助手已加载完成', 'success');
+        // 页面加载完成（不显示提示）
+        console.log('智能复盘助手已加载完成');
     } catch (error) {
         console.error('应用初始化失败:', error);
         showNotification('应用加载失败，请刷新页面重试', 'error');
@@ -5561,27 +5801,322 @@ if (document.readyState === 'complete' || document.readyState === 'interactive')
 // 复盘挑战赛模块 - 高吸引力版
 // ========================================
 
+// 复盘挑战赛配置 - 押金机制版
 const CHALLENGE_CONFIG = {
-    TARGET_DAYS: 90,
-    REWARD_AMOUNT: 100
+    TARGET_DAYS: 90,           // 目标天数：90天
+    REWARD_AMOUNT: 299,        // 奖励金额：299元（年付199+押金100）
+    DEPOSIT_AMOUNT: 100,       // 押金金额：100元
+    YEARLY_PRICE: 199,         // 年付会员价格
+    MAX_ATTEMPTS: 4,           // 每年最多挑战次数
+    EXTENSION_DAYS: 183        // 失败者延长天数（约6个月，总计1.5年）
 };
 
-// 成功者荣誉榜数据
+// 挑战赛存储键名
+const CHALLENGE_STORAGE_KEYS = {
+    DEPOSIT_PAID: 'challenge_deposit_paid',           // 是否已付押金
+    ATTEMPTS_USED: 'challenge_attempts_used',         // 已使用挑战次数
+    ATTEMPTS_TOTAL: 'challenge_attempts_total',       // 总挑战次数（默认4）
+    IN_PROGRESS: 'challenge_in_progress',             // 是否正在挑战中
+    START_DATE: 'challenge_start_date',               // 当前挑战开始日期
+    LAST_CHECK_DATE: 'challenge_last_check_date',     // 上次打卡日期
+    MEMBERSHIP_START: 'membership_start_date',        // 会员开始日期
+    MEMBERSHIP_EXPIRY: 'membership_expiry_date',      // 会员到期日期
+    EXTENDED: 'membership_extended',                  // 是否已延长过
+    REMINDER_90_SENT: 'challenge_reminder_90_sent'    // 90天提醒是否已发送
+};
+
+// 成功者荣誉榜数据 - 更新为299元奖励
 const HALL_OF_FAME = [
-    { id: 'U001', name: '自律达人 张**', days: 127, reward: 100, date: '2025-12-15', avatar: '🏆' },
-    { id: 'U002', name: '成长先锋 李**', days: 98, reward: 100, date: '2025-12-10', avatar: '🥇' },
-    { id: 'U003', name: '进步之星 王**', days: 93, reward: 100, date: '2025-12-05', avatar: '🥈' },
-    { id: 'U004', name: '坚持达人 陈**', days: 91, reward: 100, date: '2025-11-28', avatar: '🥉' },
-    { id: 'U005', name: '复盘高手 刘**', days: 90, reward: 100, date: '2025-11-20', avatar: '🎖️' },
+    { id: 'U001', name: '自律达人 张**', days: 127, reward: 299, date: '2025-12-15', avatar: '🏆' },
+    { id: 'U002', name: '成长先锋 李**', days: 98, reward: 299, date: '2025-12-10', avatar: '🥇' },
+    { id: 'U003', name: '进步之星 王**', days: 93, reward: 299, date: '2025-12-05', avatar: '🥈' },
+    { id: 'U004', name: '坚持达人 陈**', days: 91, reward: 299, date: '2025-11-28', avatar: '🥉' },
+    { id: 'U005', name: '复盘高手 刘**', days: 90, reward: 299, date: '2025-11-20', avatar: '🎖️' },
 ];
 
-// 检查用户是否有参与资格（年付/终身会员）
+// 检查用户是否有参与资格（年付/终身会员且已付押金）
 function checkChallengeEligibility() {
     const isPremium = localStorage.getItem('is_premium') === 'true';
     const vipType = localStorage.getItem('vip_type');
-    const isEligible = isPremium && (vipType === 'yearly' || vipType === 'lifetime');
-    return { isEligible, isPremium, vipType };
+    const depositPaid = localStorage.getItem(CHALLENGE_STORAGE_KEYS.DEPOSIT_PAID) === 'true';
+    const isEligible = isPremium && (vipType === 'yearly' || vipType === 'lifetime') && depositPaid;
+    return { isEligible, isPremium, vipType, depositPaid };
 }
+
+// ==================== 挑战赛押金机制核心函数 ====================
+
+/**
+ * 初始化挑战赛数据（新用户或续费时调用）
+ * @param {boolean} isRenewal - 是否为续费
+ */
+function initChallengeData(isRenewal = false) {
+    const now = new Date();
+    
+    if (isRenewal) {
+        // 续费时重置挑战次数
+        localStorage.setItem(CHALLENGE_STORAGE_KEYS.ATTEMPTS_USED, '0');
+        localStorage.setItem(CHALLENGE_STORAGE_KEYS.ATTEMPTS_TOTAL, CHALLENGE_CONFIG.MAX_ATTEMPTS.toString());
+        localStorage.setItem(CHALLENGE_STORAGE_KEYS.IN_PROGRESS, 'false');
+        localStorage.setItem(CHALLENGE_STORAGE_KEYS.REMINDER_90_SENT, 'false');
+        localStorage.setItem(CHALLENGE_STORAGE_KEYS.EXTENDED, 'false');
+        console.log('【挑战赛】续费成功，挑战次数已重置为', CHALLENGE_CONFIG.MAX_ATTEMPTS, '次');
+    } else {
+        // 首次购买年付+押金
+        localStorage.setItem(CHALLENGE_STORAGE_KEYS.DEPOSIT_PAID, 'true');
+        localStorage.setItem(CHALLENGE_STORAGE_KEYS.ATTEMPTS_USED, '0');
+        localStorage.setItem(CHALLENGE_STORAGE_KEYS.ATTEMPTS_TOTAL, CHALLENGE_CONFIG.MAX_ATTEMPTS.toString());
+        localStorage.setItem(CHALLENGE_STORAGE_KEYS.IN_PROGRESS, 'false');
+        localStorage.setItem(CHALLENGE_STORAGE_KEYS.MEMBERSHIP_START, now.toISOString());
+        
+        // 设置会员到期日期（1年）
+        const expiryDate = new Date(now);
+        expiryDate.setFullYear(expiryDate.getFullYear() + 1);
+        localStorage.setItem(CHALLENGE_STORAGE_KEYS.MEMBERSHIP_EXPIRY, expiryDate.toISOString());
+        console.log('【挑战赛】押金支付成功，获得', CHALLENGE_CONFIG.MAX_ATTEMPTS, '次挑战机会');
+    }
+}
+
+/**
+ * 获取挑战赛状态
+ */
+function getChallengeStatus() {
+    const attemptsUsed = parseInt(localStorage.getItem(CHALLENGE_STORAGE_KEYS.ATTEMPTS_USED) || '0');
+    const attemptsTotal = parseInt(localStorage.getItem(CHALLENGE_STORAGE_KEYS.ATTEMPTS_TOTAL) || CHALLENGE_CONFIG.MAX_ATTEMPTS.toString());
+    const inProgress = localStorage.getItem(CHALLENGE_STORAGE_KEYS.IN_PROGRESS) === 'true';
+    const startDate = localStorage.getItem(CHALLENGE_STORAGE_KEYS.START_DATE);
+    const depositPaid = localStorage.getItem(CHALLENGE_STORAGE_KEYS.DEPOSIT_PAID) === 'true';
+    
+    return {
+        attemptsRemaining: attemptsTotal - attemptsUsed,
+        attemptsUsed,
+        attemptsTotal,
+        inProgress,
+        startDate,
+        depositPaid
+    };
+}
+
+/**
+ * 开始新挑战
+ * @returns {Object} - 结果对象 {success: boolean, message: string}
+ */
+function startNewChallenge() {
+    const status = getChallengeStatus();
+    
+    if (!status.depositPaid) {
+        return { success: false, message: '请先支付押金参与挑战' };
+    }
+    
+    if (status.attemptsRemaining <= 0) {
+        return { success: false, message: '您本年度的挑战次数已用完' };
+    }
+    
+    if (status.inProgress) {
+        return { success: false, message: '您已有进行中的挑战' };
+    }
+    
+    // 检查会员剩余时间是否足够90天
+    const membershipExpiry = new Date(localStorage.getItem(CHALLENGE_STORAGE_KEYS.MEMBERSHIP_EXPIRY) || Date.now());
+    const now = new Date();
+    const daysRemaining = Math.floor((membershipExpiry - now) / (1000 * 60 * 60 * 24));
+    
+    if (daysRemaining < CHALLENGE_CONFIG.TARGET_DAYS) {
+        return { success: false, message: '会员剩余时间不足90天，无法发起新挑战' };
+    }
+    
+    // 开始新挑战
+    localStorage.setItem(CHALLENGE_STORAGE_KEYS.IN_PROGRESS, 'true');
+    localStorage.setItem(CHALLENGE_STORAGE_KEYS.START_DATE, now.toISOString());
+    localStorage.setItem(CHALLENGE_STORAGE_KEYS.LAST_CHECK_DATE, now.toISOString());
+    
+    console.log('【挑战赛】新挑战已开始，剩余次数:', status.attemptsRemaining - 1);
+    return { success: true, message: '挑战开始！请坚持连续复盘90天' };
+}
+
+/**
+ * 检查挑战状态（每日打卡时调用）
+ * @returns {Object} - 挑战状态
+ */
+function checkChallengeProgress() {
+    const status = getChallengeStatus();
+    
+    if (!status.inProgress) {
+        return { status: 'not_started', message: '暂无进行中的挑战' };
+    }
+    
+    const streakDays = getChallengeStreakDays();
+    const startDate = new Date(status.startDate);
+    const now = new Date();
+    const daysSinceStart = Math.floor((now - startDate) / (1000 * 60 * 60 * 24));
+    
+    // 检查是否达成目标
+    if (streakDays >= CHALLENGE_CONFIG.TARGET_DAYS) {
+        // 挑战成功
+        completeChallengeSuccess();
+        return { 
+            status: 'completed', 
+            streakDays, 
+            message: '恭喜！您已完成90天挑战！' 
+        };
+    }
+    
+    // 检查是否中断（连续天数小于已进行天数，说明中断了）
+    if (streakDays < daysSinceStart && streakDays < CHALLENGE_CONFIG.TARGET_DAYS) {
+        // 挑战失败
+        completeChallengeFailure();
+        return { 
+            status: 'failed', 
+            streakDays, 
+            daysSinceStart,
+            message: '挑战中断，本次挑战失败' 
+        };
+    }
+    
+    return {
+        status: 'in_progress',
+        streakDays,
+        remainingDays: CHALLENGE_CONFIG.TARGET_DAYS - streakDays,
+        progress: Math.min(100, (streakDays / CHALLENGE_CONFIG.TARGET_DAYS) * 100),
+        message: `挑战进行中，已连续${streakDays}天`
+    };
+}
+
+/**
+ * 挑战成功处理
+ */
+function completeChallengeSuccess() {
+    // 标记挑战完成
+    localStorage.setItem(CHALLENGE_STORAGE_KEYS.IN_PROGRESS, 'false');
+    
+    // 标记已达成（用于弹窗）
+    localStorage.setItem('challenge_90_achieved', 'true');
+    
+    console.log('【挑战赛】挑战成功！奖励金额：¥' + CHALLENGE_CONFIG.REWARD_AMOUNT);
+    
+    // 显示成功弹窗
+    setTimeout(() => {
+        showChallengeSuccessModal(CHALLENGE_CONFIG.TARGET_DAYS);
+    }, 1000);
+}
+
+/**
+ * 挑战失败处理
+ */
+function completeChallengeFailure() {
+    const attemptsUsed = parseInt(localStorage.getItem(CHALLENGE_STORAGE_KEYS.ATTEMPTS_USED) || '0');
+    
+    // 增加已使用次数
+    localStorage.setItem(CHALLENGE_STORAGE_KEYS.ATTEMPTS_USED, (attemptsUsed + 1).toString());
+    localStorage.setItem(CHALLENGE_STORAGE_KEYS.IN_PROGRESS, 'false');
+    
+    const status = getChallengeStatus();
+    console.log('【挑战赛】挑战失败，已使用次数:', attemptsUsed + 1, '剩余次数:', status.attemptsRemaining);
+    
+    // 显示失败提示
+    showNotification('挑战中断', `本次挑战失败，剩余挑战次数：${status.attemptsRemaining}次`, 'warning');
+}
+
+/**
+ * 检查并发送90天提醒（每日检查）
+ */
+function checkAndSendReminder() {
+    const membershipExpiry = new Date(localStorage.getItem(CHALLENGE_STORAGE_KEYS.MEMBERSHIP_EXPIRY) || Date.now());
+    const now = new Date();
+    const daysToExpiry = Math.floor((membershipExpiry - now) / (1000 * 60 * 60 * 24));
+    
+    const reminderSent = localStorage.getItem(CHALLENGE_STORAGE_KEYS.REMINDER_90_SENT) === 'true';
+    const inProgress = localStorage.getItem(CHALLENGE_STORAGE_KEYS.IN_PROGRESS) === 'true';
+    const attemptsUsed = parseInt(localStorage.getItem(CHALLENGE_STORAGE_KEYS.ATTEMPTS_USED) || '0');
+    
+    // 到期前90天提醒（只提醒一次，且不在挑战中，且一次都没成功过）
+    if (daysToExpiry <= 90 && daysToExpiry > 89 && !reminderSent && !inProgress && attemptsUsed === 0) {
+        showNotification(
+            '挑战时间提醒',
+            '您今年的挑战时间只剩最后90天，请抓紧最后机会！',
+            'warning',
+            10000
+        );
+        localStorage.setItem(CHALLENGE_STORAGE_KEYS.REMINDER_90_SENT, 'true');
+    }
+}
+
+/**
+ * 检查是否需要自动延长会员（到期前89天0点判定）
+ */
+function checkAndExtendMembership() {
+    const membershipExpiry = new Date(localStorage.getItem(CHALLENGE_STORAGE_KEYS.MEMBERSHIP_EXPIRY) || Date.now());
+    const now = new Date();
+    const daysToExpiry = Math.floor((membershipExpiry - now) / (1000 * 60 * 60 * 24));
+    
+    const inProgress = localStorage.getItem(CHALLENGE_STORAGE_KEYS.IN_PROGRESS) === 'true';
+    const extended = localStorage.getItem(CHALLENGE_STORAGE_KEYS.EXTENDED) === 'true';
+    const depositPaid = localStorage.getItem(CHALLENGE_STORAGE_KEYS.DEPOSIT_PAID) === 'true';
+    
+    // 到期前89天判定
+    if (daysToExpiry <= 89 && depositPaid && !extended) {
+        // 检查是否未在挑战中或挑战已断开
+        const shouldExtend = !inProgress;
+        
+        if (shouldExtend) {
+            // 延长会员有效期至1.5年
+            const newExpiry = new Date(membershipExpiry);
+            newExpiry.setDate(newExpiry.getDate() + CHALLENGE_CONFIG.EXTENSION_DAYS);
+            localStorage.setItem(CHALLENGE_STORAGE_KEYS.MEMBERSHIP_EXPIRY, newExpiry.toISOString());
+            localStorage.setItem(CHALLENGE_STORAGE_KEYS.EXTENDED, 'true');
+            
+            console.log('【挑战赛】会员已自动延长至1.5年，新到期日:', newExpiry.toLocaleDateString());
+            
+            // 发送通知
+            showNotification(
+                '会员已延长',
+                '您今年的挑战时间已不足90天，无法继续挑战。已为您将会员有效期延长至1.5年。若想重新开启挑战，可续费年会员，剩余会员期自动叠加，且立即重置4次90天挑战机会。',
+                'info',
+                15000
+            );
+        }
+    }
+}
+
+/**
+ * 显示通知
+ */
+function showNotification(title, message, type = 'info', duration = 5000) {
+    // 创建通知元素
+    const notification = document.createElement('div');
+    notification.className = `challenge-notification ${type}`;
+    notification.innerHTML = `
+        <div class="notification-header">
+            <span class="notification-icon">${type === 'warning' ? '⚠️' : type === 'success' ? '✅' : 'ℹ️'}</span>
+            <span class="notification-title">${title}</span>
+        </div>
+        <div class="notification-body">${message}</div>
+    `;
+    
+    // 添加样式
+    notification.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: ${type === 'warning' ? '#fff3cd' : type === 'success' ? '#d4edda' : '#d1ecf1'};
+        border: 1px solid ${type === 'warning' ? '#ffc107' : type === 'success' ? '#28a745' : '#17a2b8'};
+        border-radius: 12px;
+        padding: 16px 20px;
+        max-width: 400px;
+        z-index: 99999;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        animation: slideInRight 0.3s ease;
+    `;
+    
+    document.body.appendChild(notification);
+    
+    // 自动移除
+    setTimeout(() => {
+        notification.style.animation = 'slideOutRight 0.3s ease';
+        setTimeout(() => notification.remove(), 300);
+    }, duration);
+}
+
+// ==================== 挑战赛押金机制核心函数结束 ====================
 
 /**
  * 获取连续复盘天数（从 localStorage 读取数据）
@@ -5607,7 +6142,7 @@ function getChallengeStreakDays() {
     return streak;
 }
 
-// 渲染挑战赛页面 - 高吸引力版
+// 渲染挑战赛页面 - 押金机制版
 function renderChallengePage() {
     console.log('【挑战赛】renderChallengePage 开始执行');
     const container = document.getElementById('challenge-page-container');
@@ -5616,7 +6151,8 @@ function renderChallengePage() {
         return;
     }
 
-    const { isEligible, isPremium, vipType } = checkChallengeEligibility();
+    const { isEligible, isPremium, vipType, depositPaid } = checkChallengeEligibility();
+    const challengeStatus = getChallengeStatus();
 
     // 实时计算连续天数，不使用缓存
     const streakDays = getChallengeStreakDays();
@@ -5640,17 +6176,17 @@ function renderChallengePage() {
                 <div class="banner-icon">🏆</div>
                 <div class="banner-text">
                     <h2>复盘挑战赛</h2>
-                    <p>亲爱的年付会员、终身会员用户，感谢您的支持！为了激励大家坚持成长，我们特别推出复盘挑战赛活动。</p>
+                    <p>年付会员+100元押金，赢取299元现金奖励！失败也能获得1.5年会员。</p>
                 </div>
                 <div class="banner-reward">
                     <span class="reward-tag">💰 坚持90天</span>
-                    <span class="reward-amount">立返¥100</span>
+                    <span class="reward-amount">立返¥${CHALLENGE_CONFIG.REWARD_AMOUNT}</span>
                 </div>
             </div>
         </div>
 
         <!-- 资格状态卡片 -->
-        ${renderEligibilityCard(isEligible, isPremium, vipType)}
+        ${renderEligibilityCard(isEligible, isPremium, vipType, depositPaid, challengeStatus)}
 
         <!-- 主仪表盘区域 -->
         <div class="challenge-dashboard">
@@ -5704,15 +6240,26 @@ function renderChallengePage() {
                         <div class="reward-success">
                             <div class="success-icon">🎊</div>
                             <p>恭喜达成挑战！</p>
-                            <span class="success-hint">截图发朋友圈，联系客服领取 <strong>¥100</strong> 现金</span>
+                            <span class="success-hint">截图发朋友圈，联系客服领取 <strong>¥${CHALLENGE_CONFIG.REWARD_AMOUNT}</strong> 现金</span>
+                        </div>
+                    ` : isEligible ? `
+                        <p class="reward-hint">已连续复盘 <strong>${streakDays}</strong> 天</p>
+                        <p class="reward-countdown">距离 <strong>¥${CHALLENGE_CONFIG.REWARD_AMOUNT}</strong> 返现还差 <strong class="highlight-num">${remaining}</strong> 天</p>
+                        <div class="challenge-attempts-info">
+                            <span class="attempts-badge">剩余挑战次数：${challengeStatus.attemptsRemaining}/${challengeStatus.attemptsTotal}</span>
                         </div>
                     ` : `
-                        <p class="reward-hint">已连续复盘 <strong>${streakDays}</strong> 天</p>
-                        <p class="reward-countdown">距离 <strong>¥100</strong> 返现还差 <strong class="highlight-num">${remaining}</strong> 天</p>
+                        <p class="reward-hint">支付押金参与挑战</p>
+                        <p class="reward-countdown">赢取 <strong>¥${CHALLENGE_CONFIG.REWARD_AMOUNT}</strong> 现金奖励</p>
                     `}
                 </div>
                 <div class="reward-actions">
-                    <button class="action-btn primary" onclick="gotoDataOverview()">
+                    ${isEligible && !challengeStatus.inProgress && challengeStatus.attemptsRemaining > 0 ? `
+                        <button class="action-btn primary" onclick="handleStartChallenge()">
+                            <span>🚀</span> 开始新挑战
+                        </button>
+                    ` : ''}
+                    <button class="action-btn ${isEligible ? 'secondary' : 'primary'}" onclick="gotoDataOverview()">
                         <span>📸</span> 前往截图
                     </button>
                     <button class="action-btn secondary" onclick="contactServiceForReward()">
@@ -5730,28 +6277,28 @@ function renderChallengePage() {
                     <div class="rule-num">1</div>
                     <div class="rule-info">
                         <h4>参与门槛</h4>
-                        <p>仅限 <strong>年付会员</strong> 和 <strong>终身用户</strong> 参加</p>
+                        <p>年付会员 + <strong>¥${CHALLENGE_CONFIG.DEPOSIT_AMOUNT}押金</strong></p>
                     </div>
                 </div>
                 <div class="rule-card">
                     <div class="rule-num">2</div>
                     <div class="rule-info">
-                        <h4>达成条件</h4>
-                        <p>连续复盘 <strong>90 天</strong>（中断需重新计算）</p>
+                        <h4>挑战次数</h4>
+                        <p>每年 <strong>${CHALLENGE_CONFIG.MAX_ATTEMPTS}次</strong>机会，中断即消耗1次</p>
                     </div>
                 </div>
                 <div class="rule-card">
                     <div class="rule-num">3</div>
                     <div class="rule-info">
-                        <h4>领取方式</h4>
-                        <p>截图数据概览，发朋友圈后联系客服</p>
+                        <h4>达成奖励</h4>
+                        <p>连续90天复盘，立返 <strong>¥${CHALLENGE_CONFIG.REWARD_AMOUNT}</strong></p>
                     </div>
                 </div>
                 <div class="rule-card highlight">
-                    <div class="rule-num">💰</div>
+                    <div class="rule-num">🛡️</div>
                     <div class="rule-info">
-                        <h4>丰厚奖励</h4>
-                        <p>凭截图 <strong>立返 ¥100 现金</strong>！</p>
+                        <h4>失败保障</h4>
+                        <p>未达成则押金转为 <strong>1.5年会员</strong></p>
                     </div>
                 </div>
             </div>
@@ -5793,16 +6340,43 @@ function renderChallengePage() {
     console.log('【挑战赛】页面渲染完成 - 连续天数:', streakDays, '进度:', progress + '%');
 }
 
-// 渲染资格状态卡片
-function renderEligibilityCard(isEligible, isPremium, vipType) {
+/**
+ * 处理开始挑战按钮点击
+ */
+function handleStartChallenge() {
+    const result = startNewChallenge();
+    if (result.success) {
+        showNotification('挑战开始', result.message, 'success');
+        renderChallengePage(); // 重新渲染页面
+    } else {
+        showNotification('无法开始挑战', result.message, 'warning');
+    }
+}
+
+// 渲染资格状态卡片 - 押金机制版
+function renderEligibilityCard(isEligible, isPremium, vipType, depositPaid, challengeStatus) {
     if (isEligible) {
+        const attemptsRemaining = challengeStatus ? challengeStatus.attemptsRemaining : 0;
+        const inProgress = challengeStatus ? challengeStatus.inProgress : false;
         return `
             <div class="eligibility-banner eligible">
                 <span class="status-icon">✅</span>
                 <div class="status-text">
                     <strong>已获得参赛资格</strong>
-                    <span>您是${vipType === 'lifetime' ? '终身' : '年付'}会员，可参与挑战赛赢取100元现金！</span>
+                    <span>您是${vipType === 'lifetime' ? '终身' : '年付'}会员且已付押金，剩余${attemptsRemaining}次挑战机会${inProgress ? '（挑战进行中）' : ''}</span>
                 </div>
+            </div>
+        `;
+    } else if (isPremium && (vipType === 'yearly' || vipType === 'lifetime')) {
+        // 是年付/终身会员但未付押金
+        return `
+            <div class="eligibility-banner warning">
+                <span class="status-icon">💰</span>
+                <div class="status-text">
+                    <strong>支付押金参与挑战</strong>
+                    <span>支付¥${CHALLENGE_CONFIG.DEPOSIT_AMOUNT}押金，赢取¥${CHALLENGE_CONFIG.REWARD_AMOUNT}现金奖励！</span>
+                </div>
+                <button class="upgrade-btn" onclick="openDepositPayment()">支付押金</button>
             </div>
         `;
     } else if (isPremium) {
@@ -5822,11 +6396,39 @@ function renderEligibilityCard(isEligible, isPremium, vipType) {
                 <span class="status-icon">🔒</span>
                 <div class="status-text">
                     <strong>开通会员参与挑战</strong>
-                    <span>成为年付或终身会员，即可参与挑战赛赢取100元</span>
+                    <span>成为年付会员+¥${CHALLENGE_CONFIG.DEPOSIT_AMOUNT}押金，赢取¥${CHALLENGE_CONFIG.REWARD_AMOUNT}现金</span>
                 </div>
                 <button class="upgrade-btn" onclick="openVipCenter()">开通会员</button>
             </div>
         `;
+    }
+}
+
+/**
+ * 打开押金支付弹窗
+ */
+function openDepositPayment() {
+    // 复用VIP支付弹窗，但显示押金信息
+    const vipPaymentOverlay = document.getElementById('vip-payment-modal');
+    const planInfoEl = document.getElementById('vip-payment-plan-info');
+    const amountEl = document.getElementById('vip-payment-amount');
+    const periodEl = document.getElementById('vip-payment-period');
+
+    if (planInfoEl) planInfoEl.textContent = '挑战押金';
+    if (amountEl) amountEl.textContent = CHALLENGE_CONFIG.DEPOSIT_AMOUNT;
+    if (periodEl) periodEl.textContent = '';
+
+    // 存储当前为押金支付
+    window.currentSelectedPlan = {
+        id: 'challenge_deposit',
+        name: '挑战押金',
+        price: CHALLENGE_CONFIG.DEPOSIT_AMOUNT,
+        isDeposit: true
+    };
+
+    if (vipPaymentOverlay) {
+        vipPaymentOverlay.classList.add('show');
+        console.log('【挑战赛】押金支付弹窗已显示');
     }
 }
 

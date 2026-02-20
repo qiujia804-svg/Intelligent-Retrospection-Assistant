@@ -1,0 +1,3 @@
+@echo off
+echo Checking Vercel deployment status...
+npx vercel --version
