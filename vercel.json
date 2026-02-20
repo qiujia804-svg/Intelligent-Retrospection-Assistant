@@ -20,10 +20,6 @@
       "destination": "/index.html"
     }
   ],
-  "domains": [
-    "deepmind.work",
-    "www.deepmind.work"
-  ],
   "redirects": [
     {
       "source": "/index.html",
