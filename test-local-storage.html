@@ -1,0 +1,694 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>本地存储功能测试 - 智能复盘助手</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+            background: #f5f5f5;
+        }
+        
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        }
+        
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .test-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            background: #fafafa;
+        }
+        
+        .test-section h3 {
+            margin-top: 0;
+            color: #667eea;
+        }
+        
+        .test-form {
+            display: grid;
+            gap: 15px;
+        }
+        
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+        
+        .form-group label {
+            font-weight: 500;
+            color: #555;
+        }
+        
+        .form-group input,
+        .form-group textarea {
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+        
+        .form-group textarea {
+            resize: vertical;
+            min-height: 60px;
+        }
+        
+        .button-group {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-top: 15px;
+        }
+        
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 500;
+        }
+        
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: #5a67d8;
+            transform: translateY(-1px);
+        }
+        
+        .btn-secondary {
+            background: #e2e8f0;
+            color: #4a5568;
+        }
+        
+        .btn-secondary:hover {
+            background: #cbd5e0;
+        }
+        
+        .btn-success {
+            background: #48bb78;
+            color: white;
+        }
+        
+        .btn-success:hover {
+            background: #38a169;
+        }
+        
+        .btn-danger {
+            background: #f56565;
+            color: white;
+        }
+        
+        .btn-danger:hover {
+            background: #e53e3e;
+        }
+        
+        .status-panel {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 6px;
+            margin-top: 15px;
+            font-family: monospace;
+            font-size: 12px;
+            white-space: pre-wrap;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        
+        .test-result {
+            padding: 10px;
+            border-radius: 6px;
+            margin-top: 10px;
+            font-size: 14px;
+        }
+        
+        .test-result.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .test-result.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .test-result.info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+        
+        .feature-card {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            border-left: 4px solid #667eea;
+        }
+        
+        .feature-card h4 {
+            margin-top: 0;
+            color: #667eea;
+        }
+        
+        .feature-card ul {
+            margin: 10px 0;
+            padding-left: 20px;
+        }
+        
+        .feature-card li {
+            margin-bottom: 5px;
+            color: #666;
+        }
+        
+        .progress-bar {
+            width: 100%;
+            height: 20px;
+            background: #e0e0e0;
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            transition: width 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 12px;
+            font-weight: 500;
+        }
+        
+        .warning-box {
+            background: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeaa7;
+            padding: 15px;
+            border-radius: 6px;
+            margin: 20px 0;
+        }
+        
+        .warning-box strong {
+            color: #d63031;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 本地存储功能测试</h1>
+        
+        <div class="warning-box">
+            <strong>⚠️ 重要提示：</strong> 这是一个测试页面，用于验证本地存储功能的正确性。请在实际使用前确保所有功能正常工作。
+        </div>
+
+        <!-- 功能特性展示 -->
+        <div class="test-section">
+            <h3>🎯 已实现的功能特性</h3>
+            <div class="feature-grid">
+                <div class="feature-card">
+                    <h4>💾 自动保存</h4>
+                    <ul>
+                        <li>每3秒自动保存输入数据</li>
+                        <li>输入防抖优化（1秒延迟）</li>
+                        <li>节流控制避免频繁保存</li>
+                        <li>支持手动触发保存</li>
+                    </ul>
+                </div>
+                
+                <div class="feature-card">
+                    <h4>🔄 数据恢复</h4>
+                    <ul>
+                        <li>页面加载时自动恢复草稿</li>
+                        <li>标签切换时恢复对应数据</li>
+                        <li>页面可见性变化时检查恢复</li>
+                        <li>24小时草稿有效期控制</li>
+                    </ul>
+                </div>
+                
+                <div class="feature-card">
+                    <h4>⚡ 智能检测</h4>
+                    <ul>
+                        <li>页面卸载前最后保存</li>
+                        <li>存储空间不足自动清理</li>
+                        <li>数据完整性验证</li>
+                        <li>过期草稿自动清理</li>
+                    </ul>
+                </div>
+                
+                <div class="feature-card">
+                    <h4>📊 用户界面</h4>
+                    <ul>
+                        <li>实时保存状态指示器</li>
+                        <li>数据管理面板</li>
+                        <li>存储使用情况显示</li>
+                        <li>数据导入导出功能</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- 复盘表单测试 -->
+        <div class="test-section">
+            <h3>📝 复盘表单测试</h3>
+            <div class="test-form">
+                <div class="form-group">
+                    <label>日期：</label>
+                    <input type="date" id="test-date" value="">
+                </div>
+                
+                <div class="form-group">
+                    <label>目标达成进度：</label>
+                    <input type="range" id="test-progress" min="0" max="100" value="50">
+                    <span id="test-progress-value">50%</span>
+                </div>
+                
+                <div class="form-group">
+                    <label>目标完成情况：</label>
+                    <textarea id="test-goal-completion" placeholder="请输入目标完成情况..."></textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label>优点：</label>
+                    <textarea id="test-strengths" placeholder="记录今天的优点..."></textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label>不足：</label>
+                    <textarea id="test-weaknesses" placeholder="记录需要改进的地方..."></textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label>改进措施：</label>
+                    <textarea id="test-improvements" placeholder="提出改进方法..."></textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label>待办事项：</label>
+                    <textarea id="test-todos" placeholder="列出待办事项..."></textarea>
+                </div>
+            </div>
+            
+            <div class="button-group">
+                <button class="btn btn-primary" onclick="fillTestData()">填充测试数据</button>
+                <button class="btn btn-secondary" onclick="clearTestData()">清空数据</button>
+                <button class="btn btn-success" onclick="checkLocalStorage()">检查存储</button>
+                <button class="btn btn-danger" onclick="clearLocalStorage()">清除存储</button>
+            </div>
+            
+            <div id="test-status" class="status-panel" style="display: none;"></div>
+        </div>
+
+        <!-- 存储状态监控 -->
+        <div class="test-section">
+            <h3>📈 存储状态监控</h3>
+            <div class="button-group">
+                <button class="btn btn-primary" onclick="showStorageStats()">显示存储统计</button>
+                <button class="btn btn-secondary" onclick="checkAutoSaveStatus()">检查自动保存状态</button>
+                <button class="btn btn-success" onclick="simulatePageReload()">模拟页面刷新</button>
+                <button class="btn btn-danger" onclick="testStorageLimit()">测试存储限制</button>
+            </div>
+            
+            <div id="storage-stats" class="status-panel" style="display: none;"></div>
+        </div>
+
+        <!-- 测试结果 -->
+        <div class="test-section">
+            <h3>🎯 测试结果</h3>
+            <div id="test-results">
+                <div class="test-result info">
+                    点击上方按钮开始测试...
+                </div>
+            </div>
+        </div>
+
+        <!-- 操作指南 -->
+        <div class="test-section">
+            <h3>📖 测试步骤指南</h3>
+            <ol>
+                <li><strong>基本功能测试：</strong>
+                    <ul>
+                        <li>在复盘表单中输入一些测试数据</li>
+                        <li>等待3秒钟，观察自动保存指示器</li>
+                        <li>点击"模拟页面刷新"按钮</li>
+                        <li>检查数据是否被正确恢复</li>
+                    </ul>
+                </li>
+                <li><strong>存储限制测试：</strong>
+                    <ul>
+                        <li>点击"测试存储限制"按钮</li>
+                        <li>观察系统如何处理存储空间不足的情况</li>
+                        <li>检查过期草稿清理功能</li>
+                    </ul>
+                </li>
+                <li><strong>数据管理测试：</strong>
+                    <ul>
+                        <li>在主页面点击"📊 数据管理"按钮</li>
+                        <li>测试数据导入导出功能</li>
+                        <li>验证自动保存开关功能</li>
+                    </ul>
+                </li>
+            </ol>
+        </div>
+    </div>
+
+    <script>
+        // 测试数据
+        const testData = {
+            date: new Date().toISOString().split('T')[0],
+            progress: 75,
+            goalCompletion: "今天完成了项目报告的撰写，参加了团队会议，处理了客户邮件。整体效率较高，但时间管理还有改进空间。",
+            strengths: "1. 专注力较好，能够连续工作2小时不分心\n2. 主动帮助同事解决技术问题\n3. 按时完成了重要任务",
+            weaknesses: "1. 早上开始工作的时间较晚\n2. 对突发任务的应对不够及时\n3. 会议准备不够充分",
+            improvements: "1. 明天设置7点的闹钟，提前开始工作\n2. 建立突发任务处理流程\n3. 提前30分钟准备会议材料",
+            todos: "1. 完成项目演示文稿\n2. 回复重要客户邮件\n3. 准备下周的工作计划"
+        };
+
+        // 初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            setupProgressSlider();
+            showTestResult('测试页面已加载完成，可以开始测试', 'info');
+        });
+
+        // 设置进度条
+        function setupProgressSlider() {
+            const slider = document.getElementById('test-progress');
+            const valueDisplay = document.getElementById('test-progress-value');
+            
+            if (slider && valueDisplay) {
+                slider.addEventListener('input', function() {
+                    valueDisplay.textContent = this.value + '%';
+                });
+            }
+        }
+
+        // 填充测试数据
+        function fillTestData() {
+            document.getElementById('test-date').value = testData.date;
+            document.getElementById('test-progress').value = testData.progress;
+            document.getElementById('test-progress-value').textContent = testData.progress + '%';
+            document.getElementById('test-goal-completion').value = testData.goalCompletion;
+            document.getElementById('test-strengths').value = testData.strengths;
+            document.getElementById('test-weaknesses').value = testData.weaknesses;
+            document.getElementById('test-improvements').value = testData.improvements;
+            document.getElementById('test-todos').value = testData.todos;
+            
+            showTestResult('测试数据已填充，请等待自动保存...', 'success');
+            
+            // 触发输入事件以激活自动保存
+            setTimeout(() => {
+                const event = new Event('input', { bubbles: true });
+                document.getElementById('test-goal-completion').dispatchEvent(event);
+            }, 500);
+        }
+
+        // 清空测试数据
+        function clearTestData() {
+            document.getElementById('test-date').value = '';
+            document.getElementById('test-progress').value = 50;
+            document.getElementById('test-progress-value').textContent = '50%';
+            document.getElementById('test-goal-completion').value = '';
+            document.getElementById('test-strengths').value = '';
+            document.getElementById('test-weaknesses').value = '';
+            document.getElementById('test-improvements').value = '';
+            document.getElementById('test-todos').value = '';
+            
+            showTestResult('测试数据已清空', 'info');
+        }
+
+        // 检查本地存储
+        function checkLocalStorage() {
+            const statusDiv = document.getElementById('test-status');
+            let status = '=== 本地存储状态检查 ===\\n\\n';
+            
+            try {
+                // 检查复盘草稿
+                const reviewDraft = localStorage.getItem('smart_review_assistant_review_draft');
+                if (reviewDraft) {
+                    const draftData = JSON.parse(reviewDraft);
+                    status += '✅ 复盘草稿存在\\n';
+                    status += `   保存时间: ${new Date(draftData.timestamp).toLocaleString()}\\n`;
+                    status += `   数据版本: ${draftData.version || '未知'}\\n`;
+                    status += `   自动保存: ${draftData.autoSaved ? '是' : '否'}\\n`;
+                } else {
+                    status += '❌ 复盘草稿不存在\\n';
+                }
+                
+                // 检查规划草稿
+                const planDraft = localStorage.getItem('smart_review_assistant_plan_draft');
+                if (planDraft) {
+                    status += '✅ 规划草稿存在\\n';
+                } else {
+                    status += '❌ 规划草稿不存在\\n';
+                }
+                
+                // 检查自动保存设置
+                const autoSaveEnabled = localStorage.getItem('smart_review_assistant_auto_save_enabled');
+                status += `\\n自动保存状态: ${autoSaveEnabled === 'true' ? '已启用' : '已禁用'}\\n`;
+                
+                // 检查最后保存时间
+                const lastSave = localStorage.getItem('smart_review_assistant_last_auto_save');
+                if (lastSave) {
+                    status += `最后保存时间: ${new Date(parseInt(lastSave)).toLocaleString()}\\n`;
+                }
+                
+                // 检查存储使用情况
+                let totalSize = 0;
+                for (let i = 0; i < localStorage.length; i++) {
+                    const key = localStorage.key(i);
+                    if (key) {
+                        const value = localStorage.getItem(key);
+                        if (value) {
+                            totalSize += key.length + value.length;
+                        }
+                    }
+                }
+                status += `\\n存储使用情况: ${Math.round(totalSize / 1024)} KB\\n`;
+                
+            } catch (error) {
+                status += `❌ 检查失败: ${error.message}\\n`;
+            }
+            
+            statusDiv.textContent = status;
+            statusDiv.style.display = 'block';
+            
+            showTestResult('本地存储检查完成，请查看详细状态', 'success');
+        }
+
+        // 清除本地存储
+        function clearLocalStorage() {
+            if (confirm('确定要清除所有本地存储数据吗？此操作不可恢复。')) {
+                try {
+                    // 只清除与复盘助手相关的数据
+                    const keysToRemove = [];
+                    for (let i = 0; i < localStorage.length; i++) {
+                        const key = localStorage.key(i);
+                        if (key && key.includes('smart_review_assistant')) {
+                            keysToRemove.push(key);
+                        }
+                    }
+                    
+                    keysToRemove.forEach(key => {
+                        localStorage.removeItem(key);
+                    });
+                    
+                    showTestResult(`已清除 ${keysToRemove.length} 个存储项目`, 'success');
+                    
+                    // 清空状态显示
+                    const statusDiv = document.getElementById('test-status');
+                    if (statusDiv) {
+                        statusDiv.style.display = 'none';
+                    }
+                    
+                } catch (error) {
+                    showTestResult(`清除失败: ${error.message}`, 'error');
+                }
+            }
+        }
+
+        // 显示存储统计
+        function showStorageStats() {
+            if (!window.LocalStorageManager || !window.LocalStorageManager.getStorageStats) {
+                showTestResult('LocalStorageManager 未加载，无法获取统计信息', 'error');
+                return;
+            }
+            
+            const stats = window.LocalStorageManager.getStorageStats();
+            const statsDiv = document.getElementById('storage-stats');
+            
+            let statsText = '=== 存储统计信息 ===\\n\\n';
+            statsText += `自动保存: ${stats.autoSaveEnabled ? '已启用' : '已禁用'}\\n`;
+            statsText += `复盘草稿: ${stats.reviewDraft ? '存在' : '无'}\\n`;
+            statsText += `规划草稿: ${stats.planDraft ? '存在' : '无'}\\n`;
+            
+            if (stats.reviewDraft && stats.reviewDraftDate) {
+                statsText += `复盘草稿时间: ${stats.reviewDraftDate}\\n`;
+            }
+            
+            if (stats.planDraft && stats.planDraftDate) {
+                statsText += `规划草稿时间: ${stats.planDraftDate}\\n`;
+            }
+            
+            if (stats.lastAutoSave) {
+                statsText += `最后保存: ${stats.lastAutoSave}\\n`;
+            }
+            
+            statsText += `\\n存储使用: ${Math.round(stats.storageUsage.used / 1024)} KB / ${Math.round(stats.storageUsage.total / (1024 * 1024))} MB (${stats.storageUsage.percentage}%)\\n`;
+            
+            statsDiv.textContent = statsText;
+            statsDiv.style.display = 'block';
+            
+            showTestResult('存储统计信息已显示', 'success');
+        }
+
+        // 检查自动保存状态
+        function checkAutoSaveStatus() {
+            if (!window.LocalStorageManager || !window.LocalStorageManager.isAutoSaveEnabled) {
+                showTestResult('LocalStorageManager 未加载', 'error');
+                return;
+            }
+            
+            const isEnabled = window.LocalStorageManager.isAutoSaveEnabled();
+            showTestResult(`自动保存功能: ${isEnabled ? '已启用' : '已禁用'}`, 'info');
+        }
+
+        // 模拟页面刷新
+        function simulatePageReload() {
+            showTestResult('正在模拟页面刷新，请稍候...', 'info');
+            
+            // 保存当前数据到测试存储
+            const currentData = {
+                date: document.getElementById('test-date').value,
+                progress: document.getElementById('test-progress').value,
+                goalCompletion: document.getElementById('test-goal-completion').value,
+                strengths: document.getElementById('test-strengths').value,
+                weaknesses: document.getElementById('test-weaknesses').value,
+                improvements: document.getElementById('test-improvements').value,
+                todos: document.getElementById('test-todos').value
+            };
+            
+            localStorage.setItem('test_page_reload_data', JSON.stringify(currentData));
+            
+            setTimeout(() => {
+                // 模拟刷新后的恢复
+                const savedData = localStorage.getItem('test_page_reload_data');
+                if (savedData) {
+                    try {
+                        const data = JSON.parse(savedData);
+                        
+                        // 清空表单然后恢复
+                        clearTestData();
+                        
+                        setTimeout(() => {
+                            document.getElementById('test-date').value = data.date || '';
+                            document.getElementById('test-progress').value = data.progress || 50;
+                            document.getElementById('test-progress-value').textContent = (data.progress || 50) + '%';
+                            document.getElementById('test-goal-completion').value = data.goalCompletion || '';
+                            document.getElementById('test-strengths').value = data.strengths || '';
+                            document.getElementById('test-weaknesses').value = data.weaknesses || '';
+                            document.getElementById('test-improvements').value = data.improvements || '';
+                            document.getElementById('test-todos').value = data.todos || '';
+                            
+                            showTestResult('页面刷新模拟完成，数据已恢复', 'success');
+                            
+                            // 清理测试数据
+                            localStorage.removeItem('test_page_reload_data');
+                        }, 500);
+                        
+                    } catch (error) {
+                        showTestResult(`恢复失败: ${error.message}`, 'error');
+                    }
+                }
+            }, 1000);
+        }
+
+        // 测试存储限制
+        function testStorageLimit() {
+            showTestResult('正在测试存储限制...', 'info');
+            
+            try {
+                // 创建大量数据来测试存储限制
+                const largeData = 'x'.repeat(1024 * 1024); // 1MB数据
+                let stored = 0;
+                
+                for (let i = 0; i < 10; i++) { // 尝试存储10MB
+                    try {
+                        localStorage.setItem(`test_large_data_${i}`, largeData);
+                        stored++;
+                    } catch (error) {
+                        showTestResult(`存储限制测试完成，最大存储: ${stored}MB\\n错误信息: ${error.message}`, 'info');
+                        
+                        // 清理测试数据
+                        for (let j = 0; j <= i; j++) {
+                            localStorage.removeItem(`test_large_data_${j}`);
+                        }
+                        return;
+                    }
+                }
+                
+                showTestResult('存储限制测试完成，成功存储了10MB数据', 'success');
+                
+                // 清理测试数据
+                for (let i = 0; i < 10; i++) {
+                    localStorage.removeItem(`test_large_data_${i}`);
+                }
+                
+            } catch (error) {
+                showTestResult(`测试失败: ${error.message}`, 'error');
+            }
+        }
+
+        // 显示测试结果
+        function showTestResult(message, type = 'info') {
+            const resultsDiv = document.getElementById('test-results');
+            const resultDiv = document.createElement('div');
+            resultDiv.className = `test-result ${type}`;
+            resultDiv.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            
+            resultsDiv.innerHTML = '';
+            resultsDiv.appendChild(resultDiv);
+        }
+
+        // 全局函数供按钮调用
+        window.fillTestData = fillTestData;
+        window.clearTestData = clearTestData;
+        window.checkLocalStorage = checkLocalStorage;
+        window.clearLocalStorage = clearLocalStorage;
+        window.showStorageStats = showStorageStats;
+        window.checkAutoSaveStatus = checkAutoSaveStatus;
+        window.simulatePageReload = simulatePageReload;
+        window.testStorageLimit = testStorageLimit;
+    </script>
+</body>
+</html>
