@@ -388,51 +388,11 @@
     }, AUTO_SAVE_CONFIG.interval);
 
     /**
-     * 显示自动保存指示器
+     * 显示自动保存指示器（已禁用，避免遮挡界面）
      */
     function showAutoSaveIndicator(message) {
-        // 创建或获取指示器元素
-        let indicator = document.getElementById('auto-save-indicator');
-        if (!indicator) {
-            indicator = document.createElement('div');
-            indicator.id = 'auto-save-indicator';
-            indicator.className = 'auto-save-indicator';
-            indicator.innerHTML = `
-                <style>
-                    .auto-save-indicator {
-                        position: fixed;
-                        top: 20px;
-                        right: 20px;
-                        background: rgba(76, 175, 80, 0.9);
-                        color: white;
-                        padding: 8px 16px;
-                        border-radius: 4px;
-                        font-size: 12px;
-                        z-index: 10000;
-                        opacity: 0;
-                        transform: translateY(-10px);
-                        transition: all 0.3s ease;
-                        pointer-events: none;
-                    }
-                    .auto-save-indicator.show {
-                        opacity: 1;
-                        transform: translateY(0);
-                    }
-                </style>
-                <span>💾 ${message}</span>
-            `;
-            document.body.appendChild(indicator);
-        }
-        
-        indicator.querySelector('span').innerHTML = `💾 ${message}`;
-        indicator.classList.add('show');
-        
-        // 3秒后隐藏
-        setTimeout(() => {
-            if (indicator) {
-                indicator.classList.remove('show');
-            }
-        }, 3000);
+        // 静默保存，不显示任何UI提示
+        console.log('[LocalStorageManager]', message);
     }
 
     /**
@@ -451,17 +411,11 @@
             const draftData = safeJsonParse(localStorage.getItem(STORAGE_KEYS.REVIEW_FORM_DRAFT));
             if (draftData && !isDraftExpired(draftData.timestamp)) {
                 restored = restoreReviewFormData(draftData);
-                if (restored) {
-                    showAutoSaveIndicator('已恢复上次未保存的复盘数据');
-                }
             }
         } else if (activeTab.id === 'plan-content') {
             const draftData = safeJsonParse(localStorage.getItem(STORAGE_KEYS.PLAN_FORM_DRAFT));
             if (draftData && !isDraftExpired(draftData.timestamp)) {
                 restored = restorePlanFormData(draftData);
-                if (restored) {
-                    showAutoSaveIndicator('已恢复上次未保存的规划数据');
-                }
             }
         }
         

@@ -18,149 +18,19 @@
     }
 
     /**
-     * 创建自动保存状态指示器
+     * 创建自动保存状态指示器（已禁用，避免遮挡界面）
      */
     function createAutoSaveIndicator() {
-        // 创建状态指示器容器
-        const indicator = document.createElement('div');
-        indicator.id = 'auto-save-status';
-        indicator.className = 'auto-save-status';
-        indicator.innerHTML = `
-            <div class="save-status-icon">💾</div>
-            <div class="save-status-text">自动保存已启用</div>
-            <div class="save-status-time">刚刚</div>
-        `;
-
-        // 添加样式
-        const style = document.createElement('style');
-        style.textContent = `
-            .auto-save-status {
-                position: fixed;
-                top: 20px;
-                right: 20px;
-                background: rgba(76, 175, 80, 0.9);
-                color: white;
-                padding: 8px 16px;
-                border-radius: 20px;
-                font-size: 12px;
-                z-index: 10000;
-                display: flex;
-                align-items: center;
-                gap: 8px;
-                box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-                transition: all 0.3s ease;
-                backdrop-filter: blur(10px);
-                border: 1px solid rgba(255,255,255,0.2);
-            }
-            
-            .auto-save-status.saving {
-                background: rgba(255, 152, 0, 0.9);
-                animation: pulse 1s infinite;
-            }
-            
-            .auto-save-status.error {
-                background: rgba(244, 67, 54, 0.9);
-            }
-            
-            .auto-save-status.disabled {
-                background: rgba(158, 158, 158, 0.9);
-            }
-            
-            .save-status-icon {
-                font-size: 14px;
-                animation: rotate 2s linear infinite;
-            }
-            
-            .save-status-text {
-                font-weight: 500;
-            }
-            
-            .save-status-time {
-                opacity: 0.8;
-                font-size: 10px;
-            }
-            
-            @keyframes pulse {
-                0% { opacity: 1; }
-                50% { opacity: 0.7; }
-                100% { opacity: 1; }
-            }
-            
-            @keyframes rotate {
-                from { transform: rotate(0deg); }
-                to { transform: rotate(360deg); }
-            }
-            
-            /* 移动端适配 */
-            @media (max-width: 768px) {
-                .auto-save-status {
-                    top: 10px;
-                    right: 10px;
-                    padding: 6px 12px;
-                    font-size: 11px;
-                }
-                
-                .save-status-time {
-                    display: none;
-                }
-            }
-        `;
-
-        document.head.appendChild(style);
-        document.body.appendChild(indicator);
-
-        return indicator;
+        // 静默处理，不创建任何UI元素
+        console.log('[LocalStorageUI] 自动保存状态指示器已禁用');
     }
 
     /**
-     * 更新自动保存状态
+     * 更新自动保存状态（已禁用，避免遮挡界面）
      */
     function updateAutoSaveStatus(status, message = null, time = null) {
-        const indicator = document.getElementById('auto-save-status');
-        if (!indicator) return;
-
-        // 移除所有状态类
-        indicator.classList.remove('saving', 'error', 'disabled');
-
-        // 根据状态更新显示
-        let icon = '💾';
-        let text = '自动保存已启用';
-        let statusTime = time || '刚刚';
-
-        switch (status) {
-            case 'saving':
-                indicator.classList.add('saving');
-                icon = '⏳';
-                text = message || '正在保存...';
-                break;
-            case 'saved':
-                icon = '✅';
-                text = message || '已自动保存';
-                statusTime = '刚刚';
-                break;
-            case 'error':
-                indicator.classList.add('error');
-                icon = '❌';
-                text = message || '保存失败';
-                break;
-            case 'disabled':
-                indicator.classList.add('disabled');
-                icon = '⏸️';
-                text = '自动保存已禁用';
-                statusTime = '';
-                break;
-        }
-
-        indicator.querySelector('.save-status-icon').textContent = icon;
-        indicator.querySelector('.save-status-text').textContent = text;
-        indicator.querySelector('.save-status-time').textContent = statusTime;
-
-        // 3秒后恢复默认状态
-        if (status !== 'disabled') {
-            setTimeout(() => {
-                updateAutoSaveStatus('enabled');
-            }, 3000);
-        }
+        // 静默处理，不更新任何UI
+        console.log('[LocalStorageUI] 自动保存状态:', status, message);
     }
 
     /**
@@ -590,17 +460,11 @@
     }
 
     /**
-     * 更新自动保存状态
+     * 更新自动保存状态（已禁用）
      */
     function updateAutoSaveStatus(status) {
-        const indicator = document.getElementById('auto-save-status');
-        if (!indicator) {
-            createAutoSaveIndicator();
-            updateAutoSaveStatus(status);
-            return;
-        }
-
-        updateAutoSaveStatus(status);
+        // 静默处理，不更新任何UI
+        console.log('[LocalStorageUI] 自动保存状态:', status);
     }
 
     /**
@@ -757,10 +621,7 @@
             return;
         }
 
-        // 创建自动保存状态指示器
-        createAutoSaveIndicator();
-
-        // 创建数据管理面板
+        // 创建数据管理面板（自动保存状态指示器已禁用）
         createDataManagementPanel();
 
         // 添加数据管理按钮到页面

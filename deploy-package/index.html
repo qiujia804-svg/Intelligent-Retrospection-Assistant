@@ -1,0 +1,1747 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>智能复盘助手 - 每日复盘、明日规划、成长跟踪</title>
+
+    <!-- PWA 配置 -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#667eea">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="复盘助手">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="msapplication-TileColor" content="#667eea">
+    <meta name="msapplication-tap-highlight" content="no">
+
+    <!-- iOS 启动图 -->
+    <link rel="apple-touch-icon" href="icons/icon-192x192.png">
+    <link rel="apple-touch-startup-image" href="icons/splash-640x1136.png" media="(device-width: 320px) and (device-height: 568px)">
+    <link rel="apple-touch-startup-image" href="icons/splash-750x1334.png" media="(device-width: 375px) and (device-height: 667px)">
+    <link rel="apple-touch-startup-image" href="icons/splash-1242x2208.png" media="(device-width: 414px) and (device-height: 736px)">
+    <link rel="apple-touch-startup-image" href="icons/splash-1125x2436.png" media="(device-width: 375px) and (device-height: 812px)">
+    <link rel="apple-touch-startup-image" href="icons/splash-1170x2532.png" media="(device-width: 390px) and (device-height: 844px)">
+    <meta name="description" content="智能复盘助手是一款帮助您进行每日复盘、明日规划、历史记录管理和智能成长建议的工具，提升个人效率与自我管理能力。">
+    <meta name="keywords" content="智能复盘,每日复盘,明日规划,时间管理,个人成长,效率提升,四象限法则">
+    <meta name="author" content="智能复盘助手团队">
+    <meta name="robots" content="index, follow">
+    <meta name="rating" content="general">
+    
+    <!-- 开放图谱标签 -->
+    <meta property="og:title" content="智能复盘助手 - 每日复盘、明日规划、成长跟踪">
+    <meta property="og:description" content="智能复盘助手是一款帮助您进行每日复盘、明日规划、历史记录管理和智能成长建议的工具，提升个人效率与自我管理能力。">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://deepmind.work/">
+    <meta property="og:image" content="https://deepmind.work/og-image.jpg">
+    
+    <!-- Twitter Cards -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="智能复盘助手 - 每日复盘、明日规划、成长跟踪">
+    <meta name="twitter:description" content="智能复盘助手是一款帮助您进行每日复盘、明日规划、历史记录管理和智能成长建议的工具，提升个人效率与自我管理能力。">
+    <meta name="twitter:image" content="https://deepmind.work/og-image.jpg">
+    
+    <!-- 结构化数据 -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebApplication",
+      "name": "智能复盘助手",
+      "description": "智能复盘助手是一款帮助您进行每日复盘、明日规划、历史记录管理和智能成长建议的工具，提升个人效率与自我管理能力。",
+      "url": "https://deepmind.work/",
+      "applicationCategory": "ProductivityApplication",
+      "operatingSystem": "Web",
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "CNY",
+        "availability": "https://schema.org/InStock"
+      }
+    }
+    </script>
+    
+    <link rel="stylesheet" href="review-assistant.css">
+    <link rel="stylesheet" href="mobile.css">
+    <!-- 复盘行动指南样式 -->
+    <style>
+        /* 复盘行动指南 - 基础重置 */
+        .ra-container, .ra-container * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        /* 弹窗遮罩层 */
+        .ra-modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.8);
+            z-index: 99999;
+            animation: raFadeIn 0.3s ease;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .ra-modal-overlay.ra-show {
+            display: flex;
+        }
+
+        /* 弹窗主体 */
+        .ra-modal {
+            background: linear-gradient(145deg, #ffffff 0%, #f8f9ff 100%);
+            border-radius: 20px;
+            width: 90%;
+            max-width: 600px;
+            max-height: 90vh;
+            overflow: hidden;
+            box-shadow: 0 25px 80px rgba(102, 126, 234, 0.3);
+            animation: raSlideUp 0.4s ease;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+
+        /* 关闭按钮 */
+        .ra-close-btn {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: rgba(255, 255, 255, 0.9);
+            border: none;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 18px;
+            color: #666;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            z-index: 10;
+        }
+
+        .ra-close-btn:hover {
+            background: #667eea;
+            color: white;
+            transform: scale(1.1);
+        }
+
+        /* 弹窗头部 */
+        .ra-modal-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 25px 30px;
+            text-align: center;
+            color: white;
+            position: relative;
+        }
+
+        .ra-modal-title {
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .ra-modal-subtitle {
+            font-size: 14px;
+            opacity: 0.9;
+            margin: 0;
+        }
+
+        /* 步骤指示器 */
+        .ra-step-indicator {
+            position: absolute;
+            top: 15px;
+            left: 20px;
+            background: rgba(255, 255, 255, 0.2);
+            padding: 5px 12px;
+            border-radius: 15px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        /* 滑动容器 */
+        .ra-slider-container {
+            position: relative;
+            flex: 1;
+            overflow: hidden;
+            padding: 30px;
+        }
+
+        /* 滑动轨道 */
+        .ra-slider {
+            display: flex;
+            transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        /* 单个幻灯片 */
+        .ra-slide {
+            min-width: 100%;
+            padding: 0 10px;
+            box-sizing: border-box;
+            opacity: 0;
+            transform: translateX(50px);
+            transition: all 0.5s ease;
+        }
+
+        .ra-slide.ra-active {
+            opacity: 1;
+            transform: translateX(0);
+        }
+
+        /* 图片区域 */
+        .ra-image-container {
+            margin-bottom: 25px;
+            text-align: center;
+        }
+
+        .ra-image {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+            border-radius: 16px;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+        }
+
+        /* 内容区域 */
+        .ra-content {
+            text-align: center;
+            padding: 0 10px;
+        }
+
+        .ra-slide-title {
+            font-size: 20px;
+            font-weight: 700;
+            color: #333;
+            margin-bottom: 15px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .ra-slide-text {
+            font-size: 15px;
+            color: #666;
+            line-height: 1.7;
+            margin: 0;
+        }
+
+        /* 导航控制 */
+        .ra-navigation {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 25px;
+            padding: 0 10px;
+        }
+
+        .ra-nav-btn {
+            background: white;
+            border: 2px solid #667eea;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 18px;
+            color: #667eea;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.2);
+        }
+
+        .ra-nav-btn:hover:not(:disabled) {
+            background: #667eea;
+            color: white;
+            transform: scale(1.1);
+        }
+
+        .ra-nav-btn:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+        }
+
+        /* 指示点 */
+        .ra-dots {
+            display: flex;
+            gap: 8px;
+            justify-content: center;
+        }
+
+        .ra-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background-color: #ddd;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .ra-dot.ra-active {
+            background: #667eea;
+            width: 24px;
+            border-radius: 4px;
+        }
+
+        /* 底部确认区域 */
+        .ra-footer {
+            padding: 20px 30px 25px;
+            border-top: 1px solid #eee;
+            background: #fafbfc;
+        }
+
+        .ra-confirm-area {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 20px;
+        }
+
+        /* 自定义复选框 */
+        .ra-checkbox-label {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            cursor: pointer;
+            user-select: none;
+            font-size: 14px;
+            color: #555;
+        }
+
+        .ra-checkbox {
+            display: none;
+        }
+
+        .ra-checkmark {
+            width: 20px;
+            height: 20px;
+            border: 2px solid #ddd;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            position: relative;
+            background: white;
+        }
+
+        .ra-checkmark::after {
+            content: '✓';
+            color: white;
+            font-size: 12px;
+            font-weight: bold;
+            opacity: 0;
+            transform: scale(0);
+            transition: all 0.2s ease;
+        }
+
+        .ra-checkbox:checked + .ra-checkmark {
+            background: #667eea;
+            border-color: #667eea;
+        }
+
+        .ra-checkbox:checked + .ra-checkmark::after {
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        /* 确定按钮 */
+        .ra-confirm-btn {
+            padding: 10px 24px;
+            background: #ccc;
+            color: white;
+            border: none;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: not-allowed;
+            transition: all 0.3s ease;
+        }
+
+        .ra-confirm-btn.ra-enabled {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+        }
+
+        .ra-confirm-btn.ra-enabled:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 16px rgba(102, 126, 234, 0.4);
+        }
+
+        /* 动画 */
+        @keyframes raFadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes raSlideUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* 响应式设计 */
+        @media (max-width: 600px) {
+            .ra-modal {
+                width: 95%;
+                max-height: 85vh;
+            }
+
+            .ra-modal-header {
+                padding: 20px;
+            }
+
+            .ra-modal-title {
+                font-size: 20px;
+            }
+
+            .ra-slider-container {
+                padding: 20px;
+            }
+
+            .ra-image {
+                height: 160px;
+            }
+
+            .ra-slide-title {
+                font-size: 18px;
+            }
+
+            .ra-slide-text {
+                font-size: 14px;
+            }
+
+            .ra-nav-btn {
+                width: 35px;
+                height: 35px;
+                font-size: 16px;
+            }
+
+            .ra-footer {
+                padding: 15px 20px 20px;
+            }
+
+            .ra-confirm-area {
+                flex-direction: column;
+                gap: 15px;
+            }
+
+            .ra-confirm-btn {
+                width: 100%;
+            }
+        }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+    <!-- EmailJS SDK -->
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>智能复盘助手</h1>
+            <p>记录每日成长，规划高效未来</p>
+            <div class="member-controls">
+                <button id="login-btn" class="member-btn">登录</button>
+                <button id="register-btn" class="member-btn register">注册</button>
+                <button id="member-center-btn" class="member-btn" style="display: none;">会员中心</button>
+                <button id="logout-btn" class="member-btn" style="display: none;">退出登录</button>
+            </div>
+        </header>
+        
+        <!-- 登录模态框 -->
+        <div id="login-modal" class="modal">
+            <div class="modal-content">
+                <span class="close">&times;</span>
+                <h2>会员登录</h2>
+                <form id="login-form">
+                    <div class="form-group">
+                        <label for="login-email">邮箱</label>
+                        <input type="email" id="login-email" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="login-password">密码</label>
+                        <input type="password" id="login-password" required>
+                    </div>
+                    <div class="form-group remember-me">
+                        <label for="remember-me">记住我</label>
+                        <input type="checkbox" id="remember-me">
+                    </div>
+                    <button type="submit" class="submit-btn">登录</button>
+                    <div class="modal-footer">
+                        <p>还没有账号？<a href="#" id="switch-to-register">立即注册</a></p>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <!-- 注册模态框 -->
+        <div id="register-modal" class="modal">
+            <div class="modal-content">
+                <span class="close">&times;</span>
+                <h2>会员注册</h2>
+                <form id="register-form">
+                    <div class="form-group">
+                        <label for="register-name">用户名</label>
+                        <input type="text" id="register-name" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="register-email">邮箱</label>
+                        <div class="email-verify-group">
+                            <input type="email" id="register-email" required>
+                            <button type="button" id="send-verify-code" class="verify-btn">发送验证码</button>
+                        </div>
+                    </div>
+                    <div class="form-group" id="verify-code-group" style="display: none;">
+                        <label for="register-verify-code">邮箱验证码</label>
+                        <input type="text" id="register-verify-code" placeholder="请输入6位验证码" maxlength="6">
+                        <div id="verify-code-hint" class="verify-code-hint">✉️ 验证码已发送至您的邮箱，请查收</div>
+                    </div>
+                    <div class="form-group">
+                        <label for="register-password">密码</label>
+                        <input type="password" id="register-password" required minlength="6">
+                    </div>
+                    <div class="form-group">
+                        <label for="register-confirm-password">确认密码</label>
+                        <input type="password" id="register-confirm-password" required minlength="6">
+                    </div>
+                    <button type="submit" class="submit-btn" id="register-submit-btn" disabled>注册</button>
+                    <div class="modal-footer">
+                        <p>已有账号？<a href="#" id="switch-to-login">立即登录</a></p>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- 支付模态框 (高颜值版 - z-index: 10001) -->
+        <div id="payment-modal" class="payment-modal-overlay">
+            <div class="payment-modal-container">
+                <!-- 关闭按钮 -->
+                <button class="payment-modal-close" id="payment-modal-close">&times;</button>
+
+                <!-- 头部 -->
+                <div class="payment-modal-header">
+                    <div class="payment-header-icon">💎</div>
+                    <h2 class="payment-header-title">确认支付</h2>
+                    <p class="payment-header-subtitle" id="payment-plan-name">解锁全部高级功能</p>
+                </div>
+
+                <!-- 价格信息 -->
+                <div class="payment-price-section">
+                    <div class="payment-price-tag">
+                        <span class="payment-currency">¥</span>
+                        <span class="payment-amount" id="payment-amount-value">19.9</span>
+                        <span class="payment-period" id="payment-period">/月</span>
+                    </div>
+                    <div class="payment-original-price" id="payment-original">原价 ¥29.9</div>
+                </div>
+
+                <!-- 收款码区域 -->
+                <div class="payment-qrcode-section">
+                    <div class="payment-qrcode-tabs">
+                        <button class="payment-tab active" data-tab="wechat">
+                            <span class="tab-icon">💚</span> 微信支付
+                        </button>
+                        <button class="payment-tab" data-tab="alipay">
+                            <span class="tab-icon">💙</span> 支付宝
+                        </button>
+                    </div>
+
+                    <div class="payment-qrcode-content">
+                        <!-- 微信收款码 -->
+                        <div class="payment-qrcode-item active" id="qrcode-wechat">
+                            <div class="qrcode-wrapper">
+                                <!-- 请将此处图片路径修改为您的实际收款码图片 -->
+                                <img src="https://coze-coding-project.tos.coze.site/coze_storage_7600959883038523443/upload_e09b2f8c_dbf946a9.jpg?sign=2085108242-912f5ea9d7-0-e00a5817a312e3ab149abd1df96a66b33979475a3254113298c8ce544e0155fd" alt="微信收款码" class="qrcode-image">
+                            </div>
+                            <p class="qrcode-tip">请使用微信扫描二维码完成支付</p>
+                        </div>
+
+                        <!-- 支付宝收款码 -->
+                        <div class="payment-qrcode-item" id="qrcode-alipay">
+                            <div class="qrcode-wrapper">
+                                <!-- 请将此处图片路径修改为您的实际收款码图片 -->
+                                <img src="https://coze-coding-project.tos.coze.site/coze_storage_7600959883038523443/upload_a179d6bd_c1e9b3c8.jpg?sign=2085109239-f6b8cf20c4-0-3a4dba85b95d70e1a499c8c13cad49fb2ee1049b51ad1a4a07e578619711dd5b" alt="支付宝收款码" class="qrcode-image">
+                            </div>
+                            <p class="qrcode-tip">请使用支付宝扫描二维码完成支付</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 操作按钮 -->
+                <div class="payment-actions-section">
+                    <button class="payment-confirm-btn" id="payment-confirm">
+                        <span class="btn-icon">✓</span> 我已完成支付
+                    </button>
+                    <button class="payment-cancel-btn" id="payment-cancel">取消</button>
+                </div>
+
+                <!-- 信任背书 -->
+                <div class="payment-trust-section">
+                    <div class="trust-item">
+                        <span class="trust-icon">🛡️</span>
+                        <span>7天无理由退款</span>
+                    </div>
+                    <div class="trust-item">
+                        <span class="trust-icon">🔒</span>
+                        <span>安全支付保障</span>
+                    </div>
+                    <div class="trust-item">
+                        <span class="trust-icon">⚡</span>
+                        <span>即时开通</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 旧会员中心模态框已删除，使用 renderVipCenter() 动态生成 -->
+
+        <!-- VIP支付弹窗 (z-index: 20000) -->
+        <div id="vip-payment-modal" class="vip-payment-overlay">
+            <div class="vip-payment-container">
+                <button class="vip-payment-close" id="vip-payment-close">&times;</button>
+
+                <div class="vip-payment-header">
+                    <div class="vip-payment-icon">💎</div>
+                    <h3 class="vip-payment-title">完成支付</h3>
+                    <p class="vip-payment-plan-info" id="vip-payment-plan-info">--</p>
+                </div>
+
+                <div class="vip-payment-price">
+                    <span class="price-currency">¥</span>
+                    <span class="price-amount" id="vip-payment-amount">0</span>
+                    <span class="price-period" id="vip-payment-period">/月</span>
+                </div>
+
+                <!-- 支付方式选择 -->
+                <div class="vip-payment-methods">
+                    <button class="vip-method-btn active" data-method="wechat">
+                        <span class="method-icon">💚</span>
+                        <span class="method-name">微信支付</span>
+                    </button>
+                    <button class="vip-method-btn" data-method="alipay">
+                        <span class="method-icon">💙</span>
+                        <span class="method-name">支付宝</span>
+                    </button>
+                </div>
+
+                <!-- 收款码展示区 -->
+                <div class="vip-qrcode-display">
+                    <div class="vip-qrcode-item active" id="vip-qr-wechat">
+                        <div class="qrcode-frame">
+                            <img src="https://coze-coding-project.tos.coze.site/coze_storage_7600959883038523443/upload_e09b2f8c_dbf946a9.jpg?sign=2085108242-912f5ea9d7-0-e00a5817a312e3ab149abd1df96a66b33979475a3254113298c8ce544e0155fd" alt="微信收款码" class="qrcode-img">
+                        </div>
+                        <p class="qrcode-hint">请使用微信扫描二维码</p>
+                    </div>
+                    <div class="vip-qrcode-item" id="vip-qr-alipay">
+                        <div class="qrcode-frame">
+                            <img src="https://coze-coding-project.tos.coze.site/coze_storage_7600959883038523443/upload_a179d6bd_c1e9b3c8.jpg?sign=2085109239-f6b8cf20c4-0-3a4dba85b95d70e1a499c8c13cad49fb2ee1049b51ad1a4a07e578619711dd5b" alt="支付宝收款码" class="qrcode-img">
+                        </div>
+                        <p class="qrcode-hint">请使用支付宝扫描二维码</p>
+                    </div>
+                </div>
+
+                <!-- 支付确认按钮 -->
+                <button class="vip-unlock-btn" id="vip-unlock-btn">
+                    <span class="unlock-icon">🔓</span>
+                    <span>我已支付，点击解锁</span>
+                </button>
+
+                <p class="vip-payment-note">支付遇到问题？请联系客服微信：JQJSBXXZI</p>
+            </div>
+        </div>
+
+        <!-- 挑战赛喜报弹窗 -->
+        <div id="challenge-success-modal" class="challenge-modal-overlay">
+            <div class="challenge-modal-container">
+                <button class="challenge-modal-close" id="challenge-modal-close">&times;</button>
+
+                <div class="challenge-modal-header">
+                    <div class="fireworks">🎆</div>
+                    <div class="trophy">🏆</div>
+                    <div class="fireworks">🎇</div>
+                </div>
+
+                <div class="challenge-modal-body">
+                    <h2>🎉 恭喜达成挑战！</h2>
+                    <p class="hero-text">英雄！您已连续复盘 <span id="modal-streak-days">90</span> 天！</p>
+
+                    <div class="reward-info">
+                        <div class="reward-icon">💰</div>
+                        <div class="reward-text">
+                            <h3>立返 299 元现金奖励</h3>
+                            <p>请截图"数据概览"中的连续打卡天数并发布朋友圈，联系客服凭截图领取奖励（含年付199元+押金100元）！</p>
+                        </div>
+                    </div>
+
+                    <div class="challenge-modal-actions">
+                        <button class="modal-btn primary" id="modal-goto-screenshot">
+                            <span>📸</span> 点击前往截图
+                        </button>
+                        <button class="modal-btn secondary" id="modal-contact-service">
+                            <span>💬</span> 联系客服领奖
+                        </button>
+                    </div>
+
+                    <p class="service-hint">客服微信：<strong>JQJSBXXZI</strong></p>
+                </div>
+            </div>
+        </div>
+
+        <main>
+            <!-- 标签切换 -->
+            <div class="tabs">
+                <button class="tab-btn active" data-tab="review-content">今日复盘</button>
+                <button class="tab-btn" data-tab="plan-content">明日规划</button>
+                <button class="tab-btn" data-tab="history-content">历史记录</button>
+                <button class="tab-btn" data-tab="advice-content">智能建议</button>
+                <button class="tab-btn challenge-tab" data-tab="challenge-content">
+                    复盘挑战赛
+                    <span class="tab-badge-new">NEW</span>
+                </button>
+            </div>
+
+            <!-- 复盘表单区域 -->
+            <div class="tab-content" id="review-content">
+                <h2>今日复盘</h2>
+                
+                <!-- 数据概览模块 -->
+                <div class="data-overview">
+                    <div class="data-overview-header">
+                        <h3>数据概览</h3>
+                    </div>
+                    
+                    <!-- 目标达成率趋势图 -->
+                    <div class="chart-container">
+                        <h4>目标达成率趋势图</h4>
+                        <div class="chart-wrapper">
+                            <canvas id="completionTrendChart"></canvas>
+                        </div>
+                    </div>
+                    
+                    <!-- 数据概览卡片 -->
+                    <div class="data-cards">
+                        <div class="data-card">
+                            <div class="data-value" id="total-days">8</div>
+                            <div class="data-label">总复盘天数</div>
+                        </div>
+                        <div class="data-card">
+                            <div class="data-value" id="avg-completion">0%</div>
+                            <div class="data-label">总体平均达成率</div>
+                        </div>
+                        <div class="data-card">
+                            <div class="data-value" id="streak-days">0天</div>
+                            <div class="data-label">连续复盘</div>
+                        </div>
+                        <div class="data-card">
+                            <div class="data-value" id="improvement-rate">0%</div>
+                            <div class="data-label">关键改进项完成率</div>
+                        </div>
+                        <div class="data-card">
+                            <div class="data-value" id="last-review">11月21日</div>
+                            <div class="data-label">最后复盘日期</div>
+                        </div>
+                    </div>
+                    
+                    <!-- 7天分段数据 -->
+                    <div class="segmented-data">
+                        <div class="segment-header">
+                            <input type="checkbox" id="segment-toggle" checked>
+                            <label for="segment-toggle">7天分段数据</label>
+                        </div>
+                        <div class="segment-cards">
+                            <div class="segment-card">
+                                <div class="segment-label">最近7天</div>
+                                <div class="segment-value" id="segment-7">0%</div>
+                            </div>
+                            <div class="segment-card">
+                                <div class="segment-label">8-14天前</div>
+                                <div class="segment-value" id="segment-14">0%</div>
+                            </div>
+                            <div class="segment-card">
+                                <div class="segment-label">15-21天前</div>
+                                <div class="segment-value" id="segment-21">--</div>
+                            </div>
+                            <div class="segment-card">
+                                <div class="segment-label">22-28天前</div>
+                                <div class="segment-value" id="segment-28">--</div>
+                            </div>
+                          </div>
+                    </div>
+                    
+                    <!-- 数据更新区域 -->
+                    <div class="data-update">
+                        <div class="update-info">数据自动更新</div>
+                        <button id="refresh-data" class="refresh-btn">刷新</button>
+                    </div>
+                </div>
+                
+                <form id="review-form">
+                    <div class="form-group">
+                        <label for="date">日期</label>
+                        <input type="date" id="date" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="goal-completion">目标达成情况</label>
+                        <div class="progress-container">
+                            <input type="range" id="goal-progress" min="0" max="100" value="50">
+                            <span id="progress-value">50%</span>
+                        </div>
+                        <textarea id="goal-completion" placeholder="请详细描述今日目标的完成情况，例如：完成了项目报告的70%，会议准备工作全部完成..." rows="3"></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="strengths">优点</label>
+                        <textarea id="strengths" placeholder="记录今天做得好的地方，例如：高效完成了会议准备，主动帮助同事解决问题..." rows="3"></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="weaknesses">不足</label>
+                        <textarea id="weaknesses" placeholder="记录需要改进的地方，例如：时间管理不够合理，沟通效率有待提高..." rows="3"></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="improvements">改进措施</label>
+                        <textarea id="improvements" placeholder="针对不足提出具体的改进方法，例如：明天使用番茄工作法，提前准备会议议程..." rows="3"></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="todos">待办事项</label>
+                        <textarea id="todos" placeholder="列出未完成的任务，例如：完成项目报告，回复重要邮件..." rows="3"></textarea>
+                    </div>
+
+                    <button type="submit" class="submit-btn">保存复盘</button>
+                </form>
+            </div>
+
+            <!-- 四象限规划区域 -->
+            <div class="tab-content" id="plan-content">
+                <h2>明日规划（四象限法则）</h2>
+                <form id="plan-form">
+                    <div class="quadrants">
+                        <!-- 任务优先级提醒 -->
+                        <div class="task-priority">
+                            <h3>任务优先级提醒</h3>
+                            <div class="priority-tips">
+                                <div class="priority-item priority-a">
+                                    <strong>A类：重要且紧急</strong>
+                                    <p>需优先处理，避免拖延导致危机</p>
+                                </div>
+                                <div class="priority-item priority-b">
+                                    <strong>B类：重要不紧急</strong>
+                                    <p>需长期规划，避免因忽视转为紧急任务</p>
+                                </div>
+                                <div class="priority-item priority-c">
+                                    <strong>C类：紧急不重要</strong>
+                                    <p>可委托或批量处理，避免占用核心时间</p>
+                                </div>
+                                <div class="priority-item priority-d">
+                                    <strong>D类：不重要不紧急</strong>
+                                    <p>尽量减少或取消，属于时间消耗型活动</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- A类：重要且紧急 -->
+                        <div class="quadrant important-urgent">
+                            <h3>A类：重要且紧急</h3>
+                            <div class="task-list" id="quadrant-a">
+                                <div class="task-item">
+                                    <input type="text" placeholder="做什么（任务内容）" class="task-what">
+                                    <input type="text" placeholder="为什么做（重要性）" class="task-why">
+                                    <textarea placeholder="怎么做（执行方法）" class="task-how" rows="2"></textarea>
+                                    <input type="text" placeholder="解决方案" class="task-solution">
+                                    <div class="task-help-row">
+                                        <input type="text" placeholder="求助对象" class="task-help">
+                                        <button type="button" class="add-task-btn">+</button>
+                                        <button type="button" class="remove-task-btn">-</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- B类：重要不紧急 -->
+                        <div class="quadrant important-not-urgent">
+                            <h3>B类：重要不紧急</h3>
+                            <div class="task-list" id="quadrant-b">
+                                <div class="task-item">
+                                    <input type="text" placeholder="做什么（任务内容）" class="task-what">
+                                    <input type="text" placeholder="为什么做（重要性）" class="task-why">
+                                    <textarea placeholder="怎么做（执行方法）" class="task-how" rows="2"></textarea>
+                                    <input type="text" placeholder="解决方案" class="task-solution">
+                                    <div class="task-help-row">
+                                        <input type="text" placeholder="求助对象" class="task-help">
+                                        <button type="button" class="add-task-btn">+</button>
+                                        <button type="button" class="remove-task-btn">-</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- C类：紧急不重要 -->
+                        <div class="quadrant not-important-urgent">
+                            <h3>C类：紧急不重要</h3>
+                            <div class="task-list" id="quadrant-c">
+                                <div class="task-item">
+                                    <input type="text" placeholder="做什么（任务内容）" class="task-what">
+                                    <input type="text" placeholder="为什么做（重要性）" class="task-why">
+                                    <textarea placeholder="怎么做（执行方法）" class="task-how" rows="2"></textarea>
+                                    <input type="text" placeholder="解决方案" class="task-solution">
+                                    <div class="task-help-row">
+                                        <input type="text" placeholder="求助对象" class="task-help">
+                                        <button type="button" class="add-task-btn">+</button>
+                                        <button type="button" class="remove-task-btn">-</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- D类：不重要不紧急 -->
+                        <div class="quadrant not-important-not-urgent">
+                            <h3>D类：不重要不紧急</h3>
+                            <div class="task-list" id="quadrant-d">
+                                <div class="task-item">
+                                    <input type="text" placeholder="做什么（任务内容）" class="task-what">
+                                    <input type="text" placeholder="为什么做（重要性）" class="task-why">
+                                    <textarea placeholder="怎么做（执行方法）" class="task-how" rows="2"></textarea>
+                                    <input type="text" placeholder="解决方案" class="task-solution">
+                                    <div class="task-help-row">
+                                        <input type="text" placeholder="求助对象" class="task-help">
+                                        <button type="button" class="add-task-btn">+</button>
+                                        <button type="button" class="remove-task-btn">-</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 时间管理界面 -->
+                    <div class="time-management">
+                        <h2>时间管理</h2>
+                        <div class="time-management-container">
+                            <!-- 今日时间安排 -->
+                            <div class="today-schedule">
+                                <h3>今日时间安排</h3>
+                                <div class="schedule-table">
+                                    <div class="schedule-header">
+                                        <div class="time-column">时间段</div>
+                                        <div class="task-column">具体任务</div>
+                                        <div class="duration-column">时长(分钟)</div>
+                                    </div>
+                                    <div id="schedule-items">
+                                        <!-- 时间段将自动生成 -->
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- 时间分配统计 -->
+                            <div class="time-stats">
+                                <div class="time-stats-header">
+                                    <h3>时间分配统计</h3>
+                                    <button type="button" class="manage-tags-btn" onclick="event.stopPropagation(); renderTagManager()">🏷️ 管理标签</button>
+                                </div>
+                                <div class="chart-container">
+                                    <canvas id="timeDistributionChart"></canvas>
+                                </div>
+                                <div class="stats-summary">
+                                    <span>总时长：<span id="total-duration">0分钟</span></span>
+                                    <span>任务数量：<span id="total-tasks">0</span></span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="submit-btn">保存规划</button>
+                </form>
+            </div>
+
+            <!-- 历史记录区域 -->
+            <div class="tab-content" id="history-content">
+                <h2>历史记录</h2>
+
+                <!-- 数据洞察看板 -->
+        <div class="data-insight-panel">
+            <div class="insight-header">
+                <h3>月度时光分析</h3>
+                <p class="insight-subtitle">基于你的时间投入，发现潜在兴趣与成长方向</p>
+            </div>
+
+                    <!-- 图表区域 -->
+                    <div class="insight-charts">
+                        <!-- 雷达图 - 精力多维分布 -->
+                        <div class="insight-chart-card">
+                            <h4>精力多维分布</h4>
+                            <p class="chart-desc">展示本月各领域的时间投入比例</p>
+                            <div id="radar-chart" class="echarts-container"></div>
+                        </div>
+
+                        <!-- 柱状图 - 时间花费对比 -->
+                        <div class="insight-chart-card">
+                            <h4>时间花费对比</h4>
+                            <p class="chart-desc">本月各项目累计时长排名</p>
+                            <div id="bar-chart" class="echarts-container"></div>
+                        </div>
+                    </div>
+
+                    <!-- 洞察卡片 -->
+                    <div class="insight-cards">
+                        <div class="insight-card primary">
+                            <div class="insight-icon">&#9733;</div>
+                            <div class="insight-content">
+                                <h5>潜在兴趣点</h5>
+                                <p id="interest-point">暂无数据</p>
+                            </div>
+                        </div>
+                        <div class="insight-card">
+                            <div class="insight-icon">&#128200;</div>
+                            <div class="insight-content">
+                                <h5>本月总投入</h5>
+                                <p id="total-investment">0 小时</p>
+                            </div>
+                        </div>
+                        <div class="insight-card">
+                            <div class="insight-icon">&#128293;</div>
+                            <div class="insight-content">
+                                <h5>复盘天数</h5>
+                                <p id="review-days">0 天</p>
+                            </div>
+                        </div>
+                        <div class="insight-card">
+                            <div class="insight-icon">&#128161;</div>
+                            <div class="insight-content">
+                                <h5>成长建议</h5>
+                                <p id="growth-advice">继续保持复盘习惯</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="history-controls">
+                    <input type="month" id="history-filter" min="2024-01">
+                    <button id="clear-history">清空历史</button>
+                </div>
+                <div id="history-list"></div>
+                <div id="history-detail" class="history-detail">
+                    <h3>复盘详情</h3>
+                    <div id="detail-content"></div>
+                    <button id="close-detail">关闭</button>
+                </div>
+            </div>
+
+            <!-- 智能建议区域 -->
+            <div class="tab-content" id="advice-content">
+                <h2>智能成长建议</h2>
+                <div class="advice-generator">
+                    <button id="generate-advice" class="advice-btn">生成建议</button>
+                </div>
+                <div id="advice-result" class="advice-result">
+                    <h3>基于你的复盘记录，我们为你准备了以下建议：</h3>
+                    <div class="advice-content">
+                        <!-- 智能建议将在这里显示 -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- 复盘挑战赛区域 -->
+            <div class="tab-content" id="challenge-content">
+                <!-- 动态渲染区域 -->
+                <div id="challenge-page-container">
+                    <!-- 由 renderChallengePage() 动态生成 -->
+                </div>
+            </div>
+        </main>
+
+        <footer>
+            <p>&copy; 2026 智能复盘助手 - 让每一天都有进步</p>
+        </footer>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <script src="data-storage.js"></script>
+    <script src="local-storage-manager.js"></script>
+    <script src="local-storage-ui.js"></script>
+    <script src="review-assistant.js"></script>
+    <!-- commercial-system.js 已禁用 -->
+    <script src="import-for-browser.js"></script>
+
+    <!-- 启动页 (Splash Screen) -->
+    <div class="splash-screen" id="splash-screen">
+        <div class="splash-logo">📊</div>
+        <div class="splash-title">智能复盘助手</div>
+        <div class="splash-subtitle">让每一天都有收获</div>
+        <div class="splash-loader"></div>
+    </div>
+
+    <!-- 移动端底部导航栏 -->
+    <nav class="mobile-tabbar" id="mobile-tabbar">
+        <div class="mobile-tabbar-inner">
+            <button class="tabbar-item active" data-tab="review-content">
+                <span class="tabbar-icon">📝</span>
+                <span class="tabbar-label">复盘</span>
+            </button>
+            <button class="tabbar-item" data-tab="plan-content">
+                <span class="tabbar-icon">📋</span>
+                <span class="tabbar-label">规划</span>
+            </button>
+            <button class="tabbar-item" data-tab="history-content">
+                <span class="tabbar-icon">📊</span>
+                <span class="tabbar-label">记录</span>
+            </button>
+            <button class="tabbar-item" data-tab="advice-content">
+                <span class="tabbar-icon">💡</span>
+                <span class="tabbar-label">建议</span>
+            </button>
+            <button class="tabbar-item" data-tab="challenge-content">
+                <span class="tabbar-icon">
+                    🏆
+                    <span class="tabbar-badge dot"></span>
+                </span>
+                <span class="tabbar-label">挑战</span>
+            </button>
+        </div>
+    </nav>
+
+
+
+    <!-- Toast 提示组件 -->
+    <div class="mobile-toast" id="mobile-toast">
+        <div class="mobile-toast-icon"></div>
+        <div class="mobile-toast-text"></div>
+    </div>
+
+    <!-- 复盘行动指南弹窗 -->
+    <div id="ra-modal-overlay" class="ra-modal-overlay">
+        <div class="ra-modal">
+            <button class="ra-close-btn" onclick="closeRAGuide()">×</button>
+            
+            <div class="ra-modal-header">
+                <div class="ra-step-indicator" id="ra-step-indicator">1/5</div>
+                <h2 class="ra-modal-title">📖 复盘行动指南</h2>
+                <p class="ra-modal-subtitle">跟随以下步骤，开启高效复盘之旅</p>
+            </div>
+
+            <div class="ra-slider-container">
+                <div class="ra-slider" id="ra-slider">
+                    <!-- 步骤1 -->
+                    <div class="ra-slide ra-active">
+                        <div class="ra-image-container">
+                            <img class="ra-image" src="https://coze-coding-project.tos.coze.site/coze_storage_7600959883038523443/image_5828e0e6.png?sign=2085639475-fa740bf4a5-0-dd720578798be800958a4a454974b2633212e53bc848ea5f7fb07827c9895403" alt="步骤1" onerror="this.src='https://via.placeholder.com/800x500/4A90E2/FFFFFF?text=Step1-四象限法则'">
+                        </div>
+                        <div class="ra-content">
+                            <h3 class="ra-slide-title">运用四象限法则</h3>
+                            <p class="ra-slide-text">列出今天要做的事情，区分重要紧急程度，合理分配时间和精力</p>
+                        </div>
+                    </div>
+
+                    <!-- 步骤2 -->
+                    <div class="ra-slide">
+                        <div class="ra-image-container">
+                            <img class="ra-image" src="https://coze-coding-project.tos.coze.site/coze_storage_7600959883038523443/image_05d9826b.png?sign=2085639809-375fdd405c-0-0be63be0d62602bd8260f42fb526d2160e160f35dcb9233971f6cc71271163ed" alt="步骤2" onerror="this.src='https://via.placeholder.com/800x500/50BFA5/FFFFFF?text=Step2-时间管理'">
+                        </div>
+                        <div class="ra-content">
+                            <h3 class="ra-slide-title">时间管理页面操作</h3>
+                            <p class="ra-slide-text">在时间管理页面，点击管理标签→添加新标签（选择颜色），然后选择具体任务和时长，点击保存规划</p>
+                        </div>
+                    </div>
+
+                    <!-- 步骤3 -->
+                    <div class="ra-slide">
+                        <div class="ra-image-container">
+                            <img class="ra-image" src="https://coze-coding-project.tos.coze.site/coze_storage_7600959883038523443/image_295bf883.png?sign=2085640497-928d49cd46-0-40baeb5584b30efd037a005431b8bb2bfba203911f14726387ee0d71797c9f4b" alt="步骤3" onerror="this.src='https://via.placeholder.com/800x500/F5A623/000000?text=Step3-今日复盘'">
+                        </div>
+                        <div class="ra-content">
+                            <h3 class="ra-slide-title">记录今日复盘</h3>
+                            <p class="ra-slide-text">点击今日复盘向下滑，记录今天的优点、缺点、改进措施、以及明天的待办事项</p>
+                        </div>
+                    </div>
+
+                    <!-- 步骤4 -->
+                    <div class="ra-slide">
+                        <div class="ra-image-container">
+                            <img class="ra-image" src="https://coze-coding-project.tos.coze.site/coze_storage_7600959883038523443/image_c74920ec.png?sign=2085641178-11db18102e-0-261449591d1c46c0f6f875ca9d98d2d4ddeaed9434f4d1cc0673f398073f4412" alt="步骤4" onerror="this.src='https://via.placeholder.com/800x500/9013FE/FFFFFF?text=Step4-历史记录'">
+                        </div>
+                        <div class="ra-content">
+                            <h3 class="ra-slide-title">查看历史记录</h3>
+                            <p class="ra-slide-text">点击历史记录，查看月度时光分析，用一个月的时间，去发现你的潜在兴趣点</p>
+                        </div>
+                    </div>
+
+                    <!-- 步骤5 -->
+                    <div class="ra-slide">
+                        <div class="ra-image-container">
+                            <img class="ra-image" src="https://coze-coding-project.tos.coze.site/coze_storage_7600959883038523443/image_cc3ed641.png?sign=2085641375-cc3897ae0d-0-4fe8a7db3b45f222d929fec9ab7a86f054a3d2527492d766a2663dd7689142ab" alt="步骤5" onerror="this.src='https://via.placeholder.com/800x500/FF5252/FFFFFF?text=Step5-挑战赛'">
+                        </div>
+                        <div class="ra-content">
+                            <h3 class="ra-slide-title">参与复盘挑战赛</h3>
+                            <p class="ra-slide-text">为了激励大家坚持成长，我们特别推出复盘挑战赛活动。坚持90天，立返¥100！</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 导航控制 -->
+                <div class="ra-navigation">
+                    <button class="ra-nav-btn" id="ra-prev-btn" onclick="previousSlide()">❮</button>
+                    
+                    <div class="ra-dots" id="ra-dots">
+                        <span class="ra-dot ra-active" onclick="goToSlide(0)"></span>
+                        <span class="ra-dot" onclick="goToSlide(1)"></span>
+                        <span class="ra-dot" onclick="goToSlide(2)"></span>
+                        <span class="ra-dot" onclick="goToSlide(3)"></span>
+                        <span class="ra-dot" onclick="goToSlide(4)"></span>
+                    </div>
+                    
+                    <button class="ra-nav-btn" id="ra-next-btn" onclick="nextSlide()">❯</button>
+                </div>
+            </div>
+
+            <!-- 底部确认区域 -->
+            <div class="ra-footer">
+                <div class="ra-confirm-area">
+                    <label class="ra-checkbox-label">
+                        <input type="checkbox" id="ra-acknowledge" class="ra-checkbox" onchange="toggleConfirmButton()">
+                        <span class="ra-checkmark"></span>
+                        <span>我已知晓</span>
+                    </label>
+                    <button class="ra-confirm-btn" id="ra-confirm-btn" onclick="confirmAndClose()" disabled>确定</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 强制缓存清除脚本 -->
+    <script>
+    (function() {
+        'use strict';
+        
+        // 版本检测与缓存清除
+        const CURRENT_VERSION = 'v1.0.3';
+        const storedVersion = localStorage.getItem('app_version');
+        
+        if (storedVersion !== CURRENT_VERSION) {
+            console.log('[版本更新] 检测到新版本:', CURRENT_VERSION, '旧版本:', storedVersion);
+            
+            // 清除所有缓存
+            if ('caches' in window) {
+                caches.keys().then(function(names) {
+                    names.forEach(function(name) {
+                        console.log('[缓存清除] 删除:', name);
+                        caches.delete(name);
+                    });
+                });
+            }
+            
+            // 存储新版本号
+            localStorage.setItem('app_version', CURRENT_VERSION);
+            console.log('[版本更新] 缓存已清除，页面将刷新以加载新版本');
+            
+            // 强制刷新页面（使用 true 跳过缓存）
+            setTimeout(function() {
+                window.location.reload(true);
+            }, 100);
+        }
+    })();
+    </script>
+
+    <!-- 移动端初始化脚本 -->
+    <script>
+    (function() {
+        'use strict';
+
+        // ==================== 本地文件协议检测 ====================
+
+        // 检测是否在 file:// 协议下运行
+        var isLocalFileProtocol = window.location.protocol === 'file:';
+
+        if (isLocalFileProtocol) {
+            console.log('[本地模式] 检测到 file:// 协议，PWA功能已禁用');
+            console.log('[本地模式] 提示：使用本地服务器（如 VS Code Live Server）可获得完整功能');
+
+            // 移除 manifest 链接以避免 CORS 错误
+            var manifestLink = document.querySelector('link[rel="manifest"]');
+            if (manifestLink) {
+                manifestLink.remove();
+                console.log('[本地模式] 已移除 manifest.json 引用');
+            }
+        }
+
+        // ==================== PWA 相关 ====================
+
+        // 注册 Service Worker（仅在非 file:// 协议下）
+        if ('serviceWorker' in navigator && !isLocalFileProtocol) {
+            window.addEventListener('load', function() {
+                navigator.serviceWorker.register('/service-worker.js')
+                    .then(function(registration) {
+                        console.log('[PWA] Service Worker 注册成功:', registration.scope);
+
+                        // 检查更新
+                        registration.addEventListener('updatefound', function() {
+                            const newWorker = registration.installing;
+                            newWorker.addEventListener('statechange', function() {
+                                if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                                    showToast('发现新版本，刷新页面即可更新', 'info');
+                                }
+                            });
+                        });
+                    })
+                    .catch(function(error) {
+                        console.log('[PWA] Service Worker 注册失败:', error);
+                    });
+            });
+        } else if (isLocalFileProtocol) {
+            console.log('[本地模式] Service Worker 已跳过注册');
+        }
+
+
+
+        // ==================== 启动页处理 ====================
+
+        const splashScreen = document.getElementById('splash-screen');
+
+        window.addEventListener('load', function() {
+            // 延迟隐藏启动页，确保资源加载完成
+            setTimeout(function() {
+                if (splashScreen) {
+                    splashScreen.classList.add('hidden');
+                    // 动画结束后移除元素
+                    setTimeout(function() {
+                        splashScreen.style.display = 'none';
+                    }, 350);
+                }
+            }, 800);
+        });
+
+        // ==================== 底部导航栏 ====================
+
+        const tabbar = document.getElementById('mobile-tabbar');
+        const tabbarItems = tabbar ? tabbar.querySelectorAll('.tabbar-item') : [];
+        const tabContents = document.querySelectorAll('.tab-content');
+        const originalTabs = document.querySelectorAll('.tab-btn');
+
+        // 页面切换动画方向追踪
+        let currentTabIndex = 0;
+        const tabOrder = ['review-content', 'plan-content', 'history-content', 'advice-content', 'challenge-content'];
+
+        tabbarItems.forEach(function(item, index) {
+            // 触摸开始 - 缩放动画
+            item.addEventListener('touchstart', function(e) {
+                this.classList.add('pressing');
+                // 轻触反馈
+                triggerHaptic('light');
+            }, { passive: true });
+
+            // 触摸结束 - 恢复动画
+            item.addEventListener('touchend', function() {
+                this.classList.remove('pressing');
+            }, { passive: true });
+
+            item.addEventListener('touchcancel', function() {
+                this.classList.remove('pressing');
+            }, { passive: true });
+
+            item.addEventListener('click', function() {
+                const targetTab = this.getAttribute('data-tab');
+                const newIndex = tabOrder.indexOf(targetTab);
+
+                // 如果点击当前选中的标签，不做任何操作
+                if (newIndex === currentTabIndex) {
+                    return;
+                }
+
+                // 更新底部导航高亮
+                tabbarItems.forEach(function(i) { i.classList.remove('active'); });
+                this.classList.add('active');
+
+                // 同步更新原有顶部标签（保持兼容）
+                originalTabs.forEach(function(tab) {
+                    tab.classList.remove('active');
+                    if (tab.getAttribute('data-tab') === targetTab) {
+                        tab.classList.add('active');
+                    }
+                });
+
+                // 切换页面内容（带动画）
+                const direction = newIndex > currentTabIndex ? 'right' : 'left';
+                switchTab(targetTab, direction);
+                currentTabIndex = newIndex;
+
+                // 触觉反馈 - 中等强度
+                triggerHaptic('medium');
+            });
+        });
+
+        // 增强触觉反馈函数
+        function triggerHaptic(intensity) {
+            // 优先使用 iOS Taptic Engine (如果支持)
+            if (window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.haptic) {
+                window.webkit.messageHandlers.haptic.postMessage(intensity);
+                return;
+            }
+
+            // Android 震动 API
+            if (navigator.vibrate) {
+                switch(intensity) {
+                    case 'light':
+                        navigator.vibrate(5);
+                        break;
+                    case 'medium':
+                        navigator.vibrate(10);
+                        break;
+                    case 'heavy':
+                        navigator.vibrate([15, 5, 10]);
+                        break;
+                    default:
+                        navigator.vibrate(10);
+                }
+            }
+        }
+
+        // 暴露触觉反馈函数供全局使用
+        window.triggerHaptic = triggerHaptic;
+
+        function switchTab(targetTab, direction) {
+            tabContents.forEach(function(content) {
+                if (content.id === targetTab) {
+                    content.style.display = 'block';
+                    content.classList.remove('slide-in-left', 'slide-in-right');
+                    content.classList.add(direction === 'right' ? 'slide-in-right' : 'slide-in-left');
+                } else {
+                    content.style.display = 'none';
+                }
+            });
+        }
+
+        // 监听原有标签切换，同步底部导航
+        originalTabs.forEach(function(tab) {
+            tab.addEventListener('click', function() {
+                const targetTab = this.getAttribute('data-tab');
+                tabbarItems.forEach(function(item) {
+                    item.classList.remove('active');
+                    if (item.getAttribute('data-tab') === targetTab) {
+                        item.classList.add('active');
+                    }
+                });
+            });
+        });
+
+        // ==================== 工具函数 ====================
+
+        function isMobile() {
+            return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
+                   window.innerWidth <= 768;
+        }
+
+        function showToast(message, type) {
+            type = type || 'info';
+            const toast = document.getElementById('mobile-toast');
+            if (!toast) return;
+
+            const iconMap = {
+                success: '✓',
+                error: '✕',
+                info: 'ℹ',
+                warning: '⚠'
+            };
+
+            toast.querySelector('.mobile-toast-icon').textContent = iconMap[type] || '';
+            toast.querySelector('.mobile-toast-text').textContent = message;
+            toast.classList.add('show');
+
+            setTimeout(function() {
+                toast.classList.remove('show');
+            }, 2500);
+        }
+
+        // 暴露全局方法
+        window.showMobileToast = showToast;
+
+        // ==================== 消除 300ms 点击延迟 ====================
+
+        // FastClick 简化实现
+        document.addEventListener('touchstart', function() {}, { passive: true });
+
+        // ==================== 网络状态监听 ====================
+
+        window.addEventListener('online', function() {
+            showToast('网络已恢复', 'success');
+            document.body.classList.remove('offline-mode');
+            // 触发数据同步
+            if (window.DataStorage && window.DataStorage.processSyncQueue) {
+                window.DataStorage.processSyncQueue();
+            }
+            if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+                navigator.serviceWorker.ready.then(function(registration) {
+                    if (registration.sync) {
+                        registration.sync.register('sync-reviews');
+                    }
+                });
+            }
+        });
+
+        window.addEventListener('offline', function() {
+            showToast('当前处于离线状态', 'warning');
+            document.body.classList.add('offline-mode');
+        });
+
+        // 初始化时检查网络状态
+        if (!navigator.onLine) {
+            document.body.classList.add('offline-mode');
+        }
+
+        // ==================== 移动端仅显示底部导航 ====================
+
+        function updateNavVisibility() {
+            if (isMobile()) {
+                document.body.classList.add('mobile-mode');
+                if (tabbar) tabbar.style.display = 'block';
+            } else {
+                document.body.classList.remove('mobile-mode');
+                if (tabbar) tabbar.style.display = 'none';
+            }
+        }
+
+        updateNavVisibility();
+        window.addEventListener('resize', updateNavVisibility);
+
+        // ==================== URL 参数处理（快捷方式支持）====================
+
+        const urlParams = new URLSearchParams(window.location.search);
+        const tabParam = urlParams.get('tab');
+        if (tabParam && tabOrder.includes(tabParam + '-content')) {
+            const targetTab = tabParam + '-content';
+            // 延迟执行，确保 DOM 已准备好
+            setTimeout(function() {
+                tabbarItems.forEach(function(item) {
+                    item.classList.remove('active');
+                    if (item.getAttribute('data-tab') === targetTab) {
+                        item.classList.add('active');
+                    }
+                });
+                originalTabs.forEach(function(tab) {
+                    tab.classList.remove('active');
+                    if (tab.getAttribute('data-tab') === targetTab) {
+                        tab.classList.add('active');
+                        tab.click(); // 触发原有的切换逻辑
+                    }
+                });
+            }, 100);
+        }
+
+        console.log('[Mobile] 移动端增强已加载');
+    })();
+
+    // ==================== 复盘行动指南功能 ====================
+    (function() {
+        'use strict';
+
+        let raCurrentSlide = 0;
+        const raTotalSlides = 5;
+        let raSlider = null;
+        let raDots = null;
+        let raPrevBtn = null;
+        let raNextBtn = null;
+        let raStepIndicator = null;
+
+        // 初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeRAGuide();
+            
+            // 检查是否已经确认过（使用 localStorage）
+            if (!localStorage.getItem('ra_guide_acknowledged')) {
+                // 延迟显示，等待页面完全加载
+                setTimeout(function() {
+                    showRAGuide();
+                }, 1500);
+            }
+        });
+
+        function initializeRAGuide() {
+            raSlider = document.getElementById('ra-slider');
+            raDots = document.querySelectorAll('.ra-dot');
+            raPrevBtn = document.getElementById('ra-prev-btn');
+            raNextBtn = document.getElementById('ra-next-btn');
+            raStepIndicator = document.getElementById('ra-step-indicator');
+
+            // 点击遮罩关闭
+            var overlay = document.getElementById('ra-modal-overlay');
+            if (overlay) {
+                overlay.addEventListener('click', function(e) {
+                    if (e.target === this) {
+                        closeRAGuide();
+                    }
+                });
+            }
+
+            // 键盘导航
+            document.addEventListener('keydown', function(e) {
+                var overlay = document.getElementById('ra-modal-overlay');
+                if (!overlay || !overlay.classList.contains('ra-show')) return;
+
+                if (e.key === 'ArrowLeft') {
+                    previousSlide();
+                } else if (e.key === 'ArrowRight') {
+                    nextSlide();
+                } else if (e.key === 'Escape') {
+                    closeRAGuide();
+                }
+            });
+
+            // 触摸滑动支持
+            var sliderContainer = document.querySelector('.ra-slider-container');
+            if (sliderContainer) {
+                var touchStartX = 0;
+                var touchEndX = 0;
+
+                sliderContainer.addEventListener('touchstart', function(e) {
+                    touchStartX = e.changedTouches[0].screenX;
+                }, { passive: true });
+
+                sliderContainer.addEventListener('touchend', function(e) {
+                    touchEndX = e.changedTouches[0].screenX;
+                    handleSwipe(touchStartX, touchEndX);
+                }, { passive: true });
+            }
+        }
+
+        function handleSwipe(startX, endX) {
+            var swipeThreshold = 50;
+            var diff = startX - endX;
+
+            if (Math.abs(diff) > swipeThreshold) {
+                if (diff > 0) {
+                    nextSlide(); // 向左滑动，下一张
+                } else {
+                    previousSlide(); // 向右滑动，上一张
+                }
+            }
+        }
+
+        // 显示弹窗
+        window.showRAGuide = function() {
+            var overlay = document.getElementById('ra-modal-overlay');
+            if (overlay) {
+                overlay.classList.add('ra-show');
+                document.body.style.overflow = 'hidden';
+            }
+        };
+
+        // 关闭弹窗
+        window.closeRAGuide = function() {
+            var overlay = document.getElementById('ra-modal-overlay');
+            if (overlay) {
+                overlay.classList.remove('ra-show');
+                document.body.style.overflow = '';
+            }
+        };
+
+        // 切换到指定幻灯片
+        window.goToSlide = function(index) {
+            if (index < 0 || index >= raTotalSlides) return;
+
+            raCurrentSlide = index;
+
+            // 更新滑动位置
+            if (raSlider) {
+                raSlider.style.transform = 'translateX(-' + (index * 100) + '%)';
+            }
+
+            // 更新幻灯片状态
+            var slides = document.querySelectorAll('.ra-slide');
+            slides.forEach(function(slide, i) {
+                if (i === index) {
+                    slide.classList.add('ra-active');
+                } else {
+                    slide.classList.remove('ra-active');
+                }
+            });
+
+            // 更新指示点
+            if (raDots) {
+                raDots.forEach(function(dot, i) {
+                    if (i === index) {
+                        dot.classList.add('ra-active');
+                    } else {
+                        dot.classList.remove('ra-active');
+                    }
+                });
+            }
+
+            // 更新步骤指示器
+            if (raStepIndicator) {
+                raStepIndicator.textContent = (index + 1) + '/' + raTotalSlides;
+            }
+
+            // 更新导航按钮状态
+            updateNavButtons();
+        };
+
+        // 下一张
+        window.nextSlide = function() {
+            if (raCurrentSlide < raTotalSlides - 1) {
+                goToSlide(raCurrentSlide + 1);
+            }
+        };
+
+        // 上一张
+        window.previousSlide = function() {
+            if (raCurrentSlide > 0) {
+                goToSlide(raCurrentSlide - 1);
+            }
+        };
+
+        // 更新导航按钮状态
+        function updateNavButtons() {
+            if (raPrevBtn) {
+                raPrevBtn.disabled = raCurrentSlide === 0;
+            }
+            if (raNextBtn) {
+                raNextBtn.disabled = raCurrentSlide === raTotalSlides - 1;
+            }
+        }
+
+        // 切换确认按钮状态
+        window.toggleConfirmButton = function() {
+            var checkbox = document.getElementById('ra-acknowledge');
+            var confirmBtn = document.getElementById('ra-confirm-btn');
+            
+            if (checkbox && confirmBtn) {
+                if (checkbox.checked) {
+                    confirmBtn.disabled = false;
+                    confirmBtn.classList.add('ra-enabled');
+                } else {
+                    confirmBtn.disabled = true;
+                    confirmBtn.classList.remove('ra-enabled');
+                }
+            }
+        };
+
+        // 确认并关闭
+        window.confirmAndClose = function() {
+            // 保存确认状态到 localStorage
+            localStorage.setItem('ra_guide_acknowledged', 'true');
+            
+            // 关闭弹窗
+            closeRAGuide();
+        };
+
+        console.log('[复盘行动指南] 已加载');
+    })();
+    </script>
+</body>
+</html>
