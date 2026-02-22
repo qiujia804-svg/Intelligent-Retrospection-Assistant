@@ -624,8 +624,8 @@
         // 创建数据管理面板（自动保存状态指示器已禁用）
         createDataManagementPanel();
 
-        // 添加数据管理按钮到页面
-        addDataManagementButton();
+        // 数据管理按钮已禁用
+        // addDataManagementButton();
 
         // 监听自动保存事件
         setupAutoSaveListeners();
