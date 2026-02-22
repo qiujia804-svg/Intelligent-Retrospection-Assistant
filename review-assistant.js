@@ -1722,16 +1722,16 @@ function updateTrendChartWithCurrentInput() {
         const reviews = getReviews();
         const now = new Date();
         const todayStr = now.toISOString().split('T')[0];
-        
+
         // 创建当前输入值的临时review数据
         const currentInputValue = parseInt(goalProgress.value);
-        
+
         // 检查是否已有今天的review
         const todayReviewIndex = reviews.findIndex(r => r.date === todayStr);
-        
+
         // 创建临时数据，包含当前输入值
         const tempReviews = [...reviews];
-        
+
         if (todayReviewIndex >= 0) {
             // 更新已有review的目标达成率
             tempReviews[todayReviewIndex] = {
@@ -1741,23 +1741,10 @@ function updateTrendChartWithCurrentInput() {
                     percentage: currentInputValue
                 }
             };
-        } else {
-            // 添加今天的review，使用当前输入值
-            tempReviews.push({
-                date: todayStr,
-                goalCompletion: {
-                    percentage: currentInputValue,
-                    description: ''
-                },
-                strengths: '',
-                weaknesses: '',
-                improvements: '',
-                todos: ''
-            });
+            // 更新趋势图
+            initCompletionTrendChart(tempReviews);
         }
-        
-        // 更新趋势图
-        initCompletionTrendChart(tempReviews);
+        // 如果今天没有真实数据，不添加临时数据到趋势图
     } catch (error) {
         console.error('实时更新趋势图失败:', error);
     }
@@ -3641,7 +3628,8 @@ function setupDataOverview() {
         refreshDataBtn.addEventListener('click', function() {
             const reviews = getReviews();
             updateDataOverview(reviews);
-            showNotification('数据已刷新', 'success');
+            // 数据已刷新提示已禁用
+            // showNotification('数据已刷新', 'success');
         });
     }
     
