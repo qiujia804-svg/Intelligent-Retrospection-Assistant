@@ -164,69 +164,69 @@ function checkTrialStatus() {
     };
 }
 
-// 渲染VIP会员中心 - 重新设计布局，支持滚动和正常退出
+// 渲染VIP会员中心 - 全新设计：深色渐变背景 + 玻璃拟态卡片
 function renderVipCenter(isForced = false, days = 3, hours = 0, minutes = 0) {
-    // 1. 浅紫色半透明背景，支持滚动
+    // 1. 深色渐变背景，更有高级感（减小padding）
     const overlayStyle = `
         position: fixed; 
         top: 0; 
         left: 0; 
         width: 100%; 
         height: 100%;
-        background: rgba(139, 92, 246, 0.95);
+        background: linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%);
         z-index: 10000; 
         display: flex; 
         justify-content: center; 
-        align-items: flex-start;
-        backdrop-filter: blur(10px);
+        align-items: center;
+        backdrop-filter: blur(20px);
         overflow-y: auto;
-        padding: 20px 0;
+        padding: 20px;
     `;
 
-    // 2. 关闭按钮 - 固定在右上角
+    // 2. 关闭按钮 - 玻璃拟态风格
     const closeBtn = `
         <button onclick="closeVipCenter()" 
             style="
                 position: fixed; 
-                top: 20px; 
-                right: 20px; 
-                background: rgba(255,255,255,0.9); 
-                border: none; 
-                color: #667eea; 
+                top: 16px; 
+                right: 16px; 
+                background: rgba(255,255,255,0.1); 
+                border: 1px solid rgba(255,255,255,0.2);
+                color: rgba(255,255,255,0.8); 
                 width: 44px; 
                 height: 44px; 
                 border-radius: 50%; 
                 cursor: pointer; 
-                font-size: 24px; 
-                font-weight: bold;
-                transition: all 0.3s;
-                box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+                font-size: 22px; 
+                font-weight: 300;
+                transition: all 0.3s ease;
+                backdrop-filter: blur(10px);
                 z-index: 10001;
                 display: flex;
                 align-items: center;
                 justify-content: center;
             " 
-            onmouseover="this.style.transform='scale(1.1)'; this.style.boxShadow='0 6px 20px rgba(0,0,0,0.3)';" 
-            onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='0 4px 15px rgba(0,0,0,0.2)';">
+            onmouseover="this.style.background='rgba(255,255,255,0.2)'; this.style.transform='rotate(90deg) scale(1.1)'; this.style.borderColor='rgba(255,255,255,0.4)';" 
+            onmouseout="this.style.background='rgba(255,255,255,0.1)'; this.style.transform='rotate(0deg) scale(1)'; this.style.borderColor='rgba(255,255,255,0.2)';">
             ×
         </button>
     `;
 
-    // 3. 顶部状态栏
+    // 3. 顶部状态栏 - 发光效果
     const topStatusBar = `
-        <div style="display: flex; align-items: center; justify-content: center; gap: 12px; margin-top: 15px; flex-wrap: wrap;">
-            <div style="background: linear-gradient(90deg, #f59e0b, #ef4444); color: #fff; padding: 8px 20px; border-radius: 25px; font-weight: bold; font-size: 0.95em; box-shadow: 0 4px 15px rgba(245, 158, 11, 0.4);">
-                ⏱️ 试用中：${days}天${hours}小时${minutes}分钟
+        <div style="display: flex; align-items: center; justify-content: center; gap: 12px; margin-top: 12px; flex-wrap: wrap;">
+            <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: #fff; padding: 10px 24px; border-radius: 25px; font-weight: 600; font-size: 0.9em; box-shadow: 0 6px 24px rgba(102, 126, 234, 0.4); border: 1px solid rgba(255,255,255,0.1);">
+                ⏱️ 试用剩余 ${days}天${hours}小时${minutes}分钟
             </div>
-            <span id="vip-expiry-tag" style="display: none; background: rgba(255,255,255,0.15); color: #fff; padding: 8px 16px; border-radius: 25px; font-size: 0.9em; backdrop-filter: blur(5px); border: 1px solid rgba(255,255,255,0.2);">
+            <span id="vip-expiry-tag" style="display: none; background: rgba(255,255,255,0.08); color: rgba(255,255,255,0.9); padding: 8px 16px; border-radius: 20px; font-size: 0.85em; backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.15);">
                 📅 <span id="vip-expiry-text">未订阅</span>
             </span>
         </div>
     `;
 
-    // 4. 卡片样式 - 统一尺寸
+    // 4. 玻璃拟态卡片样式（稍微缩小）
     const cardStyle = `
-        background: #fff; 
+        background: rgba(255, 255, 255, 0.05); 
         padding: 28px 20px; 
         border-radius: 20px; 
         width: 260px; 
@@ -234,13 +234,15 @@ function renderVipCenter(isForced = false, days = 3, hours = 0, minutes = 0) {
         display: flex; 
         flex-direction: column; 
         justify-content: space-between;
-        box-shadow: 0 10px 30px rgba(0,0,0,0.15);
-        transition: transform 0.3s, box-shadow 0.3s;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        backdrop-filter: blur(20px);
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255,255,255,0.1);
+        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
     `;
 
-    const cardHoverStyle = `onmouseover="this.style.transform='translateY(-5px)'; this.style.boxShadow='0 15px 40px rgba(0,0,0,0.2)';" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 10px 30px rgba(0,0,0,0.15)';"`;
+    const cardHoverStyle = `onmouseover="this.style.transform='translateY(-6px) scale(1.02)'; this.style.boxShadow='0 16px 48px rgba(102, 126, 234, 0.25), inset 0 1px 0 rgba(255,255,255,0.2)'; this.style.borderColor='rgba(255,255,255,0.25)';" onmouseout="this.style.transform='translateY(0) scale(1)'; this.style.boxShadow='0 8px 32px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255,255,255,0.1)'; this.style.borderColor='rgba(255,255,255,0.1)';"`;
 
-    // 5. 按钮样式
+    // 5. 主按钮样式 - 渐变发光
     const btnStylePrimary = `
         width: 100%; 
         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
@@ -249,24 +251,61 @@ function renderVipCenter(isForced = false, days = 3, hours = 0, minutes = 0) {
         padding: 12px; 
         border-radius: 12px; 
         cursor: pointer; 
-        font-weight: bold; 
+        font-weight: 600; 
+        font-size: 0.95em;
         margin-top: 20px;
-        transition: all 0.3s;
-        font-size: 1em;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+        letter-spacing: 0.5px;
     `;
 
+    // 6. 高亮按钮样式（挑战版）- 金色渐变
     const btnStyleHighlight = `
         width: 100%; 
-        background: linear-gradient(135deg, #f59e0b 0%, #ef4444 100%); 
+        background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); 
         color: #fff; 
         border: none; 
         padding: 14px; 
         border-radius: 12px; 
         cursor: pointer; 
-        font-weight: bold; 
+        font-weight: 700; 
+        font-size: 1em;
         margin-top: 20px;
-        transition: all 0.3s;
-        font-size: 1.05em;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 20px rgba(245, 87, 108, 0.4);
+        letter-spacing: 0.5px;
+    `;
+
+    // 7. 标签样式
+    const badgeStyleValue = `
+        position: absolute; 
+        top: -10px; 
+        right: 12px; 
+        background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); 
+        color: #fff; 
+        padding: 5px 12px; 
+        border-radius: 15px; 
+        font-weight: 600; 
+        font-size: 0.7em; 
+        box-shadow: 0 4px 15px rgba(245, 87, 108, 0.4);
+        border: 1px solid rgba(255,255,255,0.2);
+        z-index: 2;
+    `;
+
+    const badgeStyleChallenge = `
+        position: absolute; 
+        top: -10px; 
+        left: 50%; 
+        transform: translateX(-50%); 
+        background: linear-gradient(135deg, #fa709a 0%, #fee140 100%); 
+        color: #fff; 
+        padding: 5px 14px; 
+        border-radius: 15px; 
+        font-weight: 700; 
+        font-size: 0.75em; 
+        box-shadow: 0 4px 15px rgba(250, 112, 154, 0.4);
+        border: 1px solid rgba(255,255,255,0.2);
+        z-index: 2;
     `;
 
     return `
@@ -274,112 +313,104 @@ function renderVipCenter(isForced = false, days = 3, hours = 0, minutes = 0) {
         ${closeBtn}
         
         <div style="
-            background: rgba(255,255,255,0.08); 
-            padding: 40px 30px; 
+            background: rgba(255,255,255,0.03); 
+            padding: 36px 32px; 
             border-radius: 24px; 
-            width: 90%; 
-            max-width: 1200px; 
+            width: auto; 
+            max-width: 900px; 
             text-align: center; 
             position: relative; 
-            border: 1px solid rgba(255,255,255,0.15); 
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
-            margin: 20px auto;
-            min-height: fit-content;
+            border: 1px solid rgba(255,255,255,0.08); 
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255,255,255,0.05);
+            backdrop-filter: blur(10px);
         ">
-            <div style="margin-bottom: 40px;">
-                <h2 style="color: #fff; margin: 0 0 10px 0; font-size: 2.2em; text-shadow: 0 4px 10px rgba(0,0,0,0.3);">会员中心</h2>
-                <p style="color: rgba(255,255,255,0.8); font-size: 1.1em;">解锁全部高级功能，让复盘更高效</p>
+            <!-- 装饰性光晕（缩小） -->
+            <div style="position: absolute; top: -80px; left: -80px; width: 200px; height: 200px; background: radial-gradient(circle, rgba(102,126,234,0.25) 0%, transparent 70%); border-radius: 50%; pointer-events: none;"></div>
+            <div style="position: absolute; bottom: -100px; right: -100px; width: 250px; height: 250px; background: radial-gradient(circle, rgba(118,75,162,0.15) 0%, transparent 70%); border-radius: 50%; pointer-events: none;"></div>
+            
+            <div style="margin-bottom: 32px; position: relative; z-index: 1;">
+                <div style="display: inline-flex; align-items: center; justify-content: center; width: 56px; height: 56px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 16px; margin-bottom: 12px; box-shadow: 0 8px 32px rgba(102, 126, 234, 0.4);">
+                    <span style="font-size: 28px;">👑</span>
+                </div>
+                <h2 style="color: #fff; margin: 0 0 8px 0; font-size: 2em; font-weight: 700; letter-spacing: -0.5px;">会员中心</h2>
+                <p style="color: rgba(255,255,255,0.6); font-size: 1em; font-weight: 300; margin: 0;">解锁全部高级功能，让复盘更高效</p>
                 ${topStatusBar}
             </div>
 
-            <!-- 2x2 网格布局 -->
+            <!-- 一排三列布局 -->
             <div style="
                 display: grid; 
-                grid-template-columns: repeat(2, 1fr); 
-                gap: 25px; 
-                max-width: 600px; 
-                margin: 0 auto 30px auto;
+                grid-template-columns: repeat(3, 1fr); 
+                gap: 24px; 
+                margin: 0 auto 28px auto;
+                position: relative;
+                z-index: 1;
             ">
                 <!-- 卡片1：月度会员 -->
                 <div style="${cardStyle}" ${cardHoverStyle}>
                     <div>
-                        <h3 style="color: #333; margin-bottom: 8px; font-size: 1.2em; font-weight: 600;">月度会员</h3>
-                        <div style="font-size: 2.2em; color: #667eea; font-weight: 800; margin: 8px 0;">¥19.9 <span style="font-size: 0.4em; color: #666; font-weight: 500;">/月</span></div>
-                        <div style="color: #999; text-decoration: line-through; font-size: 0.85em; margin-bottom: 12px;">¥29.9</div>
-                        <ul style="list-style: none; padding: 0; margin: 0; color: #555; text-align: left; font-size: 0.9em; line-height: 2;">
-                            <li style="display: flex; align-items: center; gap: 6px;"><span style="color: #667eea;">✓</span> 无限复盘记录</li>
-                            <li style="display: flex; align-items: center; gap: 6px;"><span style="color: #667eea;">✓</span> AI智能分析</li>
-                            <li style="display: flex; align-items: center; gap: 6px;"><span style="color: #667eea;">✓</span> 数据图表导出</li>
-                            <li style="display: flex; align-items: center; gap: 6px;"><span style="color: #667eea;">✓</span> 优先客服支持</li>
+                        <h3 style="color: rgba(255,255,255,0.9); margin-bottom: 12px; font-size: 1.2em; font-weight: 600;">月度会员</h3>
+                        <div style="font-size: 2.2em; color: #fff; font-weight: 800; margin: 12px 0; text-shadow: 0 2px 16px rgba(102,126,234,0.5);">¥19.9 <span style="font-size: 0.4em; color: rgba(255,255,255,0.5); font-weight: 400;">/月</span></div>
+                        <div style="color: rgba(255,255,255,0.4); text-decoration: line-through; font-size: 0.85em; margin-bottom: 16px;">原价 ¥29.9</div>
+                        <div style="width: 100%; height: 1px; background: linear-gradient(90deg, transparent, rgba(255,255,255,0.15), transparent); margin-bottom: 16px;"></div>
+                        <ul style="list-style: none; padding: 0; margin: 0; color: rgba(255,255,255,0.75); text-align: left; font-size: 0.9em; line-height: 2;">
+                            <li style="display: flex; align-items: center; gap: 8px;"><span style="color: #667eea;">✓</span> 无限复盘记录</li>
+                            <li style="display: flex; align-items: center; gap: 8px;"><span style="color: #667eea;">✓</span> AI智能分析</li>
+                            <li style="display: flex; align-items: center; gap: 8px;"><span style="color: #667eea;">✓</span> 数据图表导出</li>
+                            <li style="display: flex; align-items: center; gap: 8px;"><span style="color: #667eea;">✓</span> 优先客服支持</li>
                         </ul>
                     </div>
                     <button onclick="handleSubscribeWithExpiry('monthly')" style="${btnStylePrimary}" 
-                        onmouseover="this.style.transform='scale(1.02)'; this.style.boxShadow='0 6px 20px rgba(102,126,234,0.4)';" 
-                        onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='none';">立即订阅</button>
+                        onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 8px 25px rgba(102,126,234,0.5)';" 
+                        onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 15px rgba(102,126,234,0.3)';">立即订阅</button>
                 </div>
 
-                <!-- 卡片2：年度会员 -->
-                <div style="${cardStyle}" ${cardHoverStyle}>
+                <!-- 卡片2：年度会员+挑战（高亮） -->
+                <div style="${cardStyle}; position: relative; border: 1px solid rgba(250, 112, 154, 0.3); box-shadow: 0 8px 32px rgba(250, 112, 154, 0.15), inset 0 1px 0 rgba(255,255,255,0.15);" onmouseover="this.style.transform='translateY(-6px) scale(1.02)'; this.style.boxShadow='0 16px 48px rgba(250, 112, 154, 0.3), inset 0 1px 0 rgba(255,255,255,0.2)';" onmouseout="this.style.transform='translateY(0) scale(1)'; this.style.boxShadow='0 8px 32px rgba(250, 112, 154, 0.15), inset 0 1px 0 rgba(255,255,255,0.15)';">
+                    <div style="${badgeStyleChallenge}">🏆 挑战版</div>
                     <div>
-                        <h3 style="color: #333; margin-bottom: 8px; font-size: 1.2em; font-weight: 600;">年度会员</h3>
-                        <div style="font-size: 2.2em; color: #667eea; font-weight: 800; margin: 8px 0;">¥199 <span style="font-size: 0.4em; color: #666; font-weight: 500;">/年</span></div>
-                        <div style="color: #999; text-decoration: line-through; font-size: 0.85em; margin-bottom: 12px;">¥358</div>
-                        <ul style="list-style: none; padding: 0; margin: 0; color: #555; text-align: left; font-size: 0.9em; line-height: 2;">
-                            <li style="display: flex; align-items: center; gap: 6px;"><span style="color: #667eea;">✓</span> 月度会员全部权益</li>
-                            <li style="display: flex; align-items: center; gap: 6px;"><span style="color: #667eea;">✓</span> 年度成长报告</li>
-                            <li style="display: flex; align-items: center; gap: 6px;"><span style="color: #667eea;">✓</span> 专属成长导师</li>
-                            <li style="display: flex; align-items: center; gap: 6px;"><span style="color: #667eea;">✓</span> 7折续费优惠</li>
-                        </ul>
-                    </div>
-                    <button onclick="handleSubscribeWithExpiry('yearly')" style="${btnStylePrimary}" 
-                        onmouseover="this.style.transform='scale(1.02)'; this.style.boxShadow='0 6px 20px rgba(102,126,234,0.4)';" 
-                        onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='none';">立即订阅</button>
-                </div>
-
-                <!-- 卡片3：年度会员+挑战（高亮） -->
-                <div style="${cardStyle.replace('box-shadow: 0 10px 30px rgba(0,0,0,0.15)', 'border: 3px solid #f59e0b; box-shadow: 0 10px 30px rgba(245,158,11,0.25)')}; position: relative;" ${cardHoverStyle}>
-                    <div style="position: absolute; top: -12px; left: 50%; transform: translateX(-50%); background: linear-gradient(135deg, #f59e0b 0%, #ef4444 100%); color: #fff; padding: 5px 14px; border-radius: 15px; font-weight: bold; font-size: 0.8em; box-shadow: 0 4px 10px rgba(245,158,11,0.3);">🏆 挑战版</div>
-                    <div>
-                        <h3 style="color: #333; margin-bottom: 8px; font-size: 1.2em; font-weight: 600; margin-top: 5px;">年度会员+挑战</h3>
-                        <div style="font-size: 2.2em; color: #f59e0b; font-weight: 800; margin: 8px 0;">¥299 <span style="font-size: 0.4em; color: #666; font-weight: 500;">/年</span></div>
-                        <div style="color: #999; text-decoration: line-through; font-size: 0.85em; margin-bottom: 12px;">¥458</div>
-                        <ul style="list-style: none; padding: 0; margin: 0; color: #555; text-align: left; font-size: 0.9em; line-height: 2;">
-                            <li style="display: flex; align-items: center; gap: 6px;"><span style="color: #f59e0b; font-weight: bold;">✓</span> <b>年度会员全部权益</b></li>
-                            <li style="display: flex; align-items: center; gap: 6px;"><span style="color: #f59e0b; font-weight: bold;">✓</span> <b>4次90天挑战机会</b></li>
-                            <li style="display: flex; align-items: center; gap: 6px;"><span style="color: #f59e0b;">✓</span> 达成赢¥299现金</li>
-                            <li style="display: flex; align-items: center; gap: 6px;"><span style="color: #f59e0b;">✓</span> 失败得1.5年会员</li>
+                        <h3 style="color: rgba(255,255,255,0.95); margin-bottom: 12px; font-size: 1.2em; font-weight: 700; margin-top: 4px;">年度会员+挑战</h3>
+                        <div style="font-size: 2.2em; color: #fa709a; font-weight: 800; margin: 12px 0; text-shadow: 0 2px 16px rgba(250, 112, 154, 0.5);">¥299 <span style="font-size: 0.4em; color: rgba(255,255,255,0.5); font-weight: 400;">/年</span></div>
+                        <div style="color: rgba(255,255,255,0.4); text-decoration: line-through; font-size: 0.85em; margin-bottom: 16px;">原价 ¥458</div>
+                        <div style="width: 100%; height: 1px; background: linear-gradient(90deg, transparent, rgba(250,112,154,0.3), transparent); margin-bottom: 16px;"></div>
+                        <ul style="list-style: none; padding: 0; margin: 0; color: rgba(255,255,255,0.8); text-align: left; font-size: 0.9em; line-height: 2;">
+                            <li style="display: flex; align-items: center; gap: 8px;"><span style="color: #fa709a; font-weight: bold;">✓</span> <b>年度会员全部权益</b></li>
+                            <li style="display: flex; align-items: center; gap: 8px;"><span style="color: #fa709a; font-weight: bold;">✓</span> <b>4次90天挑战</b></li>
+                            <li style="display: flex; align-items: center; gap: 8px;"><span style="color: #fee140;">✓</span> 达成赢¥299现金</li>
+                            <li style="display: flex; align-items: center; gap: 8px;"><span style="color: #fee140;">✓</span> 失败得1.5年会员</li>
                         </ul>
                     </div>
                     <button onclick="handleSubscribeWithExpiry('yearly_challenge')" style="${btnStyleHighlight}" 
-                        onmouseover="this.style.transform='scale(1.02)'; this.style.boxShadow='0 6px 20px rgba(245,158,11,0.4)';" 
-                        onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='none';">立即订阅</button>
+                        onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 8px 30px rgba(245,87,108,0.6)';" 
+                        onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 20px rgba(245,87,108,0.4)';">立即订阅</button>
                 </div>
 
-                <!-- 卡片4：终身会员 -->
+                <!-- 卡片3：终身会员 -->
                 <div style="${cardStyle}; position: relative;" ${cardHoverStyle}>
-                    <div style="position: absolute; top: -12px; right: 10px; background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); color: #fff; padding: 4px 10px; border-radius: 10px; font-weight: bold; font-size: 0.75em; box-shadow: 0 4px 10px rgba(239,68,68,0.3);">超值</div>
+                    <div style="${badgeStyleValue}">超值</div>
                     <div>
-                        <h3 style="color: #333; margin-bottom: 8px; font-size: 1.2em; font-weight: 600; margin-top: 5px;">终身会员</h3>
-                        <div style="font-size: 2.2em; color: #667eea; font-weight: 800; margin: 8px 0;">¥399 <span style="font-size: 0.4em; color: #666; font-weight: 500;">/永久</span></div>
-                        <div style="color: #999; text-decoration: line-through; font-size: 0.85em; margin-bottom: 12px;">¥999</div>
-                        <ul style="list-style: none; padding: 0; margin: 0; color: #555; text-align: left; font-size: 0.9em; line-height: 2;">
-                            <li style="display: flex; align-items: center; gap: 6px;"><span style="color: #667eea;">✓</span> 所有高级功能</li>
-                            <li style="display: flex; align-items: center; gap: 6px;"><span style="color: #667eea;">✓</span> 终身免费更新</li>
-                            <li style="display: flex; align-items: center; gap: 6px;"><span style="color: #667eea;">✓</span> VIP专属群</li>
-                            <li style="display: flex; align-items: center; gap: 6px;"><span style="color: #667eea;">✓</span> 一对一咨询</li>
+                        <h3 style="color: rgba(255,255,255,0.9); margin-bottom: 12px; font-size: 1.2em; font-weight: 600; margin-top: 4px;">终身会员</h3>
+                        <div style="font-size: 2.2em; color: #fff; font-weight: 800; margin: 12px 0; text-shadow: 0 2px 16px rgba(102,126,234,0.5);">¥399 <span style="font-size: 0.4em; color: rgba(255,255,255,0.5); font-weight: 400;">/永久</span></div>
+                        <div style="color: rgba(255,255,255,0.4); text-decoration: line-through; font-size: 0.85em; margin-bottom: 16px;">原价 ¥999</div>
+                        <div style="width: 100%; height: 1px; background: linear-gradient(90deg, transparent, rgba(255,255,255,0.15), transparent); margin-bottom: 16px;"></div>
+                        <ul style="list-style: none; padding: 0; margin: 0; color: rgba(255,255,255,0.75); text-align: left; font-size: 0.9em; line-height: 2;">
+                            <li style="display: flex; align-items: center; gap: 8px;"><span style="color: #667eea;">✓</span> 所有高级功能</li>
+                            <li style="display: flex; align-items: center; gap: 8px;"><span style="color: #667eea;">✓</span> 终身免费更新</li>
+                            <li style="display: flex; align-items: center; gap: 8px;"><span style="color: #667eea;">✓</span> VIP专属群</li>
+                            <li style="display: flex; align-items: center; gap: 8px;"><span style="color: #667eea;">✓</span> 一对一咨询</li>
                         </ul>
                     </div>
                     <button onclick="handleSubscribeWithExpiry('lifetime')" style="${btnStylePrimary}" 
-                        onmouseover="this.style.transform='scale(1.02)'; this.style.boxShadow='0 6px 20px rgba(102,126,234,0.4)';" 
-                        onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='none';">立即订阅</button>
+                        onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 8px 25px rgba(102,126,234,0.5)';" 
+                        onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 15px rgba(102,126,234,0.3)';">立即订阅</button>
                 </div>
             </div>
 
             <!-- 底部保障信息 -->
-            <div style="display: flex; justify-content: center; gap: 30px; color: rgba(255,255,255,0.7); font-size: 0.9em; flex-wrap: wrap; padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.1);">
-                <span style="display: flex; align-items: center; gap: 6px;">🛡️ 7天无理由退款</span>
-                <span style="display: flex; align-items: center; gap: 6px;">🔒 数据本地存储安全</span>
-                <span style="display: flex; align-items: center; gap: 6px;">⚡ 即时开通使用</span>
+            <div style="display: flex; justify-content: center; gap: 32px; color: rgba(255,255,255,0.5); font-size: 0.9em; flex-wrap: wrap; padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.08); position: relative; z-index: 1;">
+                <span style="display: flex; align-items: center; gap: 6px;"><span style="font-size: 1.1em;">🛡️</span> 7天无理由退款</span>
+                <span style="display: flex; align-items: center; gap: 6px;"><span style="font-size: 1.1em;">🔒</span> 数据本地存储安全</span>
+                <span style="display: flex; align-items: center; gap: 6px;"><span style="font-size: 1.1em;">⚡</span> 即时开通使用</span>
             </div>
         </div>
     </div>
