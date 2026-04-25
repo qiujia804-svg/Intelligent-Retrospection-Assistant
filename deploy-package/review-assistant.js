@@ -1948,7 +1948,6 @@ function saveReview(review) {
         }
         
         localStorage.setItem(STORAGE_KEY_REVIEWS, JSON.stringify(reviews));
-        showNotification('保存成功', 'success');
         
         // 自动同步本月总投入
         if (typeof updateMonthlyInvestment === 'function') {
@@ -3268,8 +3267,13 @@ function getTrendChartData(reviews) {
                     return;
                 }
 
-                // 历史日期的数据全部保留，不进行额外验证
-                // 今天的日期数据也全部保留，因为用户可能正在输入当天数据
+                // 【关键修复】跳过"空壳记录"（系统自动创建但用户未填写任何复盘内容）
+                const hasRealContent = review.strengths || review.weaknesses || review.improvements || review.todos;
+                const hasTimeStats = review.timeStats && review.timeStats.items && review.timeStats.items.length > 0;
+                if (!hasRealContent && !hasTimeStats) {
+                    console.log('【折线图】跳过空壳记录:', reviewDateStr);
+                    return;
+                }
 
                 // 处理不同格式的goalCompletion
                 let percentage = 0;

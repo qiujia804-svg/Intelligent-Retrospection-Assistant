@@ -1966,7 +1966,6 @@ function saveReview(review) {
         }
         
         localStorage.setItem(STORAGE_KEY_REVIEWS, JSON.stringify(reviews));
-        showNotification('保存成功', 'success');
         
         // 自动同步本月总投入
         if (typeof updateMonthlyInvestment === 'function') {
@@ -2157,7 +2156,7 @@ function setupPlanForm() {
                 existingReview = {
                     date: todayDate,
                     goalCompletion: {
-                        percentage: 50,
+                        percentage: 0,
                         description: ''
                     },
                     strengths: '',
