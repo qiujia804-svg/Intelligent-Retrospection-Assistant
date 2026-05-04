@@ -39,9 +39,5 @@
   ],
   "github": {
     "enabled": true
-  },
-  "domains": [
-    "deepmind.work",
-    "www.deepmind.work"
-  ]
+  }
 }
