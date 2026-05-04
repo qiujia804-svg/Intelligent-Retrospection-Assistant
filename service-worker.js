@@ -3,9 +3,9 @@
  * 提供离线缓存和后台同步功能
  */
 
-const CACHE_NAME = 'retrospection-assistant-v1.0.3';
-const STATIC_CACHE = 'static-v1.0.3';
-const DYNAMIC_CACHE = 'dynamic-v1.0.3';
+const CACHE_NAME = 'retrospection-assistant-v1.0.4';
+const STATIC_CACHE = 'static-v1.0.4';
+const DYNAMIC_CACHE = 'dynamic-v1.0.4';
 
 // 需要预缓存的静态资源
 const STATIC_ASSETS = [
