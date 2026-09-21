@@ -84,6 +84,17 @@ server {
         try_files $uri $uri/ /index.html;
     }
 
+    # AI晨间规划 API 反向代理
+    location = /api/ai-plan {
+        client_max_body_size 64k;
+        proxy_pass http://127.0.0.1:3100;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_read_timeout 65s;
+        proxy_send_timeout 65s;
+    }
+
     # 邮件 API 反向代理
     location /api/send-email {
         proxy_pass http://localhost:3000;
@@ -115,7 +126,7 @@ systemctl restart nginx
 echo -e "${GREEN}✓ Nginx 配置完成${NC}"
 echo ""
 
-echo -e "${YELLOW}步骤 7/7: 启动邮件服务...${NC}"
+echo -e "${YELLOW}步骤 7/8: 启动邮件服务与AI规划服务...${NC}"
 cd $SERVER_DIR
 
 # 如果邮件服务已经在运行，先停止
@@ -123,6 +134,15 @@ pm2 delete email-server 2>/dev/null || true
 
 # 启动邮件服务
 pm2 start email-server.js --name "email-server"
+
+# AI规划服务从项目根目录启动，API密钥只从服务器环境变量读取
+cd $PROJECT_DIR
+if [ -z "${DEEPSEEK_API_KEY:-}" ]; then
+    echo -e "${YELLOW}警告：当前Shell没有DEEPSEEK_API_KEY，AI按钮将显示未配置。${NC}"
+else
+    pm2 delete ai-plan-server 2>/dev/null || true
+    pm2 start server/ai-plan-server.js --name "ai-plan-server"
+fi
 pm2 save
 pm2 startup systemd -u root --hp /root
 

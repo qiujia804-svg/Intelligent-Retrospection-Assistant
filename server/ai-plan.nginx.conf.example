@@ -1,0 +1,11 @@
+# Add this location INSIDE the existing website's server block.
+# Keep all existing locations (including email API) unchanged.
+location = /api/ai-plan {
+    client_max_body_size 64k;
+    proxy_pass http://127.0.0.1:3100;
+    proxy_http_version 1.1;
+    proxy_set_header Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_read_timeout 65s;
+    proxy_send_timeout 65s;
+}

@@ -49,12 +49,8 @@ let verifyCodeHint = null;
 let registerSubmitBtn = null;
 let registerEmailInput = null;
 
-// SendCloud 配置
-const SENDCLOUD_CONFIG = {
-    apiUser: 'sc_akjvcr_test_VlAstu',
-    apiKey: '82bb08ac6c8d8f56b1e9b0f454e16695',
-    templateName: 'verify_code_template'
-};
+// 注意：SendCloud 等邮件服务商的密钥只能放在后端（api/send-email.js / server/email-server.js），
+// 严禁写进前端代码 —— 任何出现在这里的密钥都会随页面源码泄露给所有访问者。
 const subscriptionPlansContainer = document.getElementById('subscription-plans');
 const paymentPlanNameElement = document.getElementById('payment-plan-name');
 const paymentAmountElement = document.getElementById('payment-amount-value');
@@ -1210,7 +1206,7 @@ function generateVerifyCode() {
 }
 
 // 处理发送验证码
-function handleSendVerifyCode() {
+async function handleSendVerifyCode() {
     const email = registerEmailInput.value.trim();
     
     if (!email) {
@@ -1235,9 +1231,6 @@ function handleSendVerifyCode() {
     // 生成验证码
     currentVerifyCode = generateVerifyCode();
     
-    // 使用 SendCloud 发送邮件
-    sendVerificationEmail(email, currentVerifyCode);
-    
     // 显示验证码输入框
     verifyCodeGroup.style.display = 'block';
     
@@ -1256,6 +1249,15 @@ function handleSendVerifyCode() {
             sendVerifyCodeBtn.textContent = '发送验证码';
         }
     }, 1000);
+
+    // 使用 SendCloud 发送邮件
+    // 失败时作废本次验证码（避免任何人跳过邮箱验证直接注册），且绝不把验证码回显给用户
+    const delivered = await sendVerificationEmail(email, currentVerifyCode);
+    if (delivered) {
+        alert('验证码已发送至您的邮箱，请查收！');
+    } else {
+        currentVerifyCode = null;
+    }
 }
 
 // 处理验证码输入
@@ -1275,37 +1277,31 @@ function handleVerifyCodeInput() {
 // 后端邮件服务配置 - 使用相对路径，自动适配当前域名
 const EMAIL_SERVER_URL = '/api/send-email';
 
-// SendCloud 发送验证邮件（通过后端代理）
-function sendVerificationEmail(email, verifyCode) {
-    console.log('发送邮件请求:', { email, verifyCode });
-    
-    fetch(EMAIL_SERVER_URL, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-            email: email,
-            verifyCode: verifyCode
-        })
-    })
-    .then(response => {
-        console.log('后端响应状态:', response.status);
-        return response.json();
-    })
-    .then(data => {
-        console.log('后端响应数据:', data);
-        if (data.success) {
-            alert('验证码已发送至您的邮箱，请查收！');
-        } else {
-            console.error('邮件发送失败:', data);
-            alert('邮件发送失败：' + (data.error || '未知错误') + '，模拟验证码：' + verifyCode);
+// 发送验证邮件（通过后端代理）
+// 返回 Promise<boolean>：仅在后端确认投递成功时 resolve(true)。
+// 任何失败都不允许把验证码回显给用户或打印到控制台，否则邮箱验证形同虚设。
+async function sendVerificationEmail(email, verifyCode) {
+    try {
+        const response = await fetch(EMAIL_SERVER_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email: email, verifyCode: verifyCode })
+        });
+
+        const data = await response.json().catch(() => null);
+
+        if (response.ok && data && data.success) {
+            return true;
         }
-    })
-    .catch(error => {
-        console.error('请求失败:', error);
-        alert('邮件服务暂时不可用，模拟验证码：' + verifyCode);
-    });
+
+        console.error('邮件发送失败:', response.status, data && data.error);
+        alert('邮件发送失败：' + ((data && data.error) || `服务异常（${response.status}）`) + '，请稍后重试。');
+        return false;
+    } catch (error) {
+        console.error('邮件服务请求失败:', error.message);
+        alert('邮件服务暂时不可用，请稍后重试。');
+        return false;
+    }
 }
 
 // 处理登录
@@ -4627,11 +4623,11 @@ function forceInitChartsAndUpdate() {
 
     // 销毁现有实例
     if (radarChartInstance) {
-        try { radarChartInstance.dispose(); } catch(e) {}
+        try { radarChartInstance.dispose(); } catch(e) { console.warn('销毁雷达图实例失败（不影响后续重建）:', e.message); }
         radarChartInstance = null;
     }
     if (barChartInstance) {
-        try { barChartInstance.dispose(); } catch(e) {}
+        try { barChartInstance.dispose(); } catch(e) { console.warn('销毁柱状图实例失败（不影响后续重建）:', e.message); }
         barChartInstance = null;
     }
 

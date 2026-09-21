@@ -49,12 +49,7 @@ let verifyCodeHint = null;
 let registerSubmitBtn = null;
 let registerEmailInput = null;
 
-// SendCloud 配置
-const SENDCLOUD_CONFIG = {
-    apiUser: 'sc_akjvcr_test_VlAstu',
-    apiKey: '82bb08ac6c8d8f56b1e9b0f454e16695',
-    templateName: 'verify_code_template'
-};
+// 注意：SendCloud 等邮件服务商的密钥只能放在后端，严禁写进前端代码。
 const subscriptionPlansContainer = document.getElementById('subscription-plans');
 const paymentPlanNameElement = document.getElementById('payment-plan-name');
 const paymentAmountElement = document.getElementById('payment-amount-value');

@@ -3,25 +3,30 @@
  * 提供离线缓存和后台同步功能
  */
 
-const CACHE_NAME = 'retrospection-assistant-v1.0.4';
-const STATIC_CACHE = 'static-v1.0.4';
-const DYNAMIC_CACHE = 'dynamic-v1.0.4';
+const CACHE_NAME = 'retrospection-assistant-v1.0.5';
+const STATIC_CACHE = 'static-v1.0.5';
+const DYNAMIC_CACHE = 'dynamic-v1.0.5';
 
 // 需要预缓存的静态资源
+// 注意：CDN 地址必须与 index.html 中实际 <script src> 使用的地址完全一致，
+// 否则缓存里存的是另一个 URL，离线时页面依然取不到资源。
 const STATIC_ASSETS = [
   './',
   './index.html',
   './review-assistant.css',
   './mobile.css',
   './review-assistant.js',
+  './ai-plan-core.js',
+  './ai-planner.js',
+  './ai-planner.css',
   './data-storage.js',
   './commercial-system.js',
   './manifest.json',
   './offline.html',
-  // CDN 资源
+  // CDN 资源（与 index.html 保持一致）
   'https://cdn.jsdelivr.net/npm/chart.js',
   'https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js',
-  'https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js'
+  'https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js'
 ];
 
 // 离线回退页面
@@ -29,7 +34,7 @@ const OFFLINE_PAGE = '/offline.html';
 
 // 安装事件 - 预缓存静态资源
 self.addEventListener('install', (event) => {
-  console.log('[SW] Installing Service Worker v1.0.3...');
+  console.log(`[SW] Installing Service Worker ${CACHE_NAME}...`);
 
   event.waitUntil(
     // 先清除所有旧缓存
@@ -47,7 +52,15 @@ self.addEventListener('install', (event) => {
     })
     .then((cache) => {
       console.log('[SW] Pre-caching static assets');
-      return cache.addAll(STATIC_ASSETS);
+      // 逐项缓存：原先用 cache.addAll 时，只要有任意一个资源（例如某个 CDN 临时不可用）
+      // 请求失败，整个预缓存都会失败，导致离线功能彻底不可用。改为逐项缓存 + 单独记录失败。
+      return Promise.all(
+        STATIC_ASSETS.map((asset) =>
+          cache.add(asset).catch((error) => {
+            console.warn('[SW] Skip asset, caching failed:', asset, error.message);
+          })
+        )
+      );
     })
     .then(() => {
       console.log('[SW] Static assets cached successfully');

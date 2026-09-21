@@ -1,0 +1,14 @@
+.ai-plan-entry{border:0;border-radius:8px;padding:10px 18px;margin:0 0 16px;background:#667eea;color:white;cursor:pointer;font:inherit}
+#ai-plan-dialog{box-sizing:border-box;width:min(720px,94vw);max-height:88vh;margin:auto;padding:24px;border:0;border-radius:16px;color:#333;background:#fff;box-shadow:0 20px 70px #0004;overflow:auto;font-family:inherit}
+#ai-plan-dialog::backdrop{background:#0008}
+#ai-plan-dialog .ai-plan-heading{display:flex;justify-content:space-between;align-items:center;gap:16px}
+#ai-plan-dialog h2{margin:0;font-size:22px}
+#ai-plan-dialog p{line-height:1.65;margin:10px 0;white-space:pre-wrap;overflow-wrap:anywhere}
+#ai-plan-dialog textarea{box-sizing:border-box;width:100%;margin-top:8px;padding:12px;border:1px solid #ccd0e5;border-radius:8px;resize:vertical;font:inherit}
+#ai-plan-dialog button{padding:10px 16px;border:0;border-radius:8px;background:#667eea;color:#fff;cursor:pointer;font:inherit}
+#ai-plan-dialog button:disabled{opacity:.5;cursor:not-allowed}
+#ai-plan-dialog .ai-plan-hint{color:#666;font-size:13px}
+#ai-plan-dialog article{padding:12px 16px;margin:12px 0;border:1px solid #e0e3f4;border-radius:10px;background:#f8f9ff}
+#ai-plan-dialog input[type=checkbox]{margin-right:8px}
+#ai-plan-dialog #ai-plan-apply{margin-top:16px}
+@media(max-width:480px){#ai-plan-dialog{padding:16px}#ai-plan-dialog h2{font-size:19px}}
