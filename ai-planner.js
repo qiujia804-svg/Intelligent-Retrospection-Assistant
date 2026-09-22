@@ -52,11 +52,36 @@
         } catch(e) { invalidate(); status(e.name === 'AbortError' ? '生成超时，请重试。' : e.message); }
         finally { clearTimeout(timer); $('ai-plan-generate').disabled=false; $('ai-plan-input').disabled=false; }
     }
+    // 【AI规划同步】把AI使用的标签自动补充进“管理标签”，已存在的标签不重复创建。
+    // 标签补齐后，时间分配统计与右侧饼图才能按标签正确归类并显示颜色。
+    function ensureAiTags(names) {
+        if (typeof getUserTags !== 'function' || typeof saveUserTags !== 'function') return [];
+        const existing = getUserTags();
+        // 标签体系中“学习”“休息放松”会被永久过滤，无法创建，直接跳过
+        const reserved = ['学习', '休息放松'];
+        const palette = (typeof TAG_MANAGER_CONFIG === 'object' && TAG_MANAGER_CONFIG && Array.isArray(TAG_MANAGER_CONFIG.presetColors))
+            ? TAG_MANAGER_CONFIG.presetColors.map(c => c.value) : [];
+        // 生活类标签不分配颜色，与原有标签体系保持一致（不会进入常规时段的下拉菜单）
+        const lifeHint = ['洗漱', '晨跑', '做饭', '吃饭', '午休', '午睡', '睡觉', '家务', '冥想', '健身', '运动', '跑步', '散步', '遛狗', '洗澡', '购物', '买菜', '通勤', '早餐', '午餐', '晚餐', '休息', '生活'];
+        const created = [];
+        [...new Set(names)].forEach(name => {
+            const tagName = String(name || '').trim();
+            if (!tagName || reserved.includes(tagName)) return;
+            if (existing.some(t => t.name === tagName) || created.some(t => t.name === tagName)) return;
+            const used = new Set([...existing, ...created].map(t => t.color).filter(Boolean));
+            const isLife = lifeHint.some(k => tagName.includes(k));
+            const color = isLife ? null : (palette.find(c => !used.has(c)) || (palette.length ? palette[(existing.length + created.length) % palette.length] : null));
+            created.push({ id: 'tag_' + Date.now() + '_' + created.length, name: tagName, color: color });
+        });
+        if (created.length) saveUserTags([...existing, ...created]);
+        return created.map(t => t.name);
+    }
     function apply() {
         if (!proposal) return;
         if (fingerprint() !== snapshot) { invalidate(); return status('原表单已有变化，请重新生成，避免覆盖刚才的修改。'); }
         const conflicts = AIPlanCore.conflicts(proposal, readSchedule());
         if(conflicts.length && !$('ai-plan-overwrite')?.checked) return;
+        const createdTags = ensureAiTags(proposal.tasks.map(t => t.tag));
         // Append new quadrant tasks; preserve every existing task and its event handlers.
         proposal.tasks.forEach(t => {
             const list = document.getElementById(`quadrant-${t.quadrant}`);
@@ -76,13 +101,18 @@
             const task = proposal.tasks.find(t=>t.id===s.taskId);
             const input = row.querySelector('.task-input'); input.value=task.what;
             row.querySelector('.duration-input').value=s.minutes;
+            // 标记该行由AI填入的标签，供时间分配统计/饼图按标签归类（用户手动改动文字后自动失效）
+            if (input.dataset) { input.dataset.aiTag = task.tag || ''; input.dataset.aiTagText = task.what; }
             input.dispatchEvent(new Event('input',{bubbles:true}));
             const tag = typeof getUserTags === 'function' ? getUserTags().find(t=>t.name===task.tag) : null;
             if(tag?.color) input.style.borderColor=tag.color;
         });
         updateTimeStatistics();
         if(window.LocalStorageManager) window.LocalStorageManager.manualSave();
-        invalidate(); status('已填入原规划和时间表，时间分配图已更新。请检查后使用原来的“保存规划”按钮。');
+        invalidate();
+        status(createdTags.length
+            ? `已填入原规划和时间表，时间分配图已更新，并自动新增标签：${createdTags.join('、')}。请检查后使用原来的“保存规划”按钮。`
+            : '已填入原规划和时间表，时间分配图已更新。请检查后使用原来的“保存规划”按钮。');
     }
     function init() {
         const form = $('plan-form'); if(!form) return;

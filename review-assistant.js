@@ -3967,7 +3967,11 @@ function updateTimeStatistics() {
         const duration = parseInt(durationInput ? durationInput.value : 0) || 0;
         
         if (taskName && duration > 0) {
-            const { type } = getTaskType(taskName);
+            // 【AI规划同步】AI填入的行会带上标签（data-ai-tag）；当用户未手动改动该行文字时按标签归类，
+            // 使右侧饼图与时间分配统计能正确显示AI任务。手动填写或修改过的行不受影响，仍走原有关键词逻辑。
+            const tagValue = (taskInput && taskInput.dataset) ? (taskInput.dataset.aiTag || '') : '';
+            const aiTag = (tagValue && taskInput.value.trim() === (taskInput.dataset.aiTagText || '')) ? tagValue : '';
+            const { type } = aiTag ? { type: aiTag } : getTaskType(taskName);
             // 确保只添加有效的任务类型，不包括"其他"
             const taskType = type !== '其他' ? type : taskName;
             
