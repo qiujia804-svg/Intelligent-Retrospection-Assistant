@@ -7,6 +7,8 @@
         const ids = new Set();
         for (const t of plan.tasks) {
             if (!text(t.id, 40) || !t.id || ids.has(t.id) || !text(t.what, 120) || !t.what.trim() || !['a','b','c','d'].includes(t.quadrant) || !['why','how','solution','help','tag'].every(k => text(t[k])) || typeof t.estimated !== 'boolean') throw new Error('AI任务信息无效，请重新生成。');
+            // cat为可选的统计分类（work/life/fun），用于时间分配统计；缺失或非法时不拦截，前端按work处理
+            if (t.cat !== undefined && t.cat !== null && !['work', 'life', 'fun'].includes(t.cat)) throw new Error('AI任务分类无效，请重新生成。');
             ids.add(t.id);
         }
         const seen = new Set();

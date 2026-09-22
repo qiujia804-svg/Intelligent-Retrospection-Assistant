@@ -101,8 +101,8 @@
             const task = proposal.tasks.find(t=>t.id===s.taskId);
             const input = row.querySelector('.task-input'); input.value=task.what;
             row.querySelector('.duration-input').value=s.minutes;
-            // 标记该行由AI填入的标签，供时间分配统计/饼图按标签归类（用户手动改动文字后自动失效）
-            if (input.dataset) { input.dataset.aiTag = task.tag || ''; input.dataset.aiTagText = task.what; }
+            // 标记该行由AI填入的标签与统计分类，供时间分配统计/饼图按标签归类（用户手动改动文字后自动失效）
+            if (input.dataset) { input.dataset.aiTag = task.tag || ''; input.dataset.aiTagText = task.what; input.dataset.aiCat = task.cat || ''; }
             input.dispatchEvent(new Event('input',{bubbles:true}));
             const tag = typeof getUserTags === 'function' ? getUserTags().find(t=>t.name===task.tag) : null;
             if(tag?.color) input.style.borderColor=tag.color;

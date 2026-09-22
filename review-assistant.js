@@ -3979,9 +3979,12 @@ function updateTimeStatistics() {
             totalMinutes += duration;
             taskCount++;
             
-            // 判断任务类型
-            const isEntertainment = entertainmentKeywords.some(keyword => taskName.includes(keyword));
-            const isLife = lifeKeywords.some(keyword => taskName.includes(keyword));
+            // 判断任务类型：AI填入的行优先使用AI给出的统计分类（cat: work/life/fun），
+            // 避免任务文字里的“视频”“直播”等字样被关键词误判成娱乐（如“做数字人视频”“复盘视频”“直播带货”）。
+            // 手动填写或修改过的行不受影响，仍走原有关键词逻辑。
+            const aiCat = aiTag ? ((taskInput.dataset && taskInput.dataset.aiCat) || '') : '';
+            const isEntertainment = aiTag ? (aiCat === 'fun') : entertainmentKeywords.some(keyword => taskName.includes(keyword));
+            const isLife = aiTag ? (aiCat === 'life') : lifeKeywords.some(keyword => taskName.includes(keyword));
             
             if (isEntertainment) {
                 entertainmentTotalMinutes += duration;
@@ -6805,7 +6808,7 @@ function renderTagManager() {
                                     <div class="tag-color-indicator" style="background-color: ${tag.color}"></div>
                                     <span class="tag-display-name">${tag.name}</span>
                                     <span class="tag-edit-icon">✏️</span>
-                                    <button class="tag-delete-btn" onclick="event.stopPropagation(); handleDeleteTag('${tag.id}')" title="删除标签">
+                                    <button class="tag-delete-btn" onclick="event.stopPropagation(); handleDeleteTag('${tag.id}', this)" title="删除标签">
                                         🗑️
                                     </button>
                                 </div>
@@ -7038,12 +7041,38 @@ function handleTagColorChange(tagId, newColor, element) {
 
 /**
  * 处理删除标签
+ * 两步点击确认：第一次点击按钮变红显示“确认删除?”，3秒内再点一次才真正删除。
+ * 不依赖 confirm() 系统弹窗——部分内嵌/预览环境会拦截系统弹窗，导致删除永远无法完成。
  */
-function handleDeleteTag(tagId) {
-    if (confirm('确定要删除这个标签吗？')) {
-        deleteUserTag(tagId);
-        renderTagManager();
+const pendingTagDeletes = new Set();
+function handleDeleteTag(tagId, btn) {
+    if (!pendingTagDeletes.has(tagId)) {
+        pendingTagDeletes.add(tagId);
+        if (btn) {
+            btn.dataset.originalText = btn.textContent;
+            btn.textContent = '确认删除?';
+            btn.style.opacity = '1';
+            btn.style.background = 'rgba(245, 34, 45, 0.2)';
+            btn.style.color = '#f5222d';
+            btn.style.fontSize = '12px';
+            btn.style.whiteSpace = 'nowrap';
+        }
+        setTimeout(() => {
+            pendingTagDeletes.delete(tagId);
+            if (btn && btn.isConnected) {
+                btn.textContent = btn.dataset.originalText || '🗑️';
+                btn.style.opacity = '';
+                btn.style.background = '';
+                btn.style.color = '';
+                btn.style.fontSize = '';
+                btn.style.whiteSpace = '';
+            }
+        }, 3000);
+        return;
     }
+    pendingTagDeletes.delete(tagId);
+    deleteUserTag(tagId);
+    renderTagManager();
 }
 
 // 暴露全局函数
