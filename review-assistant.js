@@ -3731,27 +3731,9 @@ function generateTimeSlots() {
 }
 
 // 根据时间段获取对应的生活标签
+// 已按需求移除所有自动预填（洗漱、晨跑、做家务、冥想、做饭、吃饭、午休等），
+// 时间表默认全部留空，由用户自行填写；保留函数以兼容生成逻辑中的两处调用。
 function getLifeTagForTimeSlot(hour, minute) {
-    // 早上 05:00-06:00：05:00-05:30洗漱、晨跑，05:30-06:00做家务、冥想（06:00-07:00 不自动填充，让用户自己选择）
-    if (hour >= 5 && hour < 6) {
-        if (hour === 5 && minute === 0) return { name: '洗漱、晨跑', duration: 30 };
-        if (hour === 5 && minute === 30) return { name: '做家务、冥想', duration: 30 };
-    }
-    
-    // 中午 12:00-14:00：做饭、吃饭，午休
-    if (hour >= 12 && hour < 14) {
-        if (hour === 12 && minute === 0) return { name: '做饭、吃饭', duration: 30 };
-        if (hour === 12 && minute === 30) return { name: '做饭、吃饭', duration: 30 };
-        if (hour === 13 && minute === 0) return { name: '午休', duration: 30 };
-        if (hour === 13 && minute === 30) return { name: '午休', duration: 30 };
-    }
-    
-    // 晚上 19:00-20:00：做饭、吃饭（20:00-21:00 不自动填充，让用户自己选择）
-    if (hour >= 19 && hour < 20) {
-        if (hour === 19 && minute === 0) return { name: '做饭、吃饭', duration: 30 };
-        if (hour === 19 && minute === 30) return { name: '做饭、吃饭', duration: 30 };
-    }
-    
     return null;
 }
 
