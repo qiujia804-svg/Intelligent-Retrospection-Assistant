@@ -4219,8 +4219,8 @@ function updateTotalStatistics(totalMinutes, taskCount, studyTotalMinutes, enter
             totalDurationElement.parentNode.appendChild(lifePercentageElement);
         }
         
-        // 显示格式：自我提升总时长：XX分钟（XX小时），占比XX%
-        studyPercentageElement.textContent = `自我提升总时长：${studyTotalMinutes}分钟${studyHours > 0 ? `(${studyHours}小时${studyMinutes > 0 ? studyMinutes + '分钟' : ''})` : ''}，占比${studyPercentage}%`;
+        // 显示格式：工作总时长：XX分钟（XX小时），占比XX%（仅改显示文案；生成文本与解析正则仍是"自我提升总时长"，保证历史数据与月度同步不受影响）
+        studyPercentageElement.textContent = `工作总时长：${studyTotalMinutes}分钟${studyHours > 0 ? `(${studyHours}小时${studyMinutes > 0 ? studyMinutes + '分钟' : ''})` : ''}，占比${studyPercentage}%`;
         
         // 显示格式：娱乐总时长：XX分钟（XX小时），占比XX%
         entertainmentPercentageElement.textContent = `娱乐总时长：${entertainmentTotalMinutes}分钟${entertainmentHours > 0 ? `(${entertainmentHours}小时${entertainmentMinutes > 0 ? entertainmentMinutes + '分钟' : ''})` : ''}，占比${entertainmentPercentage}%`;
@@ -6808,7 +6808,7 @@ function renderTagManager() {
                                     <div class="tag-color-indicator" style="background-color: ${tag.color}"></div>
                                     <span class="tag-display-name">${tag.name}</span>
                                     <span class="tag-edit-icon">✏️</span>
-                                    <button class="tag-delete-btn" onclick="event.stopPropagation(); handleDeleteTag('${tag.id}', this)" title="删除标签">
+                                    <button class="tag-delete-btn" onclick="event.stopPropagation(); handleDeleteTag('${tag.id}')" title="删除标签">
                                         🗑️
                                     </button>
                                 </div>
@@ -7041,38 +7041,12 @@ function handleTagColorChange(tagId, newColor, element) {
 
 /**
  * 处理删除标签
- * 两步点击确认：第一次点击按钮变红显示“确认删除?”，3秒内再点一次才真正删除。
- * 不依赖 confirm() 系统弹窗——部分内嵌/预览环境会拦截系统弹窗，导致删除永远无法完成。
  */
-const pendingTagDeletes = new Set();
-function handleDeleteTag(tagId, btn) {
-    if (!pendingTagDeletes.has(tagId)) {
-        pendingTagDeletes.add(tagId);
-        if (btn) {
-            btn.dataset.originalText = btn.textContent;
-            btn.textContent = '确认删除?';
-            btn.style.opacity = '1';
-            btn.style.background = 'rgba(245, 34, 45, 0.2)';
-            btn.style.color = '#f5222d';
-            btn.style.fontSize = '12px';
-            btn.style.whiteSpace = 'nowrap';
-        }
-        setTimeout(() => {
-            pendingTagDeletes.delete(tagId);
-            if (btn && btn.isConnected) {
-                btn.textContent = btn.dataset.originalText || '🗑️';
-                btn.style.opacity = '';
-                btn.style.background = '';
-                btn.style.color = '';
-                btn.style.fontSize = '';
-                btn.style.whiteSpace = '';
-            }
-        }, 3000);
-        return;
+function handleDeleteTag(tagId) {
+    if (confirm('确定要删除这个标签吗？')) {
+        deleteUserTag(tagId);
+        renderTagManager();
     }
-    pendingTagDeletes.delete(tagId);
-    deleteUserTag(tagId);
-    renderTagManager();
 }
 
 // 暴露全局函数
