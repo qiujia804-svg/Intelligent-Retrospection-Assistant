@@ -6587,12 +6587,13 @@ const TAG_MANAGER_CONFIG = {
         { name: '品红', value: '#eb2f96' }
     ],
     // 新用户默认预设标签
-    // 注：「工作」必须排第一（下拉菜单最顶部）；生活类标签（无颜色）排在后面，不放在开头。
-    //     生活类标签 always:true = 全部时段的下拉都可见（否则通勤/锻炼等在非生活时段会被过滤掉）。
-    //     旧版预置生活标签（洗漱、晨跑/做家务、冥想/做饭、吃饭/散步、遛狗/午休）已移出，
+    // 注：默认不预置「工作」标签——美国尾程直播、做数字人视频、复盘等任务本身就是工作，
+    //     由「AI帮我安排」按任务提炼独立标签即可，无需再搭一个笼统的「工作」大标签。
+    //     生活类标签（无颜色）always:true = 全部时段的下拉都可见
+    //     （否则通勤/锻炼等在非生活时段会被过滤掉）。
+    //     旧版预置标签（工作、洗漱、晨跑/做家务、冥想/做饭、吃饭/散步/遛狗/午休）均已移出，
     //     老用户浏览器里已存的由 getUserTags 中的清理迁移移除，新版默认标签由迁移追加到列表末尾。
     defaultTags: [
-        { id: 'tag_6', name: '工作', color: '#722ed1' },
         { id: 'tag_7', name: '午餐', color: null, always: true },
         { id: 'tag_8', name: '晚餐', color: null, always: true },
         { id: 'tag_9', name: '通勤', color: null, always: true },
@@ -6600,11 +6601,11 @@ const TAG_MANAGER_CONFIG = {
         { id: 'tag_11', name: '冥想', color: null, always: true },
         { id: 'tag_12', name: '洗漱', color: null, always: true }
     ],
-    // 一次性清理标记：从已存标签中移除旧版预置的生活类默认标签（按固定 id 匹配，
-    // 用户此后手动新建的同名标签 id 为时间戳，不受影响）
-    cleanupKey: 'custom_tags_cleanup_v2',
-    removedPresetTagIds: ['tag_1', 'tag_2', 'tag_3', 'tag_4', 'tag_5'],
-    // 一次性追加标记：把新版默认生活标签追加到老用户标签列表【末尾】（工作保持在最上面）
+    // 一次性清理标记：从已存标签中移除旧版预置默认标签（v2 清理生活标签 tag_1~tag_5，
+    // v3 追加清理「工作」tag_6；均按固定 id 匹配，用户此后手动新建的同名标签 id 为时间戳，不受影响）
+    cleanupKey: 'custom_tags_cleanup_v3',
+    removedPresetTagIds: ['tag_1', 'tag_2', 'tag_3', 'tag_4', 'tag_5', 'tag_6'],
+    // 一次性追加标记：把新版默认生活标签追加到老用户标签列表【末尾】（用户已有标签保持在前面）
     defaultsKey: 'custom_tags_defaults_v3'
 };
 
@@ -6619,7 +6620,7 @@ function getUserTags() {
         let tags;
         if (storedTags) {
             tags = JSON.parse(storedTags);
-            // 一次性清理：移除旧版预置的生活类默认标签（tag_1~tag_5）。
+            // 一次性清理：移除旧版预置默认标签（tag_1~tag_5 生活标签，v3 起含 tag_6「工作」）。
             // 只按 id 匹配——用户后来手动新建的同名标签 id 为 tag_<时间戳>，不会被误删。
             if (!localStorage.getItem(TAG_MANAGER_CONFIG.cleanupKey)) {
                 localStorage.setItem(TAG_MANAGER_CONFIG.cleanupKey, '1');
@@ -6627,11 +6628,11 @@ function getUserTags() {
                 if (kept.length !== tags.length) {
                     tags = kept;
                     saveUserTags(tags);
-                    console.log('【标签管理】已一次性清理旧版预置生活标签');
+                    console.log('【标签管理】已一次性清理旧版预置默认标签');
                 }
             }
             // 一次性追加：新版默认生活标签（午餐/晚餐/通勤/锻炼/冥想/洗漱）追加到列表【末尾】，
-            // 「工作」和用户已有标签（含AI创建的）保持在前面。按 id 和名称双重去重，用户手动建过的不重复添加。
+            // 用户已有标签（含AI创建的）保持在前面。按 id 和名称双重去重，用户手动建过的不重复添加。
             if (!localStorage.getItem(TAG_MANAGER_CONFIG.defaultsKey)) {
                 localStorage.setItem(TAG_MANAGER_CONFIG.defaultsKey, '1');
                 const existingIds = new Set(tags.map(t => t.id));
