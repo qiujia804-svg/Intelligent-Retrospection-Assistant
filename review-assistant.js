@@ -3943,6 +3943,7 @@ function updateTimeStatistics() {
     let studyTotalMinutes = 0; // 存储学习类任务总时长
     let entertainmentTotalMinutes = 0; // 存储娱乐类任务总时长
     let lifeTotalMinutes = 0; // 存储生活类任务总时长
+    const typeCats = {}; // 记录每个统计桶的分类（work/life/fun），供保存规划同步目标达成情况时使用，避免关键词二次误判
 
     // 娱乐任务关键词列表
     const entertainmentKeywords = ['刷视频', '打游戏', '游戏', '视频', '追剧', '看剧', '观影', '电影', '电视剧', '综艺', '动漫', '直播', '抖音', '快手', 'B站', 'b站', '小红书', '社交', '聊天', '微博', '知乎', '贴吧', '论坛', '棋牌', '麻将', '扑克', '斗地主'];
@@ -3994,6 +3995,8 @@ function updateTimeStatistics() {
                 // 非娱乐和非生活类任务归类到自我提升总时长
                 studyTotalMinutes += duration;
             }
+            // 记录该统计桶的分类，供 formatTimeStatsForGoalCompletion 使用
+            typeCats[taskType] = isEntertainment ? 'fun' : (isLife ? 'life' : 'work');
             
             // 计算剩余时间并累加到休息放松类型
             const remainingMinutes = Math.max(0, timeSlotMinutes - duration);
@@ -4009,6 +4012,7 @@ function updateTimeStatistics() {
     // 添加额外的休息放松时间
     const restType = '休息放松';
     typeDurations[restType] = (typeDurations[restType] || 0) + restRelaxExtraMinutes;
+    typeCats[restType] = 'rest'; // 空白时段=休息，不算工作时长
     totalMinutes += restRelaxExtraMinutes;
     
     // 更新总时长、任务数量和学习总占比
@@ -4020,6 +4024,7 @@ function updateTimeStatistics() {
     // 【新增】保存当前时间统计到全局变量，供保存时使用
     currentTimeStats = {
         typeDurations: { ...typeDurations },
+        typeCats: { ...typeCats },
         totalMinutes: totalMinutes,
         studyTotalMinutes: studyTotalMinutes,
         entertainmentTotalMinutes: entertainmentTotalMinutes,
@@ -4037,11 +4042,12 @@ function getCurrentTimeStats() {
         return null;
     }
 
-    // 转换为数组格式 [{name: "学习AI", minutes: 540}, ...]
+    // 转换为数组格式 [{name: "学习AI", minutes: 540, cat: "work"}, ...]
     const timeStatsArray = [];
+    const cats = currentTimeStats.typeCats || {};
     for (const [name, minutes] of Object.entries(currentTimeStats.typeDurations)) {
         if (minutes > 0) {
-            timeStatsArray.push({ name, minutes });
+            timeStatsArray.push({ name, minutes, cat: cats[name] || '' });
         }
     }
 
@@ -4114,19 +4120,36 @@ function formatTimeStatsForGoalCompletion(timeStats) {
     function isEntertainmentTask(taskName) {
         return entertainmentKeywords.some(keyword => taskName.includes(keyword));
     }
-    
+
     // 判断是否为生活类任务
     function isLifeTask(taskName) {
         return lifeKeywords.some(keyword => taskName.includes(keyword));
     }
 
-    // 计算自我提升总时长（排除娱乐和生活类）
-    let selfImprovementTotalMinutes = 0;
-    timeStats.items.forEach(item => {
-        if (!isEntertainmentTask(item.name) && !isLifeTask(item.name)) {
-            selfImprovementTotalMinutes += item.minutes;
+    // 判断单个统计项的分类：优先使用统计阶段已算好的结构化分类（cat: work/life/fun/rest），
+    // 避免“做数字人视频”“美国尾程直播”这类 AI 任务名因关键词误判被错误排除，导致工作时长/占比恒为0。
+    // 无 cat 时（极旧的浏览器会话残留）回退到关键词判断。
+    function classifyItem(item) {
+        if (item.cat === 'work' || item.cat === 'fun' || item.cat === 'life' || item.cat === 'rest') {
+            return item.cat;
         }
-    });
+        if (isEntertainmentTask(item.name)) return 'fun';
+        if (isLifeTask(item.name)) return 'life';
+        return 'work';
+    }
+
+    // 计算工作（自我提升）总时长：直接采用统计阶段的结构化结果（与统计卡片/饼图同源），
+    // 不再用关键词对任务名二次猜测。
+    let selfImprovementTotalMinutes = 0;
+    if (typeof timeStats.studyTotalMinutes === 'number') {
+        selfImprovementTotalMinutes = timeStats.studyTotalMinutes;
+    } else {
+        timeStats.items.forEach(item => {
+            if (classifyItem(item) === 'work') {
+                selfImprovementTotalMinutes += item.minutes;
+            }
+        });
+    }
 
     // 计算自我提升占比（基于17小时）
     const studyPercentage = ((selfImprovementTotalMinutes / BASE_MINUTES) * 100).toFixed(1);
@@ -4136,10 +4159,10 @@ function formatTimeStatsForGoalCompletion(timeStats) {
     const studyMins = selfImprovementTotalMinutes % 60;
     lines.push(`自我提升总时长:${selfImprovementTotalMinutes}分钟(${studyHours}小时${studyMins > 0 ? studyMins + '分钟' : ''})，占比${studyPercentage}%`);
 
-    // 后续行：各项自我提升任务详情（排除娱乐和生活类任务）
+    // 后续行：各项自我提升任务详情（排除娱乐/生活/休息类任务）
     timeStats.items.forEach(item => {
-        // 跳过娱乐类和生活类任务
-        if (isEntertainmentTask(item.name) || isLifeTask(item.name)) {
+        // 跳过娱乐类、生活类和空白休息时段
+        if (classifyItem(item) !== 'work') {
             return;
         }
         // 按照17小时计算各项占比
