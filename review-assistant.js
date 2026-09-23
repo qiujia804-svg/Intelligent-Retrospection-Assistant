@@ -2212,7 +2212,7 @@ function setupPlanForm() {
             updateTrendChartWithCurrentInput();
         }
 
-        alert('明日规划已保存！');
+        alert('今日规划已保存！');
 
         // 【新增】更新数据洞察
         if (typeof updateDataInsight === 'function') {
