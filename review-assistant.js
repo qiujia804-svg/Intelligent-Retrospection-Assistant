@@ -6563,15 +6563,15 @@ const TAG_MANAGER_CONFIG = {
         { name: '品红', value: '#eb2f96' }
     ],
     // 新用户默认预设标签
-    // 注：生活类标签不分配颜色（color: null），颜色留给自我提升类标签使用
+    // 注：生活类标签（洗漱、晨跑/做家务、冥想/做饭、吃饭/散步、遛狗/午休）已按需求移出预置，
+    //     由用户自行创建；旧用户浏览器里已存的这批标签由 getUserTags 中的一次性清理迁移移除。
     defaultTags: [
-        { id: 'tag_1', name: '洗漱、晨跑', color: null },
-        { id: 'tag_2', name: '做家务、冥想', color: null },
-        { id: 'tag_3', name: '做饭、吃饭', color: null },
-        { id: 'tag_4', name: '散步、遛狗', color: null },
-        { id: 'tag_5', name: '午休', color: null },
         { id: 'tag_6', name: '工作', color: '#722ed1' }
-    ]
+    ],
+    // 一次性清理标记：从已存标签中移除旧版预置的生活类默认标签（按固定 id 匹配，
+    // 用户此后手动新建的同名标签 id 为时间戳，不受影响）
+    cleanupKey: 'custom_tags_cleanup_v2',
+    removedPresetTagIds: ['tag_1', 'tag_2', 'tag_3', 'tag_4', 'tag_5']
 };
 
 /**
@@ -6585,6 +6585,17 @@ function getUserTags() {
         let tags;
         if (storedTags) {
             tags = JSON.parse(storedTags);
+            // 一次性清理：移除旧版预置的生活类默认标签（tag_1~tag_5）。
+            // 只按 id 匹配——用户后来手动新建的同名标签 id 为 tag_<时间戳>，不会被误删。
+            if (!localStorage.getItem(TAG_MANAGER_CONFIG.cleanupKey)) {
+                localStorage.setItem(TAG_MANAGER_CONFIG.cleanupKey, '1');
+                const kept = tags.filter(tag => !TAG_MANAGER_CONFIG.removedPresetTagIds.includes(tag.id));
+                if (kept.length !== tags.length) {
+                    tags = kept;
+                    saveUserTags(tags);
+                    console.log('【标签管理】已一次性清理旧版预置生活标签');
+                }
+            }
             // 过滤掉需要删除的标签：学习和休息放松
             tags = tags.filter(tag => tag.name !== '学习' && tag.name !== '休息放松');
             if (tags.length === 0) {
@@ -7041,12 +7052,12 @@ function handleTagColorChange(tagId, newColor, element) {
 
 /**
  * 处理删除标签
+ * 点击 🗑️ 直接删除（不弹确认框）——部分运行环境会拦截/自动取消系统弹窗，
+ * 导致 confirm 永远返回 false、删除静默失败。误删成本低（重新新建即可）。
  */
 function handleDeleteTag(tagId) {
-    if (confirm('确定要删除这个标签吗？')) {
-        deleteUserTag(tagId);
-        renderTagManager();
-    }
+    deleteUserTag(tagId);
+    renderTagManager();
 }
 
 // 暴露全局函数
