@@ -3,9 +3,9 @@
  * 提供离线缓存和后台同步功能
  */
 
-const CACHE_NAME = 'retrospection-assistant-v1.0.11';
-const STATIC_CACHE = 'static-v1.0.11';
-const DYNAMIC_CACHE = 'dynamic-v1.0.11';
+const CACHE_NAME = 'retrospection-assistant-v1.0.12';
+const STATIC_CACHE = 'static-v1.0.12';
+const DYNAMIC_CACHE = 'dynamic-v1.0.12';
 
 // 需要预缓存的静态资源
 // 注意：CDN 地址必须与 index.html 中实际 <script src> 使用的地址完全一致，
@@ -18,6 +18,8 @@ const STATIC_ASSETS = [
   './review-assistant.js',
   './ai-plan-core.js',
   './ai-planner.js',
+  './ai-review-core.js',
+  './ai-review.js',
   './ai-planner.css',
   './data-storage.js',
   './commercial-system.js',
