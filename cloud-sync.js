@@ -18,7 +18,8 @@
 
     // ---- 云服务配置（来自 workbuddy_cloud_service 的 publicConfig）----
     const CLOUD_CONFIG = {
-        endpoint: 'https://smart-review-09187.app.workbuddy.host',
+        // 同源代理：云端只认注册域名，自定义域名站点须经 Vercel 代理转发
+        endpoint: window.location.origin + '/api/cloud',
         publishableKey: 'wbpk_EyygHhJU0gq4U5gWEdwZqs_5dtxmQDkuDiGlQ1oSQGQAJIzWXRZrN4W'
     };
 
