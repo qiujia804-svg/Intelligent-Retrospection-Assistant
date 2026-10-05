@@ -1,18 +1,21 @@
 /**
  * Vercel Serverless - WorkBuddy 云服务同源代理
- * 路由: vercel.json rewrite  /api/cloud/(.*) → /api/cloud
- *       原始子路径通过 req.url 解析（/api/cloud/.cloud/** → 云端 /.cloud/**）
+ * 对外路径: /cb/*   （vercel.json: /cb/(.*) → /api/cloud）
+ *
+ * 为什么用 /cb 而不是 /api/cloud：
+ *   实测确认 Vercel 的 rewrites 规则对 /api/* 前缀完全不生效——
+ *   /api/cloud/a 单级能进函数，/api/cloud/a/b 多级必被平台层 404。
+ *   于是改用非 api 前缀 /cb，让 rewrite 正常生效：
+ *     浏览器 /cb/.cloud/auth/v1/otp
+ *       → rewrite → api/cloud.js（req.url 保留 /cb/... 原始路径）
+ *       → 本函数转发到云端 /.cloud/auth/v1/otp
  *
  * 背景：WorkBuddy 云端强制校验请求 Origin（精确匹配应用注册域名），
  * 本站部署在自定义域名 www.deepmind.work，浏览器直连会被 CORS 预检 403。
- * 解法：浏览器 → 同源 /api/cloud/*（无跨域）→ 本函数（服务端）→ 云端。
- * 服务端转发时把 Origin 设为云端注册域名，绕开浏览器同源策略限制。
+ * 解法：浏览器 → 同源 /cb/*（无跨域）→ 本函数（服务端）→ 云端。
+ * 服务端转发时把 Origin 设为云端注册域名，绕开浏览器的限制。
  *
- * 为什么不用 api/cloud/[...path].js：Vercel 的 catch-all 写法在子目录下
- * 只能匹配单级路径，多级路径（/api/cloud/.cloud/auth/v1/otp）会落到
- * 平台层 404 NOT_FOUND。改用 api/ 根目录单文件 + rewrite 转发。
- *
- * 安全：仅允许同源调用（与 send-email.js 同样的 Origin 校验），不做开放中继。
+ * 安全：仅允许同源调用（Origin 主机与请求主机一致），不做开放中继。
  * 透传：方法、Authorization、Content-Type、Prefer、Range 等业务头；
  *      不透传 cookie / host / 浏览器自动头；剥离 hop-by-hop 响应头。
  */
@@ -78,20 +81,7 @@ module.exports = async (req, res) => {
             if (p.startsWith('/.cloud/')) { upstreamPath = p; break; }
         }
         if (!upstreamPath) {
-            res.status(404).json({
-                error: 'Not found',
-                debug: {
-                    rawUrl: rawUrl,
-                    original: original || null,
-                    headers: {
-                        'x-original-url': req.headers['x-original-url'] || null,
-                        'x-rewrite-url': req.headers['x-rewrite-url'] || null,
-                        'x-forwarded-uri': req.headers['x-forwarded-uri'] || null,
-                        host: req.headers.host || null
-                    },
-                    query: req.query || null
-                }
-            });
+            res.status(404).json({ error: 'Not found' });
             return;
         }
 
