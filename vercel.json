@@ -22,11 +22,11 @@
   ],
   "rewrites": [
     {
-      "source": "/api/cloud/(.*)",
+      "source": "/cb/(.*)",
       "destination": "/api/cloud"
     },
     {
-      "source": "/((?!api/).*)",
+      "source": "/((?!api/|cb/).*)",
       "destination": "/index.html"
     }
   ],
@@ -36,5 +36,8 @@
       "destination": "/",
       "permanent": true
     }
-  ]
+  ],
+  "github": {
+    "enabled": true
+  }
 }

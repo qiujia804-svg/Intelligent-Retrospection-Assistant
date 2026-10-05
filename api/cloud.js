@@ -49,6 +49,12 @@ function isAllowedOrigin(req) {
     }
 }
 
+// 从常见代理头里取原始 URL（Vercel rewrite 后可能改变 req.url）
+function originalUrlFromReq(req) {
+    const h = req.headers || {};
+    return h['x-original-url'] || h['x-rewrite-url'] || h['x-forwarded-uri'] || req.originalUrl || '';
+}
+
 module.exports = async (req, res) => {
     try {
         // 同源校验：防止被当成开放中继滥用
@@ -57,10 +63,35 @@ module.exports = async (req, res) => {
             return;
         }
 
-        // 计算上游路径：/api/cloud/xxx → /xxx
-        let upstreamPath = (req.url || '').replace(/^\/api\/cloud/, '');
-        if (!upstreamPath.startsWith('/.cloud/')) {
-            res.status(404).json({ error: 'Not found' });
+        // 计算上游路径。兼容两种前缀：
+        //   /cb/xxx        （vercel.json rewrite /cb/(.*) → /api/cloud 后的原始 URL）
+        //   /api/cloud/xxx （直连本函数时的 URL）
+        // 另外兜底：若 Vercel 把 req.url 改写成了 /api/cloud 本身，
+        // 则从 x-original-url / 自定义头里取原始路径。
+        const rawUrl = req.url || '';
+        const original = originalUrlFromReq(req);
+        let upstreamPath = '';
+        for (const candidate of [rawUrl, original]) {
+            const p = String(candidate || '')
+                .replace(/^\/cb/, '')
+                .replace(/^\/api\/cloud/, '');
+            if (p.startsWith('/.cloud/')) { upstreamPath = p; break; }
+        }
+        if (!upstreamPath) {
+            res.status(404).json({
+                error: 'Not found',
+                debug: {
+                    rawUrl: rawUrl,
+                    original: original || null,
+                    headers: {
+                        'x-original-url': req.headers['x-original-url'] || null,
+                        'x-rewrite-url': req.headers['x-rewrite-url'] || null,
+                        'x-forwarded-uri': req.headers['x-forwarded-uri'] || null,
+                        host: req.headers.host || null
+                    },
+                    query: req.query || null
+                }
+            });
             return;
         }
 
