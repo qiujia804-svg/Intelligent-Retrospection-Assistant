@@ -1,11 +1,16 @@
 /**
  * Vercel Serverless - WorkBuddy 云服务同源代理
- * 路径: /api/cloud/[...path]  （透传 /api/cloud/.cloud/** → 云端 /.cloud/**）
+ * 路由: vercel.json rewrite  /api/cloud/(.*) → /api/cloud
+ *       原始子路径通过 req.url 解析（/api/cloud/.cloud/** → 云端 /.cloud/**）
  *
  * 背景：WorkBuddy 云端强制校验请求 Origin（精确匹配应用注册域名），
  * 本站部署在自定义域名 www.deepmind.work，浏览器直连会被 CORS 预检 403。
  * 解法：浏览器 → 同源 /api/cloud/*（无跨域）→ 本函数（服务端）→ 云端。
  * 服务端转发时把 Origin 设为云端注册域名，绕开浏览器同源策略限制。
+ *
+ * 为什么不用 api/cloud/[...path].js：Vercel 的 catch-all 写法在子目录下
+ * 只能匹配单级路径，多级路径（/api/cloud/.cloud/auth/v1/otp）会落到
+ * 平台层 404 NOT_FOUND。改用 api/ 根目录单文件 + rewrite 转发。
  *
  * 安全：仅允许同源调用（与 send-email.js 同样的 Origin 校验），不做开放中继。
  * 透传：方法、Authorization、Content-Type、Prefer、Range 等业务头；
@@ -39,7 +44,7 @@ function isAllowedOrigin(req) {
     if (!origin) return true; // 同源 POST 一般不带 Origin
     try {
         return normalizeHost(new URL(origin).host) === normalizeHost(req.headers.host);
-    } catch {
+    } catch (e) {
         return false;
     }
 }
@@ -61,10 +66,10 @@ module.exports = async (req, res) => {
 
         // 组装上游请求头
         const headers = {};
-        for (const [k, v] of Object.entries(req.headers || {})) {
+        for (const k of Object.keys(req.headers || {})) {
             const lk = k.toLowerCase();
             if (HOP_REQ.has(lk)) continue;
-            headers[k] = v;
+            headers[k] = req.headers[k];
         }
         headers['origin'] = REGISTERED_ORIGIN;
         if (headers['accept-encoding']) headers['accept-encoding'] = 'identity';
@@ -87,11 +92,11 @@ module.exports = async (req, res) => {
 
         // 回写响应（剥 hop-by-hop 与 CORS 头——同源响应不需要 CORS）
         res.status(upstream.status);
-        for (const [k, v] of upstream.headers.entries()) {
+        upstream.headers.forEach((v, k) => {
             const lk = k.toLowerCase();
-            if (HOP_RES.has(lk)) continue;
+            if (HOP_RES.has(lk)) return;
             try { res.setHeader(k, v); } catch (e) { /* 个别受限头忽略 */ }
-        }
+        });
         const buf = Buffer.from(await upstream.arrayBuffer());
         res.send(buf);
     } catch (e) {
