@@ -3,9 +3,9 @@
  * 提供离线缓存和后台同步功能
  */
 
-const CACHE_NAME = 'retrospection-assistant-v1.0.18';
-const STATIC_CACHE = 'static-v1.0.18';
-const DYNAMIC_CACHE = 'dynamic-v1.0.18';
+const CACHE_NAME = 'retrospection-assistant-v1.0.19';
+const STATIC_CACHE = 'static-v1.0.19';
+const DYNAMIC_CACHE = 'dynamic-v1.0.19';
 
 // 需要预缓存的静态资源
 // 注意：CDN 地址必须与 index.html 中实际 <script src> 使用的地址完全一致，
@@ -29,7 +29,7 @@ const STATIC_ASSETS = [
   './manifest.json',
   './offline.html',
   './images/pay-wechat.jpg',
-  './images/pay-alipay.jpg',
+  './images/pay-alipay-v2.jpg',
   // CDN 资源（与 index.html 保持一致）
   'https://cdn.jsdelivr.net/npm/chart.js',
   'https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js',
