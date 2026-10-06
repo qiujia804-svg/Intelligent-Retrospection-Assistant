@@ -166,7 +166,8 @@
 
             const loginModal = document.getElementById('login-modal');
             if (typeof closeModal === 'function' && loginModal) closeModal(loginModal);
-            if (typeof loginForm !== 'undefined' && loginForm && loginForm.reset) loginForm.reset();
+            const freshLoginForm = document.getElementById('login-form');
+            if (freshLoginForm && freshLoginForm.reset) freshLoginForm.reset();
 
             alert('登录成功！');
 
@@ -183,49 +184,58 @@
     function takeOverRegister() {
         window.handleRegister = async function (e) {
             if (e && e.preventDefault) e.preventDefault();
-
-            const nameEl = document.getElementById('register-name');
-            const emailEl = document.getElementById('register-email');
-            const pwEl = document.getElementById('register-password');
-            const cpwEl = document.getElementById('register-confirm-password');
-            const codeEl = document.getElementById('register-verify-code');
-
-            const name = nameEl ? nameEl.value.trim() : '';
-            const email = emailEl ? emailEl.value.trim() : '';
-            const password = pwEl ? pwEl.value : '';
-            const confirmPassword = cpwEl ? cpwEl.value : '';
-            const verifyCode = codeEl ? codeEl.value.trim() : '';
-
-            if (password !== confirmPassword) {
-                alert('两次输入的密码不一致！');
-                return;
-            }
-            if (!verifyCode) {
-                alert('请输入邮箱验证码！');
-                return;
-            }
-
-            const res = await verifyCode(email, verifyCode, password);
-            if (!res.ok) {
-                alert('验证失败：' + (res.message || '验证码错误或已过期'));
-                return;
-            }
-
-            // 保存用户名（云端账号本身不含昵称，本地记录便于显示）
             try {
-                localStorage.setItem('smart_review_user_profile', JSON.stringify({ name: name, email: email }));
+                const nameEl = document.getElementById('register-name');
+                const emailEl = document.getElementById('register-email');
+                const pwEl = document.getElementById('register-password');
+                const cpwEl = document.getElementById('register-confirm-password');
+                const codeEl = document.getElementById('register-verify-code');
+
+                const name = nameEl ? nameEl.value.trim() : '';
+                const email = emailEl ? emailEl.value.trim() : '';
+                const password = pwEl ? pwEl.value : '';
+                const confirmPassword = cpwEl ? cpwEl.value : '';
+                // 注意：不能命名为 verifyCode，会遮蔽外层的 verifyCode() 验证函数
+                const code = codeEl ? codeEl.value.trim() : '';
+
+                if (password !== confirmPassword) {
+                    alert('两次输入的密码不一致！');
+                    return;
+                }
+                if (!code) {
+                    alert('请输入邮箱验证码！');
+                    return;
+                }
+
+                const res = await verifyCode(email, code, password);
+                if (!res.ok) {
+                    alert('验证失败：' + (res.message || '验证码错误或已过期'));
+                    return;
+                }
+
+                // 保存用户名（云端账号本身不含昵称，本地记录便于显示）
+                try {
+                    localStorage.setItem('smart_review_user_profile', JSON.stringify({ name: name, email: email }));
+                } catch (err) {
+                    console.warn('[CloudAuth] 昵称保存失败:', err && err.message);
+                }
+
+                applySignedInState({ name: name, email: email });
+
+                const registerModal = document.getElementById('register-modal');
+                if (typeof closeModal === 'function' && registerModal) closeModal(registerModal);
+                // 用当前节点重置表单（旧代码引用的 registerForm 是被替换前的旧节点）
+                const freshForm = document.getElementById('register-form');
+                if (freshForm && freshForm.reset) freshForm.reset();
+                resetVerificationUI();
+                if (typeof resetEmailVerification === 'function') resetEmailVerification();
+
+                alert('注册成功！数据将自动同步到云端。');
             } catch (err) {
-                console.warn('[CloudAuth] 昵称保存失败:', err && err.message);
+                // 不吞错：任何意外异常都直接告诉用户，避免「点了没反应」
+                console.error('[CloudAuth] 注册异常:', err);
+                alert('注册出错：' + (err && err.message ? err.message : '未知错误，请稍后重试'));
             }
-
-            applySignedInState({ name: name, email: email });
-
-            const registerModal = document.getElementById('register-modal');
-            if (typeof closeModal === 'function' && registerModal) closeModal(registerModal);
-            if (typeof registerForm !== 'undefined' && registerForm && registerForm.reset) registerForm.reset();
-            if (typeof resetEmailVerification === 'function') resetEmailVerification();
-
-            alert('注册成功！数据将自动同步到云端。');
         };
         log('handleRegister 已接管');
     }
@@ -351,6 +361,75 @@
         return { name: name, email: email };
     }
 
+    /**
+     * 在「当前」的注册表单节点上重置验证 UI。
+     * 原函数 resetEmailVerification 操作的是被替换前的旧节点，对新表单无效。
+     */
+    function resetVerificationUI() {
+        const group = document.getElementById('verify-code-group');
+        if (group) group.style.display = 'none';
+        const input = document.getElementById('register-verify-code');
+        if (input) {
+            input.value = '';
+            input.style.borderColor = '';
+        }
+        const submitBtn = document.getElementById('register-submit-btn');
+        if (submitBtn) submitBtn.disabled = true;
+        const hint = document.getElementById('verify-code-hint');
+        if (hint) hint.style.display = '';
+    }
+
+    /**
+     * 重绑登录/注册表单的提交监听器。
+     *
+     * 为什么必须克隆替换：review-assistant.js 的 initMembershipSystem 在
+     * DOMContentLoaded 时用 addEventListener('submit', handleRegister) 绑定了
+     * 「当时的函数引用」（本地假注册逻辑），且其中的验证码输入监听器会比对
+     * 已废弃的本地假验证码（currentVerifyCode），把注册按钮禁用——这就是
+     * 「点了注册没反应」的根因。后赋值 window.handleRegister 无法更换
+     * 已绑定的引用，只能克隆替换节点移除全部旧监听器后重绑。
+     */
+    function rebindAuthForms() {
+        const pairs = [
+            ['login-form', 'handleLogin'],
+            ['register-form', 'handleRegister']
+        ];
+        for (const [formId, handlerName] of pairs) {
+            const oldForm = document.getElementById(formId);
+            if (!oldForm) continue;
+            const freshForm = oldForm.cloneNode(true); // 克隆不带监听器 → 旧监听全部消失
+            oldForm.parentNode.replaceChild(freshForm, oldForm);
+            freshForm.addEventListener('submit', function (e) {
+                e.preventDefault();
+                const fn = window[handlerName];
+                if (typeof fn === 'function') fn(e);
+            });
+            log(formId + ' 提交已重绑到 ' + handlerName);
+        }
+
+        // 表单内的「立即登录/立即注册」切换链接随旧节点丢失监听器，补绑
+        const s2l = document.getElementById('switch-to-login');
+        if (s2l) {
+            s2l.addEventListener('click', function (e) {
+                e.preventDefault();
+                const rm = document.getElementById('register-modal');
+                const lm = document.getElementById('login-modal');
+                if (typeof closeModal === 'function' && rm) closeModal(rm);
+                if (typeof openModal === 'function' && lm) openModal(lm);
+            });
+        }
+        const s2r = document.getElementById('switch-to-register');
+        if (s2r) {
+            s2r.addEventListener('click', function (e) {
+                e.preventDefault();
+                const lm = document.getElementById('login-modal');
+                const rm = document.getElementById('register-modal');
+                if (typeof closeModal === 'function' && lm) closeModal(lm);
+                if (typeof openModal === 'function' && rm) openModal(rm);
+            });
+        }
+    }
+
     /** 启动时恢复已有会话 */
     async function restoreSession() {
         const session = await getSession();
@@ -371,6 +450,7 @@
         }
         takeOverLogin();
         takeOverRegister();
+        rebindAuthForms();
         takeOverLogout();
         takeOverSendCodeButton();
         restoreSession();
