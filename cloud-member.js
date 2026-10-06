@@ -280,7 +280,15 @@
         if (e && e.preventDefault) e.preventDefault();
         if (submittingOrder) return;
 
-        const plan = window.currentSelectedPlan;
+        // 套餐来源兜底：会员中心入口写 window.currentSelectedPlan，
+        // 但右下角商业化悬浮球的订阅入口只写 commercialSystem.selectedPlan，
+        // 不兜底会弹「请先选择套餐」或记错套餐金额。
+        let plan = window.currentSelectedPlan;
+        if (!plan && window.commercialSystem && window.commercialSystem.selectedPlan) {
+            plan = window.commercialSystem.selectedPlan;
+            window.currentSelectedPlan = plan; // 统一回写，后续逻辑共用
+            log('套餐取自商业化系统:', plan.id);
+        }
         if (!plan) {
             alert('请先选择套餐');
             return;
@@ -306,8 +314,11 @@
             const orderId = res.order && res.order.id ? res.order.id : '';
             alert(
                 '订单已提交' + (orderId ? '（编号 ' + orderId + '）' : '') + '\n\n' +
-                '套餐：' + plan.name + '　金额：¥' + plan.price + '\n' +
-                '我们确认到账后会为你开通会员，开通后刷新页面即可生效。\n\n' +
+                '套餐：' + plan.name + '　应付金额：¥' + plan.price + '\n\n' +
+                '⚠️ 重要：收款码为个人收款码，转账金额由付款方填写。\n' +
+                '请务必按 ¥' + plan.price + ' 全额支付，金额不符将无法开通。\n' +
+                '转账时请在备注/说明里填写你的注册邮箱，方便核对到账。\n\n' +
+                '我们核对实际到账金额后会为你开通会员，开通后刷新页面即可生效。\n' +
                 '如已付款而未开通，请联系客服微信：JQJSBXXZI'
             );
         } finally {
