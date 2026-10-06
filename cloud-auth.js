@@ -256,6 +256,7 @@
 
             if (typeof updateMemberUI === 'function') updateMemberUI();
             if (window.CloudSync && typeof CloudSync.onSignedOut === 'function') CloudSync.onSignedOut();
+            if (window.CloudMember && typeof CloudMember.onSignedOut === 'function') CloudMember.onSignedOut();
 
             alert('已退出登录！本地数据仍保留在本机。');
         };
@@ -345,6 +346,10 @@
         if (typeof updateMemberUI === 'function') updateMemberUI();
         if (window.CloudSync && typeof CloudSync.onSignedIn === 'function') {
             CloudSync.onSignedIn(user);
+        }
+        // 会员状态以云端为准（试用 / 会员 / 到期）
+        if (window.CloudMember && typeof CloudMember.onSignedIn === 'function') {
+            CloudMember.onSignedIn(user);
         }
     }
 
