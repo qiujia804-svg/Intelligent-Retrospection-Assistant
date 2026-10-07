@@ -1,0 +1,590 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<title>会员管理台 · 智能复盘助手</title>
+<style>
+    :root{
+        --navy:#1b2a4a;
+        --navy-soft:#24365c;
+        --wine:#8c2f39;
+        --bg:#f4f5f7;
+        --card:#ffffff;
+        --line:#e3e6ec;
+        --text:#1f2430;
+        --muted:#6b7280;
+        --ok:#1a7f4b;
+        --warn:#b26a00;
+        --err:#b3261e;
+    }
+    *{box-sizing:border-box;}
+    body{
+        margin:0;background:var(--bg);color:var(--text);
+        font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+        font-size:14px;line-height:1.6;
+    }
+    .wrap{max-width:1180px;margin:0 auto;padding:28px 20px 80px;}
+    header.top{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:22px;}
+    .brand{display:flex;align-items:center;gap:12px;}
+    .brand .mark{width:38px;height:38px;border-radius:10px;background:linear-gradient(135deg,var(--navy),var(--wine));display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:17px;}
+    .brand h1{font-size:19px;margin:0;font-weight:650;letter-spacing:.2px;}
+    .brand .sub{font-size:12px;color:var(--muted);margin-top:1px;}
+    .who{font-size:12.5px;color:var(--muted);display:flex;align-items:center;gap:10px;}
+    .dot{width:7px;height:7px;border-radius:50%;background:#c9ccd4;display:inline-block;}
+    .dot.on{background:var(--ok);}
+
+    .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:22px;}
+    .card + .card{margin-top:16px;}
+
+    /* 登录区 */
+    #loginView{max-width:430px;margin:6vh auto 0;}
+    #loginView h2{margin:0 0 6px;font-size:17px;font-weight:640;}
+    #loginView .hint{color:var(--muted);font-size:13px;margin-bottom:18px;}
+    label{display:block;font-size:13px;font-weight:560;margin:14px 0 6px;}
+    input[type=text],input[type=email],input[type=password]{
+        width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:8px;
+        font-size:14px;font-family:inherit;background:#fbfbfc;color:var(--text);
+    }
+    input:focus{outline:none;border-color:var(--navy);background:#fff;}
+    button{
+        font-family:inherit;font-size:14px;cursor:pointer;border:none;border-radius:8px;
+        padding:10px 16px;font-weight:560;transition:filter .15s;
+    }
+    button:disabled{opacity:.55;cursor:not-allowed;}
+    button:hover:not(:disabled){filter:brightness(1.06);}
+    .btn-primary{background:var(--navy);color:#fff;width:100%;margin-top:18px;}
+    .btn-wine{background:var(--wine);color:#fff;}
+    .btn-ghost{background:#eef0f4;color:var(--text);}
+    .btn-sm{padding:6px 12px;font-size:12.5px;border-radius:7px;}
+
+    .msg{margin-top:14px;padding:10px 12px;border-radius:8px;font-size:13px;display:none;}
+    .msg.show{display:block;}
+    .msg.err{background:#fdeceb;color:var(--err);border:1px solid #f6cfcc;}
+    .msg.ok{background:#e9f6ee;color:var(--ok);border:1px solid #c9e8d6;}
+    .msg.info{background:#eef3fb;color:var(--navy);border:1px solid #d3e0f5;}
+
+    /* 统计条 */
+    .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px;}
+    .stat{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:14px 16px;}
+    .stat .k{font-size:12px;color:var(--muted);}
+    .stat .v{font-size:22px;font-weight:680;margin-top:3px;letter-spacing:.3px;}
+    .stat.warn .v{color:var(--wine);}
+
+    /* 工具条 */
+    .bar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:14px;}
+    .bar .grow{flex:1;}
+    .seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden;background:#fff;}
+    .seg button{border-radius:0;background:#fff;color:var(--muted);padding:7px 14px;font-size:13px;font-weight:520;}
+    .seg button.act{background:var(--navy);color:#fff;}
+
+    /* 表格 */
+    .tbl-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:10px;background:#fff;}
+    table{width:100%;border-collapse:collapse;font-size:13.2px;min-width:900px;}
+    th{background:#f8f9fb;text-align:left;padding:11px 13px;font-weight:600;color:#48506a;border-bottom:1px solid var(--line);white-space:nowrap;font-size:12.5px;}
+    td{padding:11px 13px;border-bottom:1px solid #f0f2f5;vertical-align:middle;}
+    tr:last-child td{border-bottom:none;}
+    tbody tr:hover{background:#fafbfd;}
+    .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12.2px;}
+    .amt{font-weight:650;color:var(--wine);}
+    .pill{display:inline-block;padding:2px 9px;border-radius:20px;font-size:11.6px;font-weight:600;}
+    .pill.pending{background:#fff4e5;color:var(--warn);}
+    .pill.paid{background:#e9f6ee;color:var(--ok);}
+    .pill.none{background:#f0f1f4;color:#7a8194;}
+    .empty{padding:40px;text-align:center;color:var(--muted);}
+
+    .toolbar-note{font-size:12.4px;color:var(--muted);margin-top:10px;}
+    .warnbox{background:#fff8e8;border:1px solid #f2dfb0;border-radius:10px;padding:12px 14px;font-size:12.8px;color:#7a5a10;margin-bottom:16px;}
+    .warnbox b{color:#5c4104;}
+    code{background:#f2f3f6;padding:1px 5px;border-radius:4px;font-size:12.4px;font-family:ui-monospace,Menlo,Consolas,monospace;}
+    .hidden{display:none !important;}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+    <header class="top">
+        <div class="brand">
+            <div class="mark">复</div>
+            <div>
+                <h1>会员管理台</h1>
+                <div class="sub">智能复盘助手 · deepmind.work</div>
+            </div>
+        </div>
+        <div class="who">
+            <span class="dot" id="authDot"></span>
+            <span id="authText">未登录</span>
+            <button class="btn-ghost btn-sm hidden" id="signOutBtn">退出</button>
+        </div>
+    </header>
+
+    <!-- ================= 登录视图 ================= -->
+    <div id="loginView" class="card">
+        <h2>管理员登录</h2>
+        <p class="hint">仅站长本人可进入。使用与网站相同的邮箱验证码登录方式。</p>
+
+        <label for="emailInput">管理员邮箱</label>
+        <input type="email" id="emailInput" placeholder="your@email.com" autocomplete="username">
+
+        <label for="codeInput" id="codeLabel" class="hidden">邮箱验证码</label>
+        <input type="text" id="codeInput" class="hidden" placeholder="6 位数字验证码" inputmode="numeric" autocomplete="one-time-code">
+
+        <label for="pwInput" id="pwLabel" class="hidden">登录密码</label>
+        <input type="password" id="pwInput" class="hidden" placeholder="首次注册时设置的密码" autocomplete="current-password">
+
+        <button class="btn-primary" id="loginBtn">发送验证码</button>
+        <div class="msg" id="loginMsg"></div>
+    </div>
+
+    <!-- ================= 管理视图 ================= -->
+    <div id="adminView" class="hidden">
+
+        <div class="warnbox">
+            <b>操作须知：</b>开通前请先在微信/支付宝账单里<b>核对实际到账金额</b>与订单金额一致。
+            本页面确认后<i>立即</i>给用户开通对应会员，并标记订单为已支付。
+            开通类型由订单套餐自动判定：<br>
+            月度会员(¥19.9) → 1 个月　·　年度会员(¥199) → 12 个月　·　年度会员+挑战(¥299) → 12 个月　·　终身会员(¥399) → 永久
+        </div>
+
+        <div class="stats">
+            <div class="stat warn">
+                <div class="k">待确认订单</div>
+                <div class="v" id="statPending">–</div>
+            </div>
+            <div class="stat">
+                <div class="k">已开通订单</div>
+                <div class="v" id="statPaid">–</div>
+            </div>
+            <div class="stat">
+                <div class="k">待确认金额</div>
+                <div class="v" id="statAmount">–</div>
+            </div>
+            <div class="stat">
+                <div class="k">有效会员</div>
+                <div class="v" id="statMembers">–</div>
+            </div>
+        </div>
+
+        <div class="bar">
+            <div class="seg" id="filterSeg">
+                <button data-f="pending" class="act">待确认</button>
+                <button data-f="paid">已开通</button>
+                <button data-f="all">全部</button>
+            </div>
+            <div class="grow"></div>
+            <button class="btn-ghost btn-sm" id="refreshBtn">刷新数据</button>
+        </div>
+
+        <div class="tbl-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th>订单号</th>
+                        <th>套餐</th>
+                        <th>金额</th>
+                        <th>联系方式</th>
+                        <th>提交时间</th>
+                        <th>状态</th>
+                        <th>当前会员</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody id="orderBody">
+                    <tr><td colspan="8" class="empty">加载中…</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="toolbar-note">
+            数据直接来自云端数据库，实时反映真实状态。用户端会立即生效（用户刷新页面后获得会员权限）。
+        </div>
+
+        <div class="msg" id="adminMsg"></div>
+    </div>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@tencent-ai/workbuddy-cloud-sdk@dev/lib/index.global.js"></script>
+<script>
+/* ============================================================
+   会员管理台 admin-members.html
+   - 独立页面，不依赖也不修改 index.html 的任何逻辑
+   - 复用站内 /cb 同源代理（Vercel rewrite → 云端）
+   - 所有写操作走的都是云端 SECURITY DEFINER 函数，
+     函数内部二次校验 auth.uid() === ADMIN_ID，
+     因此即使本页面代码被查看，也无法越权。
+   ============================================================ */
+(function () {
+    'use strict';
+
+    var ADMIN_ID = '2107394523863711744';          // 站长账号 auth.uid()
+    var CLOUD_CONFIG = {
+        endpoint: window.location.origin + '/cb',
+        publishableKey: 'wbpk_EyygHhJU0gq4U5gWEdwZqs_5dtxmQDkuDiGlQ1oSQGQAJIzWXRZrN4W'
+    };
+
+    var cloud = null;
+    var pendingOtp = null;
+    var allRows = [];
+    var currentFilter = 'pending';
+
+    /* ---------- DOM ---------- */
+    var $ = function (id) { return document.getElementById(id); };
+    var loginView = $('loginView'), adminView = $('adminView');
+    var loginMsg = $('loginMsg'), adminMsg = $('adminMsg');
+    var emailInput = $('emailInput'), codeInput = $('codeInput'), pwInput = $('pwInput');
+    var codeLabel = $('codeLabel'), pwLabel = $('pwLabel');
+    var loginBtn = $('loginBtn'), signOutBtn = $('signOutBtn');
+    var authDot = $('authDot'), authText = $('authText');
+
+    /* ---------- 提示 ---------- */
+    function showMsg(el, text, kind) {
+        el.textContent = text;
+        el.className = 'msg show ' + (kind || 'info');
+    }
+    function hideMsg(el) { el.className = 'msg'; }
+    function log() {
+        var a = ['[管理台]'].concat(Array.prototype.slice.call(arguments));
+        console.log.apply(console, a);
+    }
+
+    /* ---------- 初始化 SDK ---------- */
+    function initCloud() {
+        if (cloud) return cloud;
+        if (typeof WorkBuddyCloud === 'undefined' || !WorkBuddyCloud.createWorkBuddyCloud) {
+            log('SDK 未加载');
+            return null;
+        }
+        cloud = WorkBuddyCloud.createWorkBuddyCloud({
+            endpoint: CLOUD_CONFIG.endpoint,
+            publishableKey: CLOUD_CONFIG.publishableKey
+        });
+        return cloud;
+    }
+
+    /* ---------- 登录态切换 ---------- */
+    function setSignedIn(email) {
+        authDot.className = 'dot on';
+        authText.textContent = '已登录：' + email;
+        signOutBtn.classList.remove('hidden');
+        loginView.classList.add('hidden');
+        adminView.classList.remove('hidden');
+    }
+    /**
+     * 切回未登录状态。
+     * @param {boolean} [clearMessage=true] 是否清空登录区提示。
+     *        管理员校验失败时传 false，以便保留「无权进入」提示。
+     */
+    function setSignedOut(clearMessage) {
+        var doClear = clearMessage !== false;
+        authDot.className = 'dot';
+        authText.textContent = '未登录';
+        signOutBtn.classList.add('hidden');
+        adminView.classList.add('hidden');
+        loginView.classList.remove('hidden');
+        // 重置登录表单
+        codeInput.classList.add('hidden');
+        pwInput.classList.add('hidden');
+        codeLabel.classList.add('hidden');
+        pwLabel.classList.add('hidden');
+        loginBtn.textContent = '发送验证码';
+        pendingOtp = null;
+        if (doClear) hideMsg(loginMsg);
+    }
+
+    /* ---------- 校验是否管理员 ---------- */
+    async function getSessionUserId() {
+        var c = initCloud();
+        if (!c) return null;
+        var res = await c.auth.getSession();
+        if (res.error || !res.data || !res.data.user) return null;
+        return res.data.user;
+    }
+
+    /**
+     * 校验当前登录者是否管理员。
+     * 返回 user 表示通过；返回 null 表示未登录或非管理员。
+     * 非管理员时已在本函数内完成退出登录与面板切换，
+     * 并把「无权进入」提示写入 loginMsg（调用方不要再清空它）。
+     */
+    async function requireAdmin() {
+        var user = await getSessionUserId();
+        if (!user) {
+            setSignedOut(false);          // 不清理提示
+            return null;
+        }
+        if (String(user.id) !== String(ADMIN_ID)) {
+            log('非管理员账号，退出：', user.id);
+            var c = initCloud();
+            try { await c.auth.signOut(); } catch (e) { /* 忽略退出异常 */ }
+            setSignedOut(false);
+            showMsg(loginMsg, '该邮箱不是管理员账号，无权进入管理台。', 'err');
+            return null;
+        }
+        setSignedIn(user.email || '(未知邮箱)');
+        return user;
+    }
+
+    /* ---------- 登录流程 ---------- */
+    loginBtn.addEventListener('click', async function () {
+        var c = initCloud();
+        if (!c) { showMsg(loginMsg, '云服务 SDK 加载失败，请检查网络后刷新页面。', 'err'); return; }
+
+        var email = (emailInput.value || '').trim();
+        if (!email || email.indexOf('@') < 0) { showMsg(loginMsg, '请输入有效的邮箱地址。', 'err'); return; }
+
+        // 第二步：已有验证码输入 → 校验
+        if (pendingOtp && codeInput.value.trim()) {
+            loginBtn.disabled = true;
+            showMsg(loginMsg, '正在验证…', 'info');
+            // 注意：SDK 的 verifyOtp 返回 { data, error }，不抛异常
+            var vres = await c.auth.verifyOtp({
+                email: pendingOtp.email,
+                verificationId: pendingOtp.verificationId,
+                isExistingUser: pendingOtp.isExistingUser,
+                token: codeInput.value.trim(),
+                password: pendingOtp.isExistingUser ? undefined : (pwInput.classList.contains('hidden') ? undefined : (pwInput.value || undefined))
+            });
+            loginBtn.disabled = false;
+            if (vres && vres.error) {
+                showMsg(loginMsg, '登录失败：' + (vres.error.message || '验证码错误或已过期'), 'err');
+                return;
+            }
+            var user = await requireAdmin();
+            if (user) hideMsg(loginMsg);
+            return;
+        }
+
+        // 第一步：发送验证码
+        loginBtn.disabled = true;
+        showMsg(loginMsg, '正在发送验证码…', 'info');
+        // 注意：SDK 的 sendOtp 返回 { data, error }，不抛异常
+        var sent = await c.auth.sendOtp({ email: email });
+        loginBtn.disabled = false;
+        if (!sent || sent.error || !sent.data || !sent.data.verificationId) {
+            showMsg(loginMsg, '发送失败：' + ((sent && sent.error && sent.error.message) || '请稍后重试'), 'err');
+            return;
+        }
+        pendingOtp = {
+            email: email,
+            verificationId: sent.data.verificationId,
+            isExistingUser: sent.data.isExistingUser
+        };
+        codeInput.classList.remove('hidden');
+        codeLabel.classList.remove('hidden');
+        if (!sent.data.isExistingUser) {
+            pwInput.classList.remove('hidden');
+            pwLabel.classList.remove('hidden');
+            showMsg(loginMsg, '验证码已发送。这是新账号，请同时设置一个登录密码（至少 6 位）。', 'ok');
+        } else {
+            showMsg(loginMsg, '验证码已发送到 ' + email + '，请查收后填入。', 'ok');
+        }
+        loginBtn.textContent = '登录';
+    });
+
+    signOutBtn.addEventListener('click', async function () {
+        var c = initCloud();
+        try { if (c) await c.auth.signOut(); } catch (e) { /* 忽略 */ }
+        setSignedOut();
+    });
+
+    /* ---------- 数据加载 ---------- */
+    async function loadOrders() {
+        var c = initCloud();
+        if (!c) return;
+        var res = await c.database.rpc('admin_list_orders');
+        if (res.error) throw new Error(res.error.message || '查询失败');
+        allRows = Array.isArray(res.data) ? res.data : [];
+        log('订单条数：', allRows.length);
+        render();
+    }
+
+    function fmtTime(iso) {
+        if (!iso) return '–';
+        var d = new Date(iso);
+        if (isNaN(d.getTime())) return '–';
+        var p = function (n) { return (n < 10 ? '0' : '') + n; };
+        return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate()) + ' ' + p(d.getHours()) + ':' + p(d.getMinutes());
+    }
+    function fmtMoney(n) {
+        var v = Number(n);
+        return isNaN(v) ? '–' : '¥' + v.toFixed(2);
+    }
+    function esc(s) {
+        return String(s == null ? '' : s).replace(/[&<>"']/g, function (ch) {
+            return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch];
+        });
+    }
+    function memberLabel(r) {
+        if (!r.is_premium) return '<span class="pill none">无</span>';
+        var names = { monthly: '月付', yearly: '年度', lifetime: '终身' };
+        var t = names[r.vip_type] || r.vip_type || '会员';
+        if (r.vip_type === 'lifetime') return '<span class="pill paid">' + esc(t) + ' · 永久</span>';
+        var exp = r.expires_at ? new Date(r.expires_at) : null;
+        var alive = exp && exp.getTime() > Date.now();
+        return '<span class="pill ' + (alive ? 'paid' : 'none') + '">' + esc(t) +
+            (exp ? ' · 至' + fmtTime(r.expires_at).slice(0, 10) : '') + '</span>';
+    }
+
+    function render() {
+        var rows = allRows.filter(function (r) {
+            if (currentFilter === 'all') return true;
+            return r.status === currentFilter;
+        });
+
+        // 统计
+        var pend = allRows.filter(function (r) { return r.status === 'pending'; });
+        var paid = allRows.filter(function (r) { return r.status === 'paid'; });
+        var sum = pend.reduce(function (a, r) { return a + (Number(r.amount) || 0); }, 0);
+        var now = Date.now();
+        var members = allRows.filter(function (r) {
+            if (!r.is_premium) return false;
+            if (r.vip_type === 'lifetime') return true;
+            return r.expires_at && new Date(r.expires_at).getTime() > now;
+        }).length;
+
+        $('statPending').textContent = pend.length;
+        $('statPaid').textContent = paid.length;
+        $('statAmount').textContent = '¥' + sum.toFixed(2);
+        $('statMembers').textContent = members;
+
+        var body = $('orderBody');
+        if (!rows.length) {
+            body.innerHTML = '<tr><td colspan="8" class="empty">' +
+                (currentFilter === 'pending' ? '当前没有待确认的订单。' : '暂无数据。') + '</td></tr>';
+            return;
+        }
+
+        body.innerHTML = rows.map(function (r) {
+            var isPending = r.status === 'pending';
+            var act = isPending
+                ? '<button class="btn-wine btn-sm act-btn" data-id="' + esc(r.id) + '">确认到账并开通</button>'
+                : '<button class="btn-ghost btn-sm rev-btn" data-id="' + esc(r.id) + '">撤销开通</button>';
+            return '<tr>' +
+                '<td class="mono">#' + esc(r.id) + '</td>' +
+                '<td>' + esc(r.plan_name || r.plan_id) + '</td>' +
+                '<td class="amt">' + fmtMoney(r.amount) + '</td>' +
+                '<td class="mono">' + esc(r.contact || '–') + '</td>' +
+                '<td class="mono">' + fmtTime(r.created_at) + '</td>' +
+                '<td><span class="pill ' + (isPending ? 'pending' : 'paid') + '">' +
+                    (isPending ? '待确认' : '已开通') + '</span></td>' +
+                '<td>' + memberLabel(r) + '</td>' +
+                '<td>' + act + '</td>' +
+            '</tr>';
+        }).join('');
+
+        Array.prototype.forEach.call(body.querySelectorAll('.act-btn'), function (btn) {
+            btn.addEventListener('click', function () { confirmOrder(btn); });
+        });
+        Array.prototype.forEach.call(body.querySelectorAll('.rev-btn'), function (btn) {
+            btn.addEventListener('click', function () { revokeOrder(btn); });
+        });
+    }
+
+    /* ---------- 撤销开通（误操作补救） ---------- */
+    async function revokeOrder(btn) {
+        var id = btn.getAttribute('data-id');
+        var row = allRows.filter(function (r) { return String(r.id) === String(id); })[0];
+        if (!row) return;
+
+        var ask = '撤销该订单的开通？\n\n' +
+            '订单号：#' + row.id + '\n' +
+            '用户将立即失去会员权限，订单回到「待确认」状态。\n\n' +
+            '此操作仅用于误操作补救，请谨慎使用。';
+        if (!window.confirm(ask)) return;
+
+        btn.disabled = true;
+        var old = btn.textContent;
+        btn.textContent = '处理中…';
+        hideMsg(adminMsg);
+
+        try {
+            var c = initCloud();
+            var res = await c.database.rpc('admin_revoke_order', { p_order_id: Number(id), p_confirm: true });
+            if (res.error) throw new Error(res.error.message || '撤销失败');
+            var out = Array.isArray(res.data) ? res.data[0] : res.data;
+            if (out && out.ok === false) throw new Error(out.message || '未成功');
+            showMsg(adminMsg, '↩️ ' + ((out && out.message) || ('订单 #' + id + ' 已撤销')), 'ok');
+            await loadOrders();
+        } catch (err) {
+            showMsg(adminMsg, '❌ 撤销失败：' + (err && err.message ? err.message : '未知错误'), 'err');
+            btn.disabled = false;
+            btn.textContent = old;
+        }
+    }
+
+    /* ---------- 确认到账并开通 ---------- */
+    async function confirmOrder(btn) {
+        var id = btn.getAttribute('data-id');
+        var row = allRows.filter(function (r) { return String(r.id) === String(id); })[0];
+        if (!row) return;
+
+        var ask = '确认已收到该订单款项？\n\n' +
+            '订单号：#' + row.id + '\n' +
+            '套餐：' + (row.plan_name || row.plan_id) + '\n' +
+            '金额：' + fmtMoney(row.amount) + '\n' +
+            '联系方式：' + (row.contact || '–') + '\n\n' +
+            '确认后将立即开通会员并标记订单已支付，不可撤销。';
+        if (!window.confirm(ask)) return;
+
+        btn.disabled = true;
+        var old = btn.textContent;
+        btn.textContent = '处理中…';
+        hideMsg(adminMsg);
+
+        try {
+            var c = initCloud();
+            var res = await c.database.rpc('admin_confirm_order', { p_order_id: Number(id) });
+            if (res.error) throw new Error(res.error.message || '开通失败');
+            var out = Array.isArray(res.data) ? res.data[0] : res.data;
+            if (out && out.ok === false) throw new Error(out.message || '未成功');
+            showMsg(adminMsg, '✅ 订单 #' + id + ' ' + ((out && out.message) || '已开通'), 'ok');
+            await loadOrders();
+        } catch (err) {
+            showMsg(adminMsg, '❌ 操作失败：' + (err && err.message ? err.message : '未知错误'), 'err');
+            btn.disabled = false;
+            btn.textContent = old;
+        }
+    }
+
+    /* ---------- 过滤与刷新 ---------- */
+    Array.prototype.forEach.call($('filterSeg').querySelectorAll('button'), function (b) {
+        b.addEventListener('click', function () {
+            Array.prototype.forEach.call($('filterSeg').querySelectorAll('button'), function (x) {
+                x.classList.remove('act');
+            });
+            b.classList.add('act');
+            currentFilter = b.getAttribute('data-f');
+            render();
+        });
+    });
+
+    $('refreshBtn').addEventListener('click', async function () {
+        $('refreshBtn').disabled = true;
+        try { await loadOrders(); hideMsg(adminMsg); }
+        catch (err) { showMsg(adminMsg, '刷新失败：' + (err && err.message ? err.message : '未知错误'), 'err'); }
+        finally { $('refreshBtn').disabled = false; }
+    });
+
+    /* ---------- 启动 ---------- */
+    (async function boot() {
+        var c = initCloud();
+        if (!c) { setSignedOut(); return; }
+        try {
+            // requireAdmin 内部已处理「未登录 / 非管理员」两种情况的界面切换与提示
+            var user = await requireAdmin();
+            if (user) {
+                try { await loadOrders(); }
+                catch (err) { showMsg(adminMsg, '加载订单失败：' + (err && err.message ? err.message : '未知错误'), 'err'); }
+            }
+        } catch (e) {
+            setSignedOut();
+        }
+    })();
+
+    window.__adminMembers = { reload: loadOrders, get rows() { return allRows; } };
+})();
+</script>
+</body>
+</html>
