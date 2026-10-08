@@ -8,6 +8,8 @@
  *  2. 支付弹窗的「我已支付，点击解锁」不再直接解锁，而是创建一条待确认
  *     订单（orders 表，status=pending），由管理员确认到账后开通。
  *  3. 未登录用户沿用原有本地 7 天试用；登录后一律以云端状态为准。
+ *     会员中心顶部的「试用剩余 X天Y小时Z分钟」在原模板里是写死的，这里在渲染
+ *     结果插入 DOM 前按云端真实状态改写那一行（会员显示有效期，试用显示倒计时）。
  *  4. 不新增/改动任何界面元素与布局，只接管已有函数的行为。
  *
  * 依赖：WorkBuddy Cloud SDK（全局 WorkBuddyCloud）
@@ -26,6 +28,14 @@
     const TRIAL_MS = 7 * 24 * 60 * 60 * 1000; // 免费试用 7 天
 
     const MEMBERSHIP_COLUMNS = 'vip_type,is_premium,expires_at,trial_start';
+
+    /** 会员类型 -> 展示名（与主程序 VIP_PLANS 的文案保持一致） */
+    const VIP_TYPE_LABEL = {
+        monthly: '月度会员',
+        yearly: '年度会员',
+        yearly_challenge: '年度会员+挑战',
+        lifetime: '终身会员'
+    };
 
     let cloud = null;
     let submittingOrder = false;
@@ -275,6 +285,78 @@
         }
     }
 
+    /**
+     * 接管会员中心顶部的状态条。
+     *
+     * 会员中心模板里那行「⏱️ 试用剩余 X天Y小时Z分钟」是**写死**的，没有任何
+     * 会员态分支——正式会员也会看到「试用剩余 0天0小时0分钟」，用户会误以为
+     * 会员没开通。这里不改模板、不改样式，只在渲染结果插入 DOM 之后按真实
+     * 云端状态修正那一行文字（节点还是原来那个节点，样式沿用原来的）。
+     */
+    function takeOverVipCenter() {
+        const original = window.renderVipCenter;
+        if (typeof original !== 'function') return;
+
+        window.renderVipCenter = function (isForced, days, hours, minutes) {
+            const html = original.call(this, isForced, days, hours, minutes);
+            try {
+                return patchVipBanner(html, days || 0, hours || 0, minutes || 0);
+            } catch (e) {
+                console.warn('[CloudMember] 会员中心状态条修正跳过:', e && e.message);
+                return html;
+            }
+        };
+    }
+
+    /** 把渲染出的 HTML 中「试用剩余」那一行替换成当前真实状态 */
+    function patchVipBanner(html, days, hours, minutes) {
+        if (typeof html !== 'string' || html.indexOf('试用剩余') === -1) return html;
+
+        const s = getStatus();
+        const cur = {
+            d: s.remainingDays, h: s.remainingHours, m: s.remainingMinutes
+        };
+        let label;
+        let matched;
+
+        if (s.isPremium) {
+            const typeName = VIP_TYPE_LABEL[s.vipType] || '会员';
+            label = s.vipType === 'lifetime'
+                ? '✅ ' + typeName + ' · 永久有效'
+                : '✅ ' + typeName + '有效期至 ' + formatDate(s.expiresAt);
+        } else if (s.loaded) {
+            // 已登录：以云端状态为准（试用中 / 试用已结束）
+            label = (cur.d === 0 && cur.h === 0 && cur.m === 0)
+                ? '⏱️ 免费试用已结束'
+                : '⏱️ 试用剩余 ' + cur.d + '天' + cur.h + '小时' + cur.m + '分钟';
+        } else {
+            // 未登录：沿用主程序传入的本地试用倒计时
+            label = '⏱️ 试用剩余 ' + (days || 0) + '天' + (hours || 0) + '小时' + (minutes || 0) + '分钟';
+        }
+
+        // renderVipCenter 返回的是**已求值**的 HTML，模板里的 ${days} 早变成了数字，
+        // 所以只能按「渲染时实际传入的数值」定位那一行，不能按 ${days} 字面量匹配。
+        const rendered = '⏱️ 试用剩余 ' + (days || 0) + '天' + (hours || 0) + '小时' + (minutes || 0) + '分钟';
+        if (html.indexOf(rendered) !== -1) {
+            return html.split(rendered).join(label);
+        }
+
+        // 兜底：传入值与渲染值不一致时（理论上不会发生），用正则匹配任意数字形态
+        matched = html.match(/⏱️ 试用剩余 \d+天\d+小时\d+分钟/);
+        if (!matched) return html; // 模板已变，放弃（不猜）
+        return html.split(matched[0]).join(label);
+    }
+
+    /** 把云端返回的 ISO 日期格式化成主程序同一风格 YYYY/MM/DD */
+    function formatDate(iso) {
+        if (!iso) return '';
+        const d = new Date(iso);
+        if (isNaN(d.getTime())) return '';
+        return d.getFullYear() + '/' +
+            String(d.getMonth() + 1).padStart(2, '0') + '/' +
+            String(d.getDate()).padStart(2, '0');
+    }
+
     /** 用户声明「我已支付」——创建订单，不直接解锁 */
     async function handleClaimPaid(e) {
         if (e && e.preventDefault) e.preventDefault();
@@ -349,6 +431,21 @@
         } catch (e) {
             console.warn('[CloudMember] 界面刷新跳过:', e && e.message);
         }
+        // 会员中心若正开着，用最新状态重渲染一次（内部走已被接管的 renderVipCenter）
+        try {
+            if (document.getElementById('vip-center-overlay') && typeof window.renderVipCenter === 'function') {
+                const s = getStatus();
+                document.body.insertAdjacentHTML('beforeend', window.renderVipCenter(false, s.remainingDays, s.remainingHours, s.remainingMinutes));
+                const old = document.getElementById('vip-center-overlay');
+                if (old) {
+                    // 新节点在末尾，删掉把「会员中心」按钮插进 DOM 时生成的那个旧节点
+                    const all = document.querySelectorAll('#vip-center-overlay');
+                    if (all.length > 1) all[0].remove();
+                }
+            }
+        } catch (e) {
+            console.warn('[CloudMember] 会员中心刷新跳过:', e && e.message);
+        }
     }
 
     // ============================================================
@@ -413,6 +510,7 @@
         }
         takeOverTrialStatus();
         takeOverUnlockButtons();
+        takeOverVipCenter();
         installPremiumGate();
 
         // 若已有登录会话（cloud-auth.js 会先恢复），这里兜底再拉一次状态
