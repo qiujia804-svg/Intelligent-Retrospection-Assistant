@@ -316,11 +316,20 @@
         }
         if (String(user.id) !== String(ADMIN_ID)) {
             log('非管理员账号，退出：', user.id);
-            var c = initCloud();
-            try { await c.auth.signOut(); } catch (e) { /* 忽略退出异常 */ }
+            var c0 = initCloud();
+            try { await c0.auth.signOut(); } catch (e) { /* 忽略退出异常 */ }
             setSignedOut(false);
             showMsg(loginMsg, '该邮箱不是管理员账号，无权进入管理台。', 'err');
             return null;
+        }
+        // SDK 的 getSession() 返回的 user 只有 id/name/avatar，不含 email，
+        // 用 getUser() 补全，仅用于顶部展示
+        if (!user.email) {
+            try {
+                var c = initCloud();
+                var me = await c.auth.getUser();
+                if (me && me.data && me.data.email) user.email = me.data.email;
+            } catch (e) { /* 补全失败就显示未知邮箱，不影响功能 */ }
         }
         setSignedIn(user.email || '(未知邮箱)');
         return user;
