@@ -43,10 +43,20 @@
         status('正在生成安排，请稍候……');
         const controller = new AbortController(), timer = setTimeout(() => controller.abort(), 60000);
         try {
-            const response = await fetch('/api/ai-plan', {method:'POST', headers:{'Content-Type':'application/json'}, signal:controller.signal,
+            const authHeader = (window.CloudMember && typeof window.CloudMember.getAuthHeader === 'function')
+                ? await window.CloudMember.getAuthHeader() : {};
+            const response = await fetch('/api/ai-plan', {method:'POST', headers:Object.assign({'Content-Type':'application/json'}, authHeader), signal:controller.signal,
                 body:JSON.stringify({text, existing, tags: typeof getUserTags === 'function' ? getUserTags().map(t=>t.name) : []})});
             const data = await response.json().catch(()=>{throw new Error('AI接口不可用，请通过已配置后端的网站访问。');});
-            if (!response.ok) throw new Error(data.error || '生成失败，请重试。');
+            if (!response.ok) {
+                // 服务端会员鉴权：401 未登录 / 403 无权益 —— 给出明确指引而不是干巴巴报错
+                if (response.status === 401) throw new Error('请先登录后再使用 AI 规划。');
+                if (response.status === 403) {
+                    if (typeof openVipCenter === 'function') { try { openVipCenter(); } catch (e) { /* 会员中心不可用时忽略 */ } }
+                    throw new Error(data.error || 'AI 功能属于会员权益，请先开通会员。');
+                }
+                throw new Error(data.error || '生成失败，请重试。');
+            }
             proposal = AIPlanCore.validate(data, existing.map(s=>s.time));
             preview(proposal); status('请检查安排、估算时长和冲突。确认填入后仍可在原表单修改。');
         } catch(e) { invalidate(); status(e.name === 'AbortError' ? '生成超时，请重试。' : e.message); }

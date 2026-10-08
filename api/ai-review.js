@@ -1,4 +1,5 @@
 const { buildUserContent, validate } = require('../ai-review-core');
+const { requireMember } = require('./_auth');
 
 // ---- 安全加固：同源校验 + 尽力而为的内存限流（与 api/ai-plan.js 同一套策略）----
 const RATE_WINDOW_MS = 10 * 60 * 1000;  // 10 分钟窗口
@@ -51,6 +52,12 @@ module.exports = async (req, res) => {
     if (req.method !== 'POST') return res.status(405).json({ error: '请使用POST请求。' });
     if (!isAllowedOrigin(req)) return res.status(403).json({ error: '禁止跨站调用。' });
     if (!rateLimit(`ip:${clientIp(req)}`, MAX_PER_IP)) return res.status(429).json({ error: '生成过于频繁，请 10 分钟后再试。' });
+
+    // ---- 会员鉴权：前端门禁只拦点击，这里才是真正的商业闭环 ----
+    // 放在参数校验之前，避免无效请求走到大模型调用（省额度）。
+    const auth = await requireMember(req);
+    if (!auth.ok) return res.status(auth.status).json({ error: auth.message, code: auth.code });
+
     const body = req.body;
     if (!body || typeof body !== 'object' || Array.isArray(body)) return res.status(400).json({ error: '请从页面上的「AI帮我复盘」按钮发起请求。' });
     let userContent;

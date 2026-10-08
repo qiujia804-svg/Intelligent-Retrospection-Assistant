@@ -1,4 +1,5 @@
 const { validate } = require('../ai-plan-core');
+const { requireMember } = require('./_auth');
 
 // ---- 安全加固：同源校验 + 尽力而为的内存限流（与 api/send-email.js 同一套策略）----
 // 注意：Serverless 实例不共享内存，此限流为尽力而为；生产环境建议在平台层再加限流/WAF。
@@ -58,6 +59,12 @@ module.exports = async (req, res) => {
     if (req.method !== 'POST') return res.status(405).json({ error: '请使用POST请求。' });
     if (!isAllowedOrigin(req)) return res.status(403).json({ error: '禁止跨站调用。' });
     if (!rateLimit(`ip:${clientIp(req)}`, MAX_PER_IP)) return res.status(429).json({ error: '生成过于频繁，请 10 分钟后再试。' });
+
+    // ---- 会员鉴权：前端门禁只拦点击，这里才是真正的商业闭环 ----
+    // 放在参数校验之前，避免无效请求走到大模型调用（省额度）。
+    const auth = await requireMember(req);
+    if (!auth.ok) return res.status(auth.status).json({ error: auth.message, code: auth.code });
+
     const body = req.body;
     if (!body || typeof body.text !== 'string' || !body.text.trim() || body.text.length > 4000 || !Array.isArray(body.existing) || body.existing.length > 100 || !Array.isArray(body.tags) || body.tags.length > 100) return res.status(400).json({ error: '请输入1—4000字的计划。' });
     const range = /^(?:[01]\d|2[0-3]):(?:00|30)-(?:[01]\d|2[0-3]):(?:00|30)$/;

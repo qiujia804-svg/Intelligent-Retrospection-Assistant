@@ -448,6 +448,28 @@
         }
     }
 
+    /**
+     * 供其他模块（AI 规划 / AI 复盘）取请求用的鉴权头。
+     *
+     * 服务端接口会校验调用者会员身份，前端必须把会话 token 带上，
+     * 否则付费用户自己也会被 401 拦掉。这里统一从 SDK 会话取，
+     * 失败返回空对象（调用方仍可发请求，由服务端裁决）。
+     */
+    async function getAuthHeader() {
+        try {
+            const c = initCloud();
+            if (!c) return {};
+            const res = await c.auth.getSession();
+            const session = res && res.data;
+            const token = session && (session.accessToken || (session.session && session.session.accessToken));
+            if (!token) return {};
+            return { Authorization: 'Bearer ' + token };
+        } catch (e) {
+            console.warn('[CloudMember] 取会话令牌失败:', e && e.message);
+            return {};
+        }
+    }
+
     // ============================================================
     //  对外接口
     // ============================================================
@@ -458,6 +480,7 @@
         refresh: loadFromCloud,
         hasPremiumAccess: hasPremiumAccess,
         getStatus: getStatus,
+        getAuthHeader: getAuthHeader,
         onSignedIn: onSignedIn,
         onSignedOut: onSignedOut
     };
