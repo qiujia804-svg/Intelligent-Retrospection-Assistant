@@ -299,13 +299,48 @@
 
         window.renderVipCenter = function (isForced, days, hours, minutes) {
             const html = original.call(this, isForced, days, hours, minutes);
+            let out = html;
             try {
-                return patchVipBanner(html, days || 0, hours || 0, minutes || 0);
+                out = patchVipBanner(out, days || 0, hours || 0, minutes || 0);
             } catch (e) {
                 console.warn('[CloudMember] 会员中心状态条修正跳过:', e && e.message);
-                return html;
             }
+            try {
+                out = patchLegalLinks(out);
+            } catch (e) {
+                console.warn('[CloudMember] 合规链接注入跳过:', e && e.message);
+            }
+            return out;
         };
+    }
+
+    /**
+     * 在会员中心底部注入一行合规链接（用户协议 / 隐私政策 / 退款说明）。
+     *
+     * 只新增一个 div，不改模板、不改样式、不动任何原有节点——主站布局零改动。
+     * 做成独立一步（而不是塞进 patchVipBanner）是因为后者有两个 return 出口，
+     * 塞进去容易漏；这里只在最后一步统一注入，两个出口都能覆盖到。
+     * 幂等：同一份 HTML 重复调用不会叠加。
+     */
+    const LEGAL_LINKS_ATTR = 'data-legal-links';
+    function patchLegalLinks(html) {
+        if (typeof html !== 'string' || !html) return html;
+        if (html.indexOf(LEGAL_LINKS_ATTR) !== -1) return html;
+
+        // 锚点取「底部保障信息」那一栏的收尾，把链接插在它下面
+        const anchor = '即时开通使用</span>';
+        const i = html.indexOf(anchor);
+        if (i === -1) return html;              // 模板结构变了就放弃，不猜
+        const j = html.indexOf('</div>', i);
+        if (j === -1) return html;
+
+        const linkStyle = 'color:rgba(255,255,255,0.42);font-size:0.78em;text-decoration:none;';
+        const block = '<div ' + LEGAL_LINKS_ATTR + '="1" style="display:flex;justify-content:center;gap:18px;flex-wrap:wrap;padding-top:12px;position:relative;z-index:1;">' +
+            '<a href="/terms.html" target="_blank" rel="noopener" style="' + linkStyle + '">用户协议</a>' +
+            '<a href="/privacy.html" target="_blank" rel="noopener" style="' + linkStyle + '">隐私政策</a>' +
+            '<a href="/refund.html" target="_blank" rel="noopener" style="' + linkStyle + '">退款说明</a>' +
+            '</div>';
+        return html.slice(0, j + 6) + block + html.slice(j + 6);
     }
 
     /** 把渲染出的 HTML 中「试用剩余」那一行替换成当前真实状态 */

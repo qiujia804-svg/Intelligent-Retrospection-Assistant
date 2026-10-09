@@ -3,9 +3,9 @@
  * 提供离线缓存和后台同步功能
  */
 
-const CACHE_NAME = 'retrospection-assistant-v1.0.22';
-const STATIC_CACHE = 'static-v1.0.22';
-const DYNAMIC_CACHE = 'dynamic-v1.0.22';
+const CACHE_NAME = 'retrospection-assistant-v1.0.23';
+const STATIC_CACHE = 'static-v1.0.23';
+const DYNAMIC_CACHE = 'dynamic-v1.0.23';
 
 // 需要预缓存的静态资源
 // 注意：CDN 地址必须与 index.html 中实际 <script src> 使用的地址完全一致，

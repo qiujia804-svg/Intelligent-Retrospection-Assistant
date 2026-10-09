@@ -29,6 +29,17 @@ const REGISTERED_ORIGIN = UPSTREAM;
 const TRIAL_MS = 7 * 24 * 60 * 60 * 1000; // 与前端 TRIAL_MS 保持一致
 const TIMEOUT_MS = 8000;
 
+/**
+ * 试用期每日 AI 调用上限（正式会员不受限）。
+ * 试用的每一次 AI 调用都由我们向大模型付费，不设上限等于把额度敞口交给脚本。
+ * 默认 10 次/天：足够真实用户体验出价值，又不至于被刷爆。
+ * 可用环境变量 TRIAL_DAILY_LIMIT 覆盖（部署平台改配置即可，不必改代码）。
+ */
+const TRIAL_DAILY_LIMIT = (() => {
+    const n = Number(process.env.TRIAL_DAILY_LIMIT);
+    return Number.isFinite(n) && n > 0 ? Math.floor(n) : 10;
+})();
+
 /** 统一的失败返回，调用方直接拿去响应 */
 function deny(status, code, message) {
     return { ok: false, status, code, message };
@@ -43,7 +54,8 @@ function readToken(req) {
 }
 
 /** 带超时的 fetch，避免上游卡住把 Serverless 拖死 */
-async function fetchJson(url, token) {
+async function fetchJson(url, token, opts) {
+    const o = opts || {};
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
     try {
@@ -56,13 +68,75 @@ async function fetchJson(url, token) {
             'accept': 'application/json'
         };
         if (token) headers['Authorization'] = 'Bearer ' + token;
-        const res = await fetch(url, { method: 'GET', headers, signal: controller.signal });
+        if (o.body !== undefined) {
+            headers['Content-Type'] = 'application/json';
+            headers['Prefer'] = 'return=representation';
+        }
+        const init = { method: o.method || 'GET', headers, signal: controller.signal };
+        if (o.body !== undefined) init.body = JSON.stringify(o.body);
+        const res = await fetch(url, init);
         const text = await res.text();
         let json = null;
         try { json = text ? JSON.parse(text) : null; } catch { /* 非 JSON，保持 null */ }
         return { status: res.status, ok: res.ok, json: json, text: text };
     } finally {
         clearTimeout(timer);
+    }
+}
+
+/** 当前北京日期（YYYY-MM-DD）。用固定时区，避免 Serverless 的 UTC 环境在凌晨算错"今天" */
+function beijingDate() {
+    return new Date(Date.now() + 8 * 60 * 60 * 1000).toISOString().slice(0, 10);
+}
+
+/**
+ * 试用期每日额度自增。
+ * 设计原则：**只拦滥用，绝不误伤**——任何一步失败都放行（fail-open），
+ * 宁可少数几次额度统计不准，也不能因为限流组件抖动把正常用户挡在门外。
+ * @returns {Promise<{allowed:boolean, used:number, limit:number}>}
+ */
+async function consumeTrialQuota(userId, token) {
+    const limit = TRIAL_DAILY_LIMIT;
+    const day = beijingDate();
+    const base = UPSTREAM + '/.cloud/database/rest/ai_usage';
+    const filter = 'owner_id=eq.' + encodeURIComponent(userId) + '&usage_date=eq.' + day;
+    try {
+        const cur = await fetchJson(base + '?select=used_count&' + filter + '&limit=1', token);
+        if (!cur.ok) {
+            console.warn('[auth] 额度查询失败，放行:', cur.status, String(cur.text || '').slice(0, 160));
+            return { allowed: true, used: 0, limit: limit };
+        }
+        const rows = Array.isArray(cur.json) ? cur.json : (cur.json && cur.json.data) || [];
+        const used = rows.length ? (Number(rows[0].used_count) || 0) : 0;
+
+        if (used >= limit) {
+            return { allowed: false, used: used, limit: limit };
+        }
+
+        if (rows.length === 0) {
+            // 当日首调用：建行。并发下可能撞主键（409），那说明已被别人建过，照常放行。
+            const ins = await fetchJson(base, token, {
+                method: 'POST',
+                body: { owner_id: userId, usage_date: day, used_count: 1 }
+            });
+            if (!ins.ok && ins.status !== 409) {
+                console.warn('[auth] 额度初始化失败，放行:', ins.status, String(ins.text || '').slice(0, 160));
+            }
+            return { allowed: true, used: 1, limit: limit };
+        }
+
+        // 乐观自增：条件带上读到的旧值，避免并发互相覆盖
+        const upd = await fetchJson(base + '?' + filter + '&used_count=eq.' + used, token, {
+            method: 'PATCH',
+            body: { used_count: used + 1 }
+        });
+        if (!upd.ok) {
+            console.warn('[auth] 额度自增失败，放行:', upd.status, String(upd.text || '').slice(0, 160));
+        }
+        return { allowed: true, used: used + 1, limit: limit };
+    } catch (e) {
+        console.warn('[auth] 额度校验异常，放行:', e && e.message);
+        return { allowed: true, used: 0, limit: limit };
     }
 }
 
@@ -122,6 +196,28 @@ async function requireMember(req) {
     const rows = Array.isArray(mem.json) ? mem.json : (mem.json && mem.json.data) || [];
     const row = rows[0] || null;
 
+    // ---- 2.5 尚无试用记录：服务端补建，让新用户从此刻起算 7 天 ----
+    // 前端登录时也会建（cloud-member.js），但注册后立刻点 AI 可能撞上竞态：
+    // 那时若直接拒绝，新用户第一眼看到的是「试用已结束」，转化当场就丢了。
+    // memberships 的 INSERT 策略允许用户写自己那行（且强制 is_premium=false），
+    // 所以这里用他自己的 token 建，仍然受 RLS 约束、拿不到任何额外权限。
+    if (!row) {
+        try {
+            await fetchJson(UPSTREAM + '/.cloud/database/rest/memberships', token, {
+                method: 'POST',
+                body: {}
+            });
+        } catch (e) {
+            console.warn('[auth] 补建试用记录失败:', e && e.message);
+        }
+        const q = await consumeTrialQuota(userId, token);
+        if (!q.allowed) {
+            return deny(403, 'TRIAL_QUOTA_EXCEEDED',
+                '今天的免费试用额度已用完（每日 ' + q.limit + ' 次）。开通会员后可不限次使用 AI 功能。');
+        }
+        return { ok: true, status: 200, code: 'OK', message: '', userId, vipType: null, trialUsed: q.used, trialLimit: q.limit };
+    }
+
     // ---- 3. 判定权益 ----
     const now = Date.now();
     if (row) {
@@ -139,7 +235,13 @@ async function requireMember(req) {
         const ts = row.trial_start ? new Date(row.trial_start).getTime() : NaN;
         const trialValid = Number.isFinite(ts) && (ts + TRIAL_MS) > now;
         if (trialValid) {
-            return { ok: true, status: 200, code: 'OK', message: '', userId, vipType: null };
+            // 试用有额度上限；返回 403 而非 429，前端会直接弹出会员中心引导开通
+            const quota = await consumeTrialQuota(userId, token);
+            if (!quota.allowed) {
+                return deny(403, 'TRIAL_QUOTA_EXCEEDED',
+                    '今天的免费试用额度已用完（每日 ' + quota.limit + ' 次）。开通会员后可不限次使用 AI 功能。');
+            }
+            return { ok: true, status: 200, code: 'OK', message: '', userId, vipType: null, trialUsed: quota.used, trialLimit: quota.limit };
         }
     }
 
