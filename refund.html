@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>退款说明 - 智能复盘助手</title>
+    <meta name="robots" content="index, follow">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+            background: #f5f6fa;
+            color: #2c3e50;
+            line-height: 1.75;
+        }
+        .hero {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #fff;
+            padding: 48px 20px 40px;
+            text-align: center;
+        }
+        .hero h1 { font-size: 1.6em; font-weight: 700; margin-bottom: 8px; }
+        .hero .meta { font-size: 0.85em; color: rgba(255,255,255,0.75); }
+        .container { max-width: 720px; margin: -20px auto 40px; padding: 0 16px; }
+        .card {
+            background: #fff;
+            border-radius: 16px;
+            padding: 28px 24px;
+            box-shadow: 0 4px 24px rgba(102,126,234,0.10);
+            margin-bottom: 16px;
+        }
+        h2 { font-size: 1.1em; font-weight: 700; color: #5a67d8; margin: 24px 0 10px; }
+        h2:first-child { margin-top: 0; }
+        p { margin: 8px 0; }
+        ul, ol { padding-left: 22px; margin: 8px 0; }
+        li { margin: 5px 0; }
+        table { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 0.92em; }
+        th, td { border: 1px solid #e3e8f5; padding: 9px 10px; text-align: left; vertical-align: top; }
+        th { background: #f4f6ff; color: #5a67d8; font-weight: 600; }
+        .highlight {
+            background: #f4f6ff;
+            border-left: 3px solid #667eea;
+            padding: 10px 14px;
+            border-radius: 0 8px 8px 0;
+            margin: 12px 0;
+            font-size: 0.95em;
+        }
+        .steps { counter-reset: step; list-style: none; padding-left: 0; }
+        .steps li {
+            counter-increment: step;
+            position: relative;
+            padding-left: 40px;
+            margin: 12px 0;
+        }
+        .steps li::before {
+            content: counter(step);
+            position: absolute;
+            left: 0; top: 2px;
+            width: 26px; height: 26px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #fff;
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 0.85em; font-weight: 700;
+        }
+        .footer { text-align: center; padding: 0 20px 40px; }
+        .footer a {
+            display: inline-block;
+            color: #667eea;
+            text-decoration: none;
+            font-size: 0.9em;
+            padding: 10px 22px;
+            border: 1px solid rgba(102,126,234,0.4);
+            border-radius: 999px;
+            background: #fff;
+        }
+        @media (max-width: 480px) {
+            .hero { padding: 36px 16px 32px; }
+            .card { padding: 22px 18px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="hero">
+        <h1>退款说明</h1>
+        <div class="meta">更新日期：2026年10月9日　|　适用范围：智能复盘助手全部付费会员服务</div>
+    </div>
+
+    <div class="container">
+        <div class="card">
+            <h2>一、购买前请知悉</h2>
+            <div class="highlight">会员服务属于虚拟数字商品，<b>开通成功后立即生效并全程可用</b>。为避免误购，每位新用户都有 <b>7 天免费试用</b>，试用期间可体验全部会员权益（含 AI 功能）——建议您充分试用后再决定是否付费。</div>
+            <p>会员套餐与价格（以购买页面实时展示为准）：</p>
+            <table>
+                <tr><th>套餐</th><th>价格</th><th>有效期</th></tr>
+                <tr><td>月度会员</td><td>¥19.9 / 月</td><td>自开通起 30 天</td></tr>
+                <tr><td>年度会员</td><td>¥199 / 年</td><td>自开通起 1 年</td></tr>
+                <tr><td>终身会员</td><td>¥399</td><td>永久有效</td></tr>
+            </table>
+
+            <h2>二、可申请退款的情形</h2>
+            <table>
+                <tr><th>情形</th><th>处理方式</th></tr>
+                <tr><td>支付成功但会员未开通成功（金额不符、系统异常等）</td><td><b>全额退款</b>，或补正确开通</td></tr>
+                <tr><td>重复支付（同一账号同一套餐多次付款）</td><td><b>多付部分全额退款</b></td></tr>
+                <tr><td>月度/年度会员开通后 72 小时内，且基本未使用会员权益（AI 分析等）</td><td><b>全额退款</b>，会员随即失效</td></tr>
+                <tr><td>月度/年度会员开通超过 72 小时后申请退款</td><td>按剩余有效天数<b>比例退款</b>（已过天数按套餐日均单价折算），会员随即失效</td></tr>
+                <tr><td>终身会员购买后 7 天内且基本未使用会员权益</td><td><b>全额退款</b></td></tr>
+                <tr><td>终身会员购买超过 7 天</td><td>原则上不再退款，特殊情况可联系我们协商</td></tr>
+                <tr><td>因违反《用户服务协议》被暂停/终止服务的</td><td><b>不予退款</b></td></tr>
+            </table>
+
+            <h2>三、退款流程</h2>
+            <ol class="steps">
+                <li>发送退款申请至邮箱 <b>qiujia804@gmail.com</b>，注明：<b>注册邮箱 + 支付方式 + 支付金额 + 支付时间</b>（附支付截图更快）。</li>
+                <li>我们人工核对订单与使用情况，一般 <b>48 小时内</b>回复处理结果。</li>
+                <li>确认可退的，按您原支付方式原路退回，通常 1–3 个工作日内到账（以支付渠道实际到账时间为准）。</li>
+            </ol>
+
+            <h2>四、特别说明</h2>
+            <ul>
+                <li>退款完成后，对应会员权益将立即失效，请确有需要再申请。</li>
+                <li>同一账号累计获得 2 次退款后，后续购买将不再支持无理由退款。</li>
+                <li>退款申请即视为您同意终止对应会员期的服务协议。</li>
+                <li>本说明未尽事宜，参照《用户服务协议》执行；如有疑问请联系 <b>qiujia804@gmail.com</b>。</li>
+            </ul>
+            <p style="margin-top:16px; color:#8a94a6; font-size:0.9em;">—— 智能复盘助手运营团队</p>
+        </div>
+    </div>
+
+    <div class="footer">
+        <a href="https://www.deepmind.work/">← 返回智能复盘助手</a>
+    </div>
+</body>
+</html>
