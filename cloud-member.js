@@ -48,7 +48,8 @@
         trialEnd: null,
         isPremium: false,
         trialActive: false,
-        lastSyncError: null
+        lastSyncError: null,
+        myOrders: []       // 最近订单缓存（fetchMyOrders 填充，会员中心渲染用）
     };
 
     function log() {
@@ -222,6 +223,48 @@
         return { ok: true, order: (res.data && res.data[0]) || null };
     }
 
+    /** 查当前用户是否已有待确认订单（防重复下单）。查询失败返回 null（不阻塞付款流程） */
+    async function findPendingOrder() {
+        const c = initCloud();
+        if (!c) return null;
+        try {
+            const res = await c.database.from('orders')
+                .select('id,plan_name,amount,created_at')
+                .eq('status', 'pending')
+                .order('created_at', { ascending: false })
+                .limit(1);
+            const rows = (!res.error && Array.isArray(res.data)) ? res.data : [];
+            return rows[0] || null;
+        } catch (e) {
+            log('查询待确认订单失败（放行，不阻塞付款）:', e && e.message);
+            return null;
+        }
+    }
+
+    /** 拉取最近几条订单，缓存到 state.myOrders 供会员中心渲染（失败静默，不影响主流程） */
+    async function fetchMyOrders() {
+        const c = initCloud();
+        const user = window.currentUser;
+        if (!c || !user) { state.myOrders = []; return; }
+        try {
+            const res = await c.database.from('orders')
+                .select('id,plan_name,amount,status,created_at')
+                .order('created_at', { ascending: false })
+                .limit(5);
+            state.myOrders = (!res.error && Array.isArray(res.data)) ? res.data : [];
+        } catch (e) {
+            log('拉取订单列表失败:', e && e.message);
+            state.myOrders = [];
+        }
+    }
+
+    /** 极简 HTML 转义（订单号/套餐名/金额均来自数据库，防意外注入） */
+    function esc(v) {
+        return String(v == null ? '' : v)
+            .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+    }
+
     // ============================================================
     //  接管原函数
     // ============================================================
@@ -310,6 +353,11 @@
             } catch (e) {
                 console.warn('[CloudMember] 合规链接注入跳过:', e && e.message);
             }
+            try {
+                out = patchMyOrders(out);
+            } catch (e) {
+                console.warn('[CloudMember] 订单状态注入跳过:', e && e.message);
+            }
             return out;
         };
     }
@@ -340,6 +388,48 @@
             '<a href="/privacy.html" target="_blank" rel="noopener" style="' + linkStyle + '">隐私政策</a>' +
             '<a href="/refund.html" target="_blank" rel="noopener" style="' + linkStyle + '">退款说明</a>' +
             '</div>';
+        return html.slice(0, j + 6) + block + html.slice(j + 6);
+    }
+
+    /**
+     * 在会员中心注入「我的订单」状态块（最近 5 条：套餐 / 金额 / 状态）。
+     * 解决「用户提交订单后无处查看进度，只能来问客服」的问题。
+     * 数据来自 fetchMyOrders() 的缓存（登录时、下单成功后刷新），
+     * 渲染是纯同步字符串拼接——不改模板、不加节点事件，主站布局零改动。
+     * 未登录 / 无订单 / 数据未加载时不注入，界面与原来完全一致。
+     */
+    const MY_ORDERS_ATTR = 'data-my-orders';
+    const ORDER_STATUS_LABEL = { pending: '待确认', paid: '已开通', revoked: '已撤销' };
+    function patchMyOrders(html) {
+        if (typeof html !== 'string' || !html) return html;
+        if (html.indexOf(MY_ORDERS_ATTR) !== -1) return html;   // 幂等
+        const user = window.currentUser;
+        if (!user || !Array.isArray(state.myOrders) || state.myOrders.length === 0) return html;
+
+        const rows = state.myOrders.slice(0, 5).map(function (o) {
+            const label = ORDER_STATUS_LABEL[o.status] || (o.status || '处理中');
+            const color = o.status === 'paid'
+                ? '#8effb0'
+                : (o.status === 'pending' ? '#ffd666' : 'rgba(255,255,255,0.55)');
+            return '<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;padding:3px 0;">' +
+                '<span style="opacity:.92;">#' + esc(o.id) + ' · ' + esc(o.plan_name || '') + ' · ¥' + esc(o.amount) + '</span>' +
+                '<span style="color:' + color + ';white-space:nowrap;">' + esc(label) + '</span>' +
+                '</div>';
+        }).join('');
+
+        const block = '<div ' + MY_ORDERS_ATTR + '="1" style="margin-top:12px;padding:10px 14px;background:rgba(255,255,255,0.10);border:1px solid rgba(255,255,255,0.16);border-radius:10px;font-size:0.82em;line-height:1.55;position:relative;z-index:1;">' +
+            '<div style="opacity:.72;margin-bottom:5px;">🧾 我的订单（核对到账后自动开通）</div>' +
+            rows +
+            '</div>';
+
+        // 优先插在合规链接块之前；合规块还没注入时，退回「保障信息」栏同一锚点
+        const legalIdx = html.indexOf('<div ' + LEGAL_LINKS_ATTR);
+        if (legalIdx !== -1) return html.slice(0, legalIdx) + block + html.slice(legalIdx);
+        const anchor = '即时开通使用</span>';
+        const i = html.indexOf(anchor);
+        if (i === -1) return html;                 // 模板结构变了就放弃，不猜
+        const j = html.indexOf('</div>', i);
+        if (j === -1) return html;
         return html.slice(0, j + 6) + block + html.slice(j + 6);
     }
 
@@ -417,8 +507,23 @@
             return;
         }
 
+        // 防重复下单：已有待确认订单时不再创建新订单。
+        // 查询失败（findPendingOrder 返回 null）时放行，宁可多一条订单也不能挡住正常付款。
         submittingOrder = true;
         try {
+            const pending = await findPendingOrder();
+            if (pending) {
+                alert(
+                    '你已有一笔待确认订单，无需重复提交。\n\n' +
+                    '订单编号：#' + pending.id + '\n' +
+                    '套餐：' + pending.plan_name + '　金额：¥' + pending.amount + '\n\n' +
+                    '我们核对到账后会为你开通，开通后刷新页面即可生效。\n' +
+                    '如需更换套餐或支付遇到问题，请联系客服微信：JQJSBXXZI'
+                );
+                if (typeof closeVipPaymentModal === 'function') closeVipPaymentModal();
+                return;
+            }
+
             const res = await createOrder(plan, user.email || null);
             if (!res.ok) {
                 alert('订单提交失败：' + ((res.error && res.error.message) || '网络异常，请稍后重试'));
@@ -427,6 +532,9 @@
 
             if (typeof closeVipPaymentModal === 'function') closeVipPaymentModal();
             if (typeof closeVipCenter === 'function') closeVipCenter();
+
+            // 刷新订单缓存，让下次打开会员中心立刻看到这笔新订单
+            fetchMyOrders();
 
             const orderId = res.order && res.order.id ? res.order.id : '';
             alert(
@@ -449,12 +557,14 @@
 
     async function onSignedIn() {
         await loadFromCloud();
+        fetchMyOrders();   // 拉取「我的订单」缓存，不阻塞界面刷新
         refreshMemberUI();
     }
 
     function onSignedOut() {
         state.userId = null;
         state.loaded = false;
+        state.myOrders = [];
         resetState();
         refreshMemberUI();
     }

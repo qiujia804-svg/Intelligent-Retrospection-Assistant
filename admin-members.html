@@ -164,6 +164,22 @@
                 <div class="k">有效会员</div>
                 <div class="v" id="statMembers">–</div>
             </div>
+            <div class="stat">
+                <div class="k">注册用户</div>
+                <div class="v" id="statRegTotal">–</div>
+            </div>
+            <div class="stat">
+                <div class="k">试用中</div>
+                <div class="v" id="statTrial">–</div>
+            </div>
+            <div class="stat">
+                <div class="k">累计收入</div>
+                <div class="v" id="statRevenue">–</div>
+            </div>
+            <div class="stat">
+                <div class="k">AI 调用次数</div>
+                <div class="v" id="statAiCalls">–</div>
+            </div>
         </div>
 
         <div class="bar">
@@ -407,6 +423,29 @@
         allRows = Array.isArray(res.data) ? res.data : [];
         log('订单条数：', allRows.length);
         render();
+        loadStats();   // 看板数据与订单列表一起刷新（自身容错，不影响订单列表）
+    }
+
+    /**
+     * 经营看板：注册用户 / 试用中 / 累计收入 / AI 调用次数。
+     * 这些数据跨所有用户，普通 RLS 读不到，走 SECURITY DEFINER 的 admin_stats()
+     * （函数内校验管理员身份）。任何失败都保持「–」，不影响订单管理。
+     */
+    async function loadStats() {
+        var c = initCloud();
+        if (!c) return;
+        try {
+            var res = await c.database.rpc('admin_stats');
+            if (res.error) { log('看板查询失败:', res.error.message); return; }
+            var s = res.data || {};
+            var num = function (v) { v = Number(v); return isNaN(v) ? '–' : String(v); };
+            $('statRegTotal').textContent = num(s.members_total);
+            $('statTrial').textContent = num(s.trial_active);
+            $('statRevenue').textContent = fmtMoney(s.revenue);
+            $('statAiCalls').textContent = num(s.ai_calls_total);
+        } catch (e) {
+            log('看板加载异常:', e && e.message);
+        }
     }
 
     function fmtTime(iso) {

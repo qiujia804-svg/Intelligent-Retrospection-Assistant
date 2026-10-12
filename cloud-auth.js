@@ -442,7 +442,24 @@
             log('无有效会话，保持未登录状态');
             return;
         }
-        const email = session.user.email || '';
+        // ⚠️ SDK 的 getSession() 返回的 user 只有 id/name/avatarUrl，不含 email
+        // （见 userFromSessionPayload 映射）。直接读 session.user.email 恒为空，
+        // 会导致「刷新页面后下单 → 订单 contact 为空 → 站长不知道谁付的钱」。
+        // 这里必须用 getUser()（走 /v1/user/me，响应里有 email）补全，
+        // 与管理台 admin-members.html 的做法一致。
+        let email = session.user.email || '';
+        if (!email) {
+            try {
+                const c = initCloud();
+                const me = c ? await c.auth.getUser() : null;
+                if (me && me.data && me.data.email) {
+                    email = me.data.email;
+                }
+            } catch (e) {
+                log('补全邮箱失败（不影响登录，仅影响订单联系方式）:', e && e.message);
+            }
+        }
+        if (!email) log('警告：本次会话未能取到邮箱，下单时订单将缺少联系方式');
         const profile = await getCurrentUserProfile(email);
         log('检测到有效会话，自动恢复登录');
         applySignedInState(profile);
