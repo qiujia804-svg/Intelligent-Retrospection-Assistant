@@ -3004,3 +3004,28 @@ body.mobile-mode .task-item .delete-action {
   }
 }
 
+
+/* ====================
+   线上实测修复（2026-10-12）
+   1) 小屏四象限被 review-assistant.css 的 grid-column:2 钉死两列，
+      B/D 象限溢出截断 → ≤480px 恢复自动流单列布局；
+   2) 客服反馈悬浮按钮盖住底部导航第 5 项（复盘挑战赛）→ 上移至底栏上方。
+==================== */
+@media (max-width: 480px) {
+  body.mobile-mode .quadrant {
+    grid-column: auto !important;
+    grid-row: auto !important;
+    min-width: 0 !important;
+  }
+
+  body.mobile-mode .quadrants {
+    grid-template-columns: 1fr !important;
+    grid-template-rows: none !important;
+  }
+}
+
+@media (max-width: 768px) {
+  .feedback-trigger {
+    bottom: calc(var(--tabbar-height, 60px) + env(safe-area-inset-bottom, 0px) + 18px) !important;
+  }
+}
