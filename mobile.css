@@ -3459,3 +3459,459 @@ body.mobile-mode .challenge-banner {
   padding: 28px 24px;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
 }
+
+/* ====================
+   第六阶段优化 - 挑战页压缩（2026-10-13）
+   问题：小屏下 .ring-stats 被桌面媒体查询改成竖堆 + 240px 大圆环
+   + 单列规则卡 + 竖排按钮，整页下拉过长
+   思路（参照智省AI记账「数据统计」页）：
+   统计改一横排分段式（带分隔线）、圆环缩小、规则两列、按钮横排
+==================== */
+
+/* 1. 核心诉求：目标/剩余/进度 三个统计改一横排（分段控件样式） */
+body.mobile-mode .ring-stats {
+  flex-direction: row !important;
+  justify-content: space-between;
+  gap: 0;
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.14);
+}
+
+body.mobile-mode .ring-stat {
+  flex: 1;
+  position: relative;
+}
+
+/* 分段之间的细分隔线（图2 趋势/分类/分析 的分段观感） */
+body.mobile-mode .ring-stat + .ring-stat::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 18%;
+  height: 64%;
+  width: 1px;
+  background: rgba(255, 255, 255, 0.16);
+}
+
+body.mobile-mode .ring-stat .stat-num {
+  font-size: 20px;
+  font-weight: 800;
+}
+
+body.mobile-mode .ring-stat .stat-text {
+  font-size: 11px;
+  margin-top: 2px;
+}
+
+/* 2. 圆环缩小：240px → 148px，数字同步缩小 */
+body.mobile-mode .progress-ring-card {
+  padding: 18px 14px 14px;
+}
+
+body.mobile-mode .ring-container {
+  width: 148px;
+  height: 148px;
+  margin: 0 auto;
+}
+
+body.mobile-mode .ring-days {
+  font-size: 34px;
+}
+
+body.mobile-mode .ring-label {
+  font-size: 10px;
+  margin-top: 2px;
+}
+
+body.mobile-mode .ring-badge {
+  margin-top: 6px;
+  padding: 3px 10px;
+  font-size: 11px;
+}
+
+/* 3. 奖励卡：压缩内边距与超大数字 */
+body.mobile-mode .reward-card {
+  padding: 16px;
+}
+
+body.mobile-mode .reward-header {
+  margin-bottom: 10px;
+}
+
+body.mobile-mode .reward-header .reward-icon {
+  font-size: 22px;
+}
+
+body.mobile-mode .reward-header h3 {
+  font-size: 16px;
+}
+
+body.mobile-mode .reward-hint {
+  font-size: 13px;
+  margin-bottom: 6px;
+}
+
+body.mobile-mode .reward-hint strong {
+  font-size: 16px;
+}
+
+body.mobile-mode .reward-countdown {
+  font-size: 14px;
+}
+
+body.mobile-mode .reward-countdown .highlight-num {
+  font-size: 20px;
+}
+
+/* 4. 操作按钮：竖排三连 → 一行两个（自动换行） */
+body.mobile-mode .reward-actions {
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+body.mobile-mode .reward-actions .action-btn {
+  flex: 1 1 44%;
+  padding: 11px 8px;
+  font-size: 13px;
+}
+
+/* 5. 挑战规则：单列 → 两列小卡 */
+body.mobile-mode .challenge-rules-v2 {
+  padding: 16px;
+  margin-bottom: 12px;
+}
+
+body.mobile-mode .challenge-rules-v2 h3 {
+  font-size: 15px;
+  margin: 0 0 10px 0;
+}
+
+body.mobile-mode .rules-grid {
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+}
+
+body.mobile-mode .rule-card {
+  padding: 10px 12px;
+  gap: 8px;
+}
+
+body.mobile-mode .rule-card .rule-num {
+  font-size: 14px;
+}
+
+body.mobile-mode .rule-card .rule-info h4 {
+  font-size: 13px;
+  margin: 0 0 2px 0;
+}
+
+body.mobile-mode .rule-card .rule-info p {
+  font-size: 11px;
+  line-height: 1.45;
+}
+
+/* 6. 整页节奏：横幅与各区块间距统一收紧 */
+body.mobile-mode .challenge-banner {
+  padding: 14px 16px;
+  margin-bottom: 12px;
+}
+
+body.mobile-mode .banner-content {
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 10px;
+  text-align: left;
+}
+
+body.mobile-mode .banner-icon {
+  font-size: 28px;
+}
+
+body.mobile-mode .banner-text h2 {
+  font-size: 16px;
+}
+
+body.mobile-mode .banner-text p {
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+body.mobile-mode .banner-reward {
+  width: auto;
+  margin-left: auto;
+  text-align: right;
+}
+
+body.mobile-mode .challenge-dashboard {
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+/* 7. 资格横幅与荣誉榜：压缩 */
+body.mobile-mode .eligibility-banner {
+  padding: 10px 14px;
+  margin-bottom: 12px;
+  gap: 10px;
+}
+
+body.mobile-mode .eligibility-banner .status-icon {
+  font-size: 20px;
+}
+
+body.mobile-mode .eligibility-banner .status-text strong {
+  font-size: 14px;
+}
+
+body.mobile-mode .eligibility-banner .status-text span {
+  font-size: 12px;
+}
+
+body.mobile-mode .fame-header h3 {
+  font-size: 15px;
+}
+
+body.mobile-mode .service-contact {
+  font-size: 12px;
+  padding: 4px 0 10px;
+}
+
+/* 8. 顶部横幅：文字一行 + 奖励盒独占一行居中（修复标题被挤换行） */
+body.mobile-mode .banner-text {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+body.mobile-mode .banner-text h2 {
+  white-space: nowrap;
+  margin-bottom: 4px;
+}
+
+body.mobile-mode .banner-reward {
+  flex: 1 1 100%;
+  flex-direction: row;
+  justify-content: center;
+  align-items: center;
+  gap: 14px;
+  margin-left: 0;
+  padding: 8px 12px;
+}
+
+body.mobile-mode .banner-reward .reward-amount {
+  font-size: 20px;
+}
+
+/* ====================
+   第七阶段优化 - tab 内分段切换（2026-10-13）
+   参照智省AI记账「趋势/分类/分析」分段控件：
+   每个长 tab 顶部加分段条，点击切换子界面（mobile-segments.js）
+==================== */
+
+/* 分段条：半透明白容器 + 激活白卡（图2 同款） */
+body.mobile-mode .mtb-bar {
+  display: flex;
+  gap: 6px;
+  background: rgba(255, 255, 255, 0.22);
+  border-radius: 16px;
+  padding: 5px;
+  margin: 0 0 14px;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+body.mobile-mode .mtb-item {
+  flex: 1;
+  border: none;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.92);
+  font-size: 12px;
+  font-weight: 600;
+  padding: 9px 2px 8px;
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  cursor: pointer;
+  font-family: inherit;
+  -webkit-tap-highlight-color: transparent;
+}
+
+body.mobile-mode .mtb-item .mtb-ico {
+  font-size: 19px;
+  line-height: 1;
+}
+
+body.mobile-mode .mtb-item.active {
+  background: #ffffff;
+  color: #5a6fd6;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.10);
+}
+
+/* 隐藏非当前分段的区块（仅移动端生效，桌面端不受影响） */
+body.mobile-mode .mtb-hidden {
+  display: none !important;
+}
+
+/* 桌面端：分段条与 AI 卡片装饰不出现 */
+body:not(.mobile-mode) .mtb-bar,
+body:not(.mobile-mode) .mtb-ai-hint {
+  display: none !important;
+}
+
+/* AI 复盘视图：居中白卡 */
+body.mobile-mode .mtb-ai-card {
+  background: #ffffff;
+  border: none;
+  border-radius: 20px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.10);
+  padding: 30px 20px 24px;
+  text-align: center;
+}
+
+body.mobile-mode .mtb-ai-hint {
+  font-size: 12px;
+  color: #8a8fa8;
+  margin: 14px 0 0;
+  line-height: 1.7;
+}
+
+/* 分段后暴露的白标题修复（白卡内不可见） */
+body.mobile-mode .time-management h2 {
+  color: #1a1a2e;
+}
+
+body.mobile-mode .data-insight-panel .insight-header h3 {
+  color: #1a1a2e;
+}
+
+body.mobile-mode .data-insight-panel .insight-header .insight-subtitle {
+  color: #8a8fa8;
+}
+
+/* ====================
+   第八阶段优化 - 时光分析 & 历史记录界面（2026-10-13）
+   问题：图表卡标题白字白底不可见、空图表占位过高、
+   洞察卡松散不齐（2+1 布局突兀）、导出/导入/清空三个按钮竖排占屏、
+   空态文案斜体灰太随意
+==================== */
+
+/* 1. 图表卡标题：白卡上必须深色（原桌面白字在白卡上隐形） */
+body.mobile-mode .insight-chart-card h4 {
+  color: #1a1a2e;
+  font-size: 15px;
+  margin-bottom: 2px;
+}
+
+body.mobile-mode .insight-chart-card .chart-desc {
+  font-size: 11px;
+  color: #8a8fa8;
+  margin-bottom: 10px;
+}
+
+body.mobile-mode .insight-chart-card {
+  padding: 14px;
+}
+
+/* 空图表：压缩占位高度，别让两个空框撑一屏 */
+body.mobile-mode .echarts-container {
+  height: 190px;
+}
+
+body.mobile-mode .echarts-container:empty {
+  height: 110px;
+}
+
+/* 2. 面板头部：左对齐更紧凑（原居中占两行） */
+body.mobile-mode .data-insight-panel {
+  padding: 16px 14px;
+}
+
+body.mobile-mode .insight-header {
+  text-align: left;
+  margin-bottom: 12px;
+}
+
+body.mobile-mode .insight-header h3 {
+  font-size: 17px;
+  color: #1a1a2e;
+}
+
+body.mobile-mode .insight-subtitle {
+  font-size: 12px;
+  color: #8a8fa8;
+}
+
+/* 3. 洞察卡：紧凑等高小卡，图标进彩色圆角底座 */
+body.mobile-mode .insight-cards {
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+  margin-top: 12px;
+}
+
+body.mobile-mode .insight-card {
+  min-height: 0;
+  padding: 13px 12px;
+  gap: 10px;
+  align-items: center;
+  border: none;
+}
+
+body.mobile-mode .insight-icon {
+  font-size: 20px;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #eef1fd;
+  border-radius: 12px;
+  flex-shrink: 0;
+}
+
+body.mobile-mode .insight-content h5 {
+  font-size: 11px;
+  font-weight: 500;
+  color: #8a8fa8;
+  margin-bottom: 2px;
+  white-space: nowrap;
+}
+
+body.mobile-mode .insight-content p {
+  font-size: 15px;
+  font-weight: 700;
+  color: #1a1a2e;
+  line-height: 1.3;
+}
+
+/* 潜在兴趣点（primary）：占满一整行，浅紫强调底 */
+body.mobile-mode .insight-card.primary {
+  grid-column: 1 / -1;
+  background: #eef1fd;
+  border: none;
+}
+
+body.mobile-mode .insight-card.primary .insight-icon {
+  background: #ffffff;
+}
+
+
+/* 主卡星标：白底座上要深紫，否则白字隐形 */
+body.mobile-mode .insight-card.primary .insight-icon {
+  color: #5a6fd6;
+}
+
+/* 成长建议（末卡）占满一行，避免 2+1 落单 */
+body.mobile-mode .insight-cards .insight-card:last-child {
+  grid-column: 1 / -1;
+}
+
+/* ====================
+   第九阶段 - 时间分配统计移到时间列表上方（2026-10-13，仅手机端）
+   容器已是 flex column，order 换序即可；桌面 grid 布局不受影响
+==================== */
+body.mobile-mode .time-stats {
+  order: -1;
+}
