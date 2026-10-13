@@ -3312,3 +3312,150 @@ body.mobile-mode .insight-cards .insight-card {
   border-radius: 16px;
   box-shadow: 0 2px 10px rgba(31, 45, 97, 0.06);
 }
+
+/* ====================
+   第五阶段优化 - 对齐「智省AI记账」设计语言（2026-10-13）
+   参考其源码 tokens：
+   页面 = 整屏紫色渐变(180deg #667eea→#764ba2)，内容全部为浮层白卡
+   白卡 = radius 20px / padding 20px / shadow 0 8px 32px rgba(0,0,0,.1)
+   输入 = #f8f9fa / radius 16 / 无边框
+   主按钮 = h52 / radius 16 / 渐变紫 + 0 6px 20px rgba(102,126,234,.45)
+   深色主卡 = 135deg #1a1a2e→#16213e→#0f3460 + 金边 rgba(255,215,0,.2)
+   金色 = #ffd700→#ffed4a
+==================== */
+
+/* 1. 整页紫色渐变（记账小程序最核心的观感） */
+body.mobile-mode {
+  background: linear-gradient(180deg, #667eea 0%, #764ba2 100%);
+  background-attachment: fixed;
+  background-color: #667eea;
+}
+
+body.mobile-mode .container {
+  background: transparent;
+  box-shadow: none;
+  border-radius: 0;
+}
+
+/* 头部与页面顶部同色无缝衔接，向下渐隐融入背景 */
+body.mobile-mode header {
+  background: linear-gradient(180deg, #667eea 0%, rgba(102, 126, 234, 0.85) 65%, rgba(102, 126, 234, 0) 100%);
+  box-shadow: none;
+  padding-bottom: 18px;
+  margin-bottom: -6px;
+}
+
+/* 2. 页面级标题在紫底上改白字 */
+body.mobile-mode .tab-content h2,
+body.mobile-mode .tab-content > h2,
+body.mobile-mode .data-overview-header h3 {
+  color: #ffffff;
+  font-size: 18px;
+  font-weight: 700;
+  border-left: none;
+  padding-left: 0;
+  text-shadow: 0 1px 6px rgba(0, 0, 0, 0.12);
+}
+
+body.mobile-mode .segment-header label,
+body.mobile-mode .update-info,
+body.mobile-mode .chart-container h4,
+body.mobile-mode .insight-chart-card h4 {
+  color: #ffffff;
+}
+
+body.mobile-mode footer,
+body.mobile-mode footer p {
+  color: rgba(255, 255, 255, 0.72);
+  background: transparent;
+}
+
+/* 3. 卡片统一为记账规格：白底 / 20px 圆角 / 大投影 */
+body.mobile-mode .data-card,
+body.mobile-mode .chart-container,
+body.mobile-mode .insight-chart-card,
+body.mobile-mode .insight-card,
+body.mobile-mode #review-form,
+body.mobile-mode .advice-result,
+body.mobile-mode .challenge-rules-v2,
+body.mobile-mode .history-item,
+body.mobile-mode .history-detail {
+  background: #ffffff;
+  border: none;
+  border-radius: 20px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.10);
+}
+
+body.mobile-mode .data-card {
+  padding: 20px 16px;
+}
+
+body.mobile-mode .quadrant {
+  background: #ffffff;
+  border-radius: 20px;
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.12);
+  border: none;
+}
+
+/* 任务子卡：浅灰内层（记账的 #f8f9fa 输入底） */
+body.mobile-mode .task-item {
+  background: #f8f9fa;
+  border-radius: 16px;
+}
+
+/* 4. 输入控件：记账风（浅灰底、圆角 16、无边框） */
+body.mobile-mode #review-form input[type="text"],
+body.mobile-mode #review-form input[type="number"],
+body.mobile-mode #review-form input[type="date"],
+body.mobile-mode #review-form textarea,
+body.mobile-mode #review-form select,
+body.mobile-mode .task-item input[type="text"],
+body.mobile-mode .task-item textarea,
+body.mobile-mode .history-controls input[type="month"] {
+  background: #f8f9fa;
+  border: none;
+  border-radius: 16px;
+}
+
+/* 5. 主按钮：记账 CTA 规格 */
+body.mobile-mode .submit-btn,
+body.mobile-mode .advice-btn,
+body.mobile-mode #generate-advice {
+  width: 100%;
+  height: 52px;
+  border-radius: 16px;
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  color: #ffffff;
+  font-size: 16px;
+  font-weight: 600;
+  border: none;
+  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.45);
+}
+
+body.mobile-mode .submit-btn:active,
+body.mobile-mode .advice-btn:active,
+body.mobile-mode #generate-advice:active {
+  transform: translateY(1px);
+  box-shadow: 0 3px 12px rgba(102, 126, 234, 0.45);
+}
+
+/* 6. 分段芯片：换记账的 #f5f5f5 底 + 20px 圆角 */
+body.mobile-mode .segment-card {
+  background: #f5f5f5;
+  border-radius: 20px;
+  padding: 14px 8px;
+}
+
+/* 7. 底部导航：白底 + 上投影（记账 tabBar 观感） */
+body.mobile-mode .mobile-tabbar {
+  background: #ffffff;
+  box-shadow: 0 -2px 16px rgba(0, 0, 0, 0.08);
+  border-top: none;
+}
+
+/* 8. 深色主卡保持金边深底（与记账 AI 教练卡同款），统一圆角与内边距 */
+body.mobile-mode .challenge-banner {
+  border-radius: 20px;
+  padding: 28px 24px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+}
