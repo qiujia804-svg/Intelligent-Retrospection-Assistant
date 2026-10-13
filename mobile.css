@@ -3004,6 +3004,103 @@ body.mobile-mode .task-item .delete-action {
   }
 }
 
+/* ====================
+   第三阶段优化 - 移动端视觉美化（2026-10-13）
+==================== */
+
+/* 1. 四象限角标不再遮挡标题：标题整体右移，避开左上角 A/B/C/D 角标 */
+body.mobile-mode .quadrant h3 {
+  padding-left: 42px;
+}
+
+body.mobile-mode .quadrant::before {
+  width: 30px;
+  height: 30px;
+  border-radius: var(--radius-lg) 0 18px 0;
+  font-size: 13px;
+}
+
+/* 2. 记录页图表卡：标题在浅色底上改用深色字（桌面样式是白字，浅灰底上看不见） */
+body.mobile-mode .insight-chart-card h4 {
+  color: var(--text-primary);
+}
+
+/* 图表未生成数据时：缩小空占位高度并给出提示文案（渲染后容器非空，此规则自动失效） */
+body.mobile-mode .echarts-container:empty {
+  height: 140px;
+  min-height: 140px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+body.mobile-mode .echarts-container:empty::after {
+  content: '📊 记录复盘后自动生成图表';
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
+/* 3. 记录页导出/导入/清空按钮：统一为柔和配色与统一尺寸
+      （JS 运行时注入的是裸 ID 选择器，这里加 body.mobile-mode 前缀提高特异性即可压过） */
+body.mobile-mode .history-controls {
+  flex-direction: column;
+  align-items: stretch;
+}
+
+body.mobile-mode .history-controls input[type="month"] {
+  width: 100%;
+}
+
+body.mobile-mode #export-data-btn,
+body.mobile-mode #import-data-btn,
+body.mobile-mode #clear-history {
+  width: 100%;
+  margin: 0;
+  padding: 12px 16px;
+  font-size: 15px;
+  font-weight: 600;
+  border-radius: 12px;
+  border: none;
+  transition: filter 0.15s ease, transform 0.1s ease;
+}
+
+body.mobile-mode #export-data-btn:active,
+body.mobile-mode #import-data-btn:active,
+body.mobile-mode #clear-history:active {
+  transform: scale(0.98);
+  filter: brightness(0.95);
+}
+
+/* 导出 = 主色渐变实心（主操作） */
+body.mobile-mode #export-data-btn {
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  color: #ffffff;
+}
+
+/* 导入 = 主色浅底描边（次操作） */
+body.mobile-mode #import-data-btn {
+  background: #eef1fd;
+  color: #5a6fd6;
+  border: 1px solid #d6dcfa;
+}
+
+/* 清空 = 浅红底红字（危险操作，不再是大红块） */
+body.mobile-mode #clear-history {
+  background: #fdecec;
+  color: #e53935;
+}
+
+/* 4. 任务表单更紧凑：输入间距收紧，删除按钮加描边增强层次 */
+body.mobile-mode .task-item input,
+body.mobile-mode .task-item textarea {
+  margin-bottom: 6px;
+}
+
+body.mobile-mode .remove-task-btn {
+  border: 1px solid #ffcdd2;
+}
+
+
 
 /* ====================
    线上实测修复（2026-10-12）
