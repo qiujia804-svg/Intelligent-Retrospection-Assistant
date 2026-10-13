@@ -3126,3 +3126,189 @@ body.mobile-mode .remove-task-btn {
     bottom: calc(var(--tabbar-height, 60px) + env(safe-area-inset-bottom, 0px) + 18px) !important;
   }
 }
+
+/* ====================
+   第四阶段优化 - 小程序化视觉（2026-10-13）
+   思路：参照微信小程序设计语言——沉浸式头部、冷灰页面底、
+   白卡片浮层、大圆角、主色点缀、分区标题带竖条
+==================== */
+
+/* 0. 全局基调：冷灰页面底 + 紫色控件色 */
+body.mobile-mode {
+  background: #f4f5fb;
+}
+
+body.mobile-mode input[type="checkbox"],
+body.mobile-mode input[type="radio"] {
+  accent-color: #667eea;
+}
+
+/* 1. 沉浸式吸顶头部：滚动时保持小程序顶栏感 */
+body.mobile-mode header {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  box-shadow: 0 2px 12px rgba(102, 126, 234, 0.28);
+}
+
+/* 2. 数据概览：去掉大白框，改为「分区标题 + 浮动卡片群」 */
+body.mobile-mode .data-overview {
+  background: transparent;
+  box-shadow: none;
+  border-radius: 0;
+  padding: 4px 0 0;
+}
+
+body.mobile-mode .data-overview-header {
+  margin-bottom: 12px;
+}
+
+body.mobile-mode .data-overview-header h3 {
+  font-size: 17px;
+  font-weight: 700;
+  color: #1a1a2e;
+  padding-left: 10px;
+  border-left: 4px solid #667eea;
+  border-radius: 2px;
+  line-height: 1.25;
+}
+
+/* 3. 统计卡：白卡浮层，柔和投影，无边框 */
+body.mobile-mode .data-cards {
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+body.mobile-mode .data-card {
+  background: #ffffff;
+  border: none;
+  border-radius: 16px;
+  padding: 18px 12px 14px;
+  box-shadow: 0 2px 10px rgba(31, 45, 97, 0.06);
+}
+
+body.mobile-mode .data-card .data-value {
+  font-size: 26px;
+  letter-spacing: -0.5px;
+}
+
+body.mobile-mode .data-card .data-label {
+  font-size: 12px;
+  color: #8a8fa8;
+  margin-top: 4px;
+}
+
+/* 连续复盘 = 主卡：紫色渐变横幅，占满一整行（JS 不加类，用位置选择器兜底） */
+body.mobile-mode .data-card:nth-child(3) {
+  grid-column: 1 / -1;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  box-shadow: 0 4px 14px rgba(102, 126, 234, 0.35);
+  padding: 16px 12px;
+}
+
+body.mobile-mode .data-card:nth-child(3) .data-value {
+  font-size: 34px;
+  background: none;
+  -webkit-text-fill-color: #ffffff;
+  color: #ffffff;
+}
+
+body.mobile-mode .data-card:nth-child(3) .data-label {
+  color: rgba(255, 255, 255, 0.85);
+}
+
+/* 4. 趋势图容器：白卡浮层 */
+body.mobile-mode .chart-container {
+  background: #ffffff;
+  border-radius: 16px;
+  box-shadow: 0 2px 10px rgba(31, 45, 97, 0.06);
+}
+
+/* 5. 7天分段：开关行修复（label 桌面白字在白底上隐形）+ 浅紫芯片卡 */
+body.mobile-mode .segment-header {
+  margin-bottom: 10px;
+  gap: 8px;
+}
+
+body.mobile-mode .segment-header label {
+  font-size: 14px;
+  font-weight: 600;
+  color: #1a1a2e;
+  cursor: pointer;
+}
+
+body.mobile-mode .segment-header input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  margin-right: 0;
+}
+
+body.mobile-mode .segment-cards {
+  gap: 8px;
+}
+
+body.mobile-mode .segment-card {
+  background: #eef1fd;
+  border-radius: 12px;
+  padding: 12px 8px;
+}
+
+body.mobile-mode .segment-label {
+  font-size: 11px;
+  color: #8a8fa8;
+  margin-bottom: 2px;
+}
+
+body.mobile-mode .segment-value {
+  font-size: 17px;
+  font-weight: 700;
+  color: #5a6fd6;
+}
+
+/* 6. 刷新按钮：主色小圆角胶囊 */
+body.mobile-mode .refresh-btn {
+  background: #eef1fd;
+  color: #5a6fd6;
+  border: 1px solid #d6dcfa;
+  border-radius: 999px;
+  padding: 6px 16px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+/* 7. 复盘表单：白卡浮层 + 圆角输入 */
+body.mobile-mode #review-form {
+  background: #ffffff;
+  border-radius: 16px;
+  box-shadow: 0 2px 10px rgba(31, 45, 97, 0.06);
+  padding: 16px;
+  margin-bottom: 16px;
+}
+
+body.mobile-mode .form-group label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #1a1a2e;
+}
+
+body.mobile-mode .form-group input,
+body.mobile-mode .form-group textarea,
+body.mobile-mode .form-group select {
+  background: #f7f8fc;
+  border: 1px solid #eceef6;
+  border-radius: 12px;
+}
+
+/* 8. 记录页图表卡：白卡浮层（原灰底在淡紫父卡上显得脏） */
+body.mobile-mode .insight-chart-card {
+  background: #ffffff;
+  border-radius: 16px;
+  box-shadow: 0 2px 10px rgba(31, 45, 97, 0.06);
+}
+
+body.mobile-mode .insight-cards .insight-card {
+  background: #ffffff;
+  border-radius: 16px;
+  box-shadow: 0 2px 10px rgba(31, 45, 97, 0.06);
+}
