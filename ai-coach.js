@@ -93,6 +93,14 @@
 
             mount.appendChild(card);
 
+            // 手机端占满屏（参照 AI 财务教练全屏布局）；桌面端保持居中限宽
+            function applyFull() {
+                if (document.body.classList.contains('mobile-mode')) card.classList.add('ac-full');
+                else card.classList.remove('ac-full');
+            }
+            applyFull();
+            window.addEventListener('resize', applyFull);
+
             var msgs = card.querySelector('#ac-msgs');
             var input = card.querySelector('#ac-input');
             var sendBtn = card.querySelector('#ac-send');

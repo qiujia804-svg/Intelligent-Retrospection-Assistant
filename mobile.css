@@ -4195,3 +4195,551 @@ body.mobile-mode .member-controls {
   max-width: 760px;
   margin: 0 auto;
 }
+
+/* ====================
+   第十一阶段 - 2026-10-14
+==================== */
+
+/* ① AI复盘教练占满屏：手机端固定高度撑满视口（减去底栏），消息区弹性伸展、
+   内部滚动、输入区贴卡底 —— 参照 AI 财务教练全屏布局；桌面端不受影响 */
+body.mobile-mode .ai-coach.ac-full {
+  position: sticky;
+  top: 10px;
+  height: calc(100dvh - var(--tabbar-height) - var(--safe-area-bottom) - 28px);
+  margin-bottom: 14px;
+}
+
+body.mobile-mode .ai-coach.ac-full .ac-msgs {
+  flex: 1;
+  max-height: none;
+}
+
+body.mobile-mode .ai-coach.ac-full .ac-header {
+  flex-shrink: 0;
+}
+
+body.mobile-mode .ai-coach.ac-full .ac-actions,
+body.mobile-mode .ai-coach.ac-full .ac-input-wrap {
+  flex-shrink: 0;
+}
+
+/* ② 头部重排：紧凑居中（标题一行 + 小副标题 + 小号胶囊按钮），去掉大块占位 */
+body.mobile-mode header {
+  padding: 14px 16px;
+  padding-top: calc(14px + var(--safe-area-top));
+}
+
+body.mobile-mode header h1 {
+  font-size: 19px;
+  letter-spacing: 1px;
+  margin-bottom: 3px;
+}
+
+body.mobile-mode header p {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.75);
+}
+
+body.mobile-mode .member-controls {
+  margin-top: 10px;
+  gap: 10px;
+}
+
+body.mobile-mode .member-btn {
+  padding: 7px 24px;
+  font-size: 13px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.16);
+  border: 1px solid rgba(255, 255, 255, 0.45);
+  color: #ffffff;
+  box-shadow: none;
+}
+
+body.mobile-mode .member-btn.register {
+  background: rgba(255, 255, 255, 0.28);
+}
+
+/* ③ 头部极简化：删除大标题与副标题，只保留纤细顶栏 + 右侧操作按钮
+   （参照 AI 财务教练的简洁顶栏；桌面端不受影响） */
+body.mobile-mode header h1,
+body.mobile-mode header p {
+  display: none;
+}
+
+body.mobile-mode header {
+  flex-direction: row;
+  justify-content: flex-end;
+  align-items: center;
+  text-align: right;
+  padding: 10px 16px;
+  padding-top: calc(10px + var(--safe-area-top));
+}
+
+body.mobile-mode .member-controls {
+  margin-top: 0;
+  gap: 8px;
+}
+
+body.mobile-mode .member-btn {
+  padding: 6px 20px;
+  font-size: 13px;
+}
+
+/* ====================
+   第十三阶段 - 回归智省AI记账小程序母版
+   撤销「整页暗色 + 毛玻璃」网页风，回到小程序的移动 App 语言：
+   紫渐变底 + 纯白卡 + 原生导航栏式顶栏 + 白底紫激活底栏 + 无页脚
+   仅手机端（body.mobile-mode），桌面端零影响
+==================== */
+
+/* 1. 主题变量回归：白卡 + 深色文字（小程序 .card 规格） */
+body.mobile-mode {
+  --bg-primary: #667eea;
+  --bg-white: #ffffff;
+  --bg-card: #ffffff;
+  --text-primary: #2d3748;
+  --text-secondary: #4a5568;
+  --text-muted: #718096;
+  --border-color: #e2e8f0;
+  --divider-color: #f0f0f0;
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.06);
+  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.08);
+  --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.10);
+  --shadow-tabbar: 0 -1px 0 rgba(0, 0, 0, 0.06);
+}
+
+/* 2. 页面底色：小程序同款紫渐变（180 度，顶到底） */
+body.mobile-mode {
+  background: linear-gradient(180deg, #667eea 0%, #764ba2 100%);
+  background-attachment: fixed;
+  background-color: #667eea;
+  color: #2d3748;
+}
+
+/* 3. 顶栏 = 小程序原生导航栏：与页头同色、硬边、无阴影、无渐隐、高度贴近 44px */
+body.mobile-mode header {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: #667eea;
+  box-shadow: none;
+  margin-bottom: 0;
+  min-height: 44px;
+  padding: 8px 16px;
+  padding-top: calc(8px + var(--safe-area-top));
+  flex-direction: row;
+  justify-content: flex-end;
+  align-items: center;
+  text-align: right;
+}
+
+body.mobile-mode header h1,
+body.mobile-mode header p {
+  display: none;
+}
+
+body.mobile-mode .member-controls {
+  margin-top: 0;
+  gap: 8px;
+}
+
+/* 顶栏按钮：小程序导航栏胶囊（半透明白底 + 白字 + 无重阴影） */
+body.mobile-mode .member-btn {
+  padding: 6px 18px;
+  font-size: 13px;
+  line-height: 1.2;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.18);
+  border: 1px solid rgba(255, 255, 255, 0.40);
+  color: #ffffff;
+  box-shadow: none;
+}
+
+body.mobile-mode .member-btn.register {
+  background: rgba(255, 255, 255, 0.30);
+}
+
+/* 4. 隐藏网页页脚（App 没有页脚） */
+body.mobile-mode footer,
+body.mobile-mode footer p {
+  display: none;
+}
+
+/* 5. 隐藏网页滚动条 */
+body.mobile-mode {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+body.mobile-mode ::-webkit-scrollbar {
+  width: 0 !important;
+  height: 0 !important;
+  display: none !important;
+}
+
+/* 6. 去掉网页点击高亮蓝框（触摸反馈交给 :active） */
+body.mobile-mode,
+body.mobile-mode * {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* 7. App 触感：按压反馈（小程序 .btn-primary:active / .list-item:active 同款） */
+body.mobile-mode .data-card,
+body.mobile-mode .insight-card,
+body.mobile-mode .history-item,
+body.mobile-mode .quadrant,
+body.mobile-mode .segment-card,
+body.mobile-mode .mobile-btn,
+body.mobile-mode .mtb-item,
+body.mobile-mode .tabbar-item {
+  transition: transform 0.16s ease, opacity 0.16s ease;
+}
+
+body.mobile-mode .data-card:active,
+body.mobile-mode .insight-card:active,
+body.mobile-mode .history-item:active,
+body.mobile-mode .quadrant:active,
+body.mobile-mode .segment-card:active {
+  transform: scale(0.985);
+}
+
+body.mobile-mode button:active,
+body.mobile-mode .mobile-btn:active,
+body.mobile-mode .mtb-item:active,
+body.mobile-mode .tabbar-item:active {
+  opacity: 0.82;
+}
+
+/* 8. 分段切换条：小程序「模式切换标签」规格（半透明容器 + 白底激活块 + 紫字） */
+body.mobile-mode .mtb-bar {
+  background: rgba(255, 255, 255, 0.18);
+  border-radius: 16px;
+  padding: 4px;
+  gap: 4px;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+body.mobile-mode .mtb-item {
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 12px;
+  font-weight: 500;
+  border-radius: 12px;
+  padding: 8px 2px 7px;
+}
+
+body.mobile-mode .mtb-item.active {
+  background: #ffffff;
+  color: #667eea;
+  font-weight: 600;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* 9. 切换动画：App 页面的进入感 */
+@keyframes ira-app-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+body.mobile-mode .tab-content.active,
+body.mobile-mode .mtb-block:not(.mtb-hidden) {
+  animation: ira-app-in 0.26s ease-out;
+}
+
+/* 10. 卡片规格统一为小程序 .card（纯白 / 20px 圆角 / 大投影） */
+body.mobile-mode .data-card,
+body.mobile-mode .chart-container,
+body.mobile-mode .insight-chart-card,
+body.mobile-mode .insight-cards .insight-card,
+body.mobile-mode .history-detail,
+body.mobile-mode .history-item,
+body.mobile-mode .challenge-rules-v2,
+body.mobile-mode .quadrant,
+body.mobile-mode .mtb-ai-card,
+body.mobile-mode #review-form,
+body.mobile-mode .advice-result {
+  background: #ffffff;
+  border-radius: 20px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.10);
+}
+
+/* 11. 底栏回到小程序 tabBar 规格：白底 / 未激活灰 #999 / 激活紫 #667eea */
+body.mobile-mode .mobile-tabbar {
+  background: #ffffff;
+  border-top: 1px solid #ececf2;
+  box-shadow: 0 -2px 16px rgba(0, 0, 0, 0.06);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+body.mobile-mode .tabbar-item {
+  color: #999999;
+}
+
+body.mobile-mode .tabbar-item.active {
+  color: #667eea;
+}
+
+/* 12. 输入控件回到小程序规格：浅灰底 #f8f9fa / 16px 圆角 / 无边框 */
+body.mobile-mode main input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="submit"]):not([type="button"]),
+body.mobile-mode main textarea,
+body.mobile-mode main select {
+  background: #f8f9fa;
+  color: #2d3748;
+  border: none;
+  border-radius: 16px;
+}
+
+body.mobile-mode main input::placeholder,
+body.mobile-mode main textarea::placeholder {
+  color: #a0aec0;
+}
+
+/* 13. 兜底：手机端不做桌面端限宽 */
+body.mobile-mode .container,
+body.mobile-mode main {
+  max-width: none;
+  margin-left: 0;
+  margin-right: 0;
+}
+
+/* 14. AI复盘教练 = 小程序「深色教练卡」规格（单卡深色 + 金色点缀，页面仍是紫渐变） */
+body.mobile-mode .ai-coach {
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+  border: 1px solid rgba(255, 215, 0, 0.20);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.30);
+}
+
+body.mobile-mode .ai-coach .ac-msgs {
+  background: transparent;
+}
+
+body.mobile-mode .ai-coach .ac-bc {
+  background: rgba(255, 255, 255, 0.10);
+  color: #ffffff;
+  border-color: rgba(255, 255, 255, 0.12);
+  box-shadow: none;
+}
+
+body.mobile-mode .ai-coach .ac-actions,
+body.mobile-mode .ai-coach .ac-input-wrap {
+  background: transparent;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+body.mobile-mode .ai-coach .ac-act {
+  background: rgba(255, 255, 255, 0.12);
+  color: #ffffff;
+}
+
+body.mobile-mode .ai-coach .ac-reply {
+  background: rgba(255, 215, 0, 0.12);
+  border-color: rgba(255, 215, 0, 0.45);
+  color: #ffd700;
+}
+
+body.mobile-mode .ai-coach .ac-input {
+  background: rgba(255, 255, 255, 0.10);
+  color: #ffffff;
+}
+
+body.mobile-mode .ai-coach .ac-input::placeholder {
+  color: rgba(255, 255, 255, 0.40);
+}
+
+/* ====================
+   第十四阶段 - 挑战页去方框化（2026-10-14 下午）
+   问题：手机端挑战页堆了 8 个方框（深色横幅/灰资格框/深色圆环卡/白奖励卡/
+   白规则卡/深色荣誉榜/灰客服框），观感割裂
+   方案：对齐小程序母版语言——顶部无框横幅 + 合并圆环与奖励为一张白卡 +
+   资格横幅白卡化 + 荣誉榜白卡化 + 客服条去框；仅手机端
+==================== */
+
+/* 1. 顶部横幅：去掉整个深色方框，改为透明居中头部，只留金色奖励 pill */
+body.mobile-mode .challenge-banner {
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  padding: 6px 16px 2px;
+  margin-bottom: 14px;
+}
+
+body.mobile-mode .banner-glow {
+  display: none;
+}
+
+body.mobile-mode .banner-content {
+  justify-content: center;
+  text-align: center;
+}
+
+body.mobile-mode .banner-icon {
+  font-size: 34px;
+}
+
+body.mobile-mode .banner-text {
+  flex: 1 1 100%;
+}
+
+body.mobile-mode .banner-text h2 {
+  justify-content: center;
+  font-size: 20px;
+  letter-spacing: 1px;
+  color: #ffffff;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.18);
+}
+
+body.mobile-mode .banner-text p {
+  color: rgba(255, 255, 255, 0.85);
+}
+
+body.mobile-mode .banner-reward {
+  display: inline-flex;
+  width: auto;
+  flex: 0 0 auto;
+  justify-content: center;
+  gap: 10px;
+  background: rgba(26, 26, 46, 0.55);
+  border: 1px solid rgba(255, 215, 0, 0.4);
+  border-radius: 999px;
+  padding: 8px 18px;
+  margin: 4px auto 0;
+}
+
+/* 2. 资格横幅：统一白卡（去掉灰底/彩边），文字深色，按钮保持渐变全宽 */
+body.mobile-mode .eligibility-banner {
+  background: #ffffff;
+  border: none;
+  border-radius: 20px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.10);
+  padding: 14px 16px;
+  margin: 0 0 12px;
+}
+
+body.mobile-mode .eligibility-banner.locked,
+body.mobile-mode .eligibility-banner.warning,
+body.mobile-mode .eligibility-banner.eligible {
+  background: #ffffff;
+  border: none;
+}
+
+body.mobile-mode .eligibility-banner .status-text strong {
+  color: #1a1a2e;
+  font-size: 15px;
+}
+
+body.mobile-mode .eligibility-banner.eligible .status-text strong {
+  color: #2f9e44;
+}
+
+body.mobile-mode .eligibility-banner.warning .status-text strong {
+  color: #e8a50a;
+}
+
+body.mobile-mode .eligibility-banner .status-text span {
+  color: #8a8fa3;
+  font-size: 12px;
+}
+
+/* 3. 主仪表盘：圆环 + 奖励合并为一张白卡，内部子卡全部透明 */
+body.mobile-mode .challenge-dashboard {
+  background: #ffffff;
+  border-radius: 20px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.10);
+  padding: 18px 14px 14px;
+  gap: 0;
+  margin-bottom: 12px;
+}
+
+body.mobile-mode .progress-ring-card {
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  border-radius: 0;
+  padding: 0 0 14px;
+}
+
+body.mobile-mode .reward-card {
+  background: transparent;
+  border-radius: 0;
+  box-shadow: none;
+  padding: 14px 0 0;
+  border-top: 1px solid #f0f1f6;
+}
+
+/* 圆环区文字从白系翻深色（ring-days 金色渐变字保留） */
+body.mobile-mode .ring-label {
+  color: #8a8fa3;
+}
+
+body.mobile-mode .ring-stats {
+  border-top: 1px solid #f0f1f6;
+}
+
+body.mobile-mode .ring-stat .stat-num {
+  color: #1a1a2e;
+}
+
+body.mobile-mode .ring-stat.highlight .stat-num {
+  color: #e8a50a;
+}
+
+body.mobile-mode .ring-stat .stat-text {
+  color: #8a8fa3;
+}
+
+body.mobile-mode .ring-container .ring-bg {
+  stroke: rgba(26, 26, 46, 0.08);
+}
+
+/* 4. 荣誉榜：深色方框 → 白卡，内部卡片浅灰化 */
+body.mobile-mode .hall-of-fame-v2 {
+  background: #ffffff;
+  border: none;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.10);
+  padding: 16px;
+  margin-bottom: 12px;
+}
+
+body.mobile-mode .fame-header h3 {
+  color: #1a1a2e;
+}
+
+body.mobile-mode .fame-card {
+  background: #f6f7fb;
+  border: 1px solid #eef0f6;
+}
+
+body.mobile-mode .fame-card.top {
+  background: linear-gradient(135deg, rgba(255, 215, 0, 0.12) 0%, rgba(255, 170, 0, 0.05) 100%);
+  border-color: rgba(232, 165, 10, 0.35);
+}
+
+body.mobile-mode .fame-name {
+  color: #1a1a2e;
+}
+
+body.mobile-mode .fame-meta,
+body.mobile-mode .fame-reward .reward-text {
+  color: #9aa0b4;
+}
+
+body.mobile-mode .fame-reward .reward-value {
+  color: #e8a50a;
+}
+
+body.mobile-mode .fame-scroll-container::-webkit-scrollbar-thumb {
+  background: #d9dce8;
+}
+
+/* 5. 客服条：去掉灰色小框，融入页面 */
+body.mobile-mode .service-contact {
+  background: transparent;
+  border-radius: 0;
+  padding: 2px 0 6px;
+}
+
+body.mobile-mode .contact-label {
+  color: rgba(255, 255, 255, 0.75);
+  font-size: 12px;
+}
