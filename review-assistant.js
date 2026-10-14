@@ -2066,8 +2066,8 @@ function setupReviewForm() {
         // 清空表单
         this.reset();
         dateInput.value = formattedDate;
-        goalProgress.value = 50;
-        progressValue.textContent = '50%';
+        goalProgress.value = 0;
+        progressValue.textContent = '0%';
 
         // 【修复】保存后立即强制重新读取数据并更新所有相关组件
         const freshReviews = getReviews();
@@ -3478,7 +3478,10 @@ function initCompletionTrendChart(reviews) {
                             display: false
                         },
                         ticks: {
-                            color: '#666666'
+                            color: '#666666',
+                            maxRotation: 0,
+                            minRotation: 0,
+                            autoSkip: true
                         },
                         border: {
                             color: 'rgba(0, 0, 0, 0.1)'

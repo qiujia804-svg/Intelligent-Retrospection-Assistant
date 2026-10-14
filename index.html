@@ -802,8 +802,8 @@
                     <div class="form-group">
                         <label for="goal-completion">目标达成情况</label>
                         <div class="progress-container">
-                            <input type="range" id="goal-progress" min="0" max="100" value="50">
-                            <span id="progress-value">50%</span>
+                            <input type="range" id="goal-progress" min="0" max="100" value="0">
+                            <span id="progress-value">0%</span>
                         </div>
                         <textarea id="goal-completion" placeholder="请详细描述今日目标的完成情况，例如：完成了项目报告的70%，会议准备工作全部完成..." rows="3"></textarea>
                     </div>
@@ -1046,13 +1046,17 @@
                 </div>
             </div>
 
-            <!-- 智能建议区域 -->
+            <!-- 智能建议区域（已升级为 AI复盘教练对话界面） -->
             <div class="tab-content" id="advice-content">
-                <h2>智能成长建议</h2>
-                <div class="advice-generator">
+                <h2>AI复盘教练</h2>
+                <!-- AI复盘教练对话界面挂载点（ai-coach.js 渲染） -->
+                <div id="ai-coach-mount"></div>
+
+                <!-- 原智能成长建议：保留在 DOM 但隐藏（review-assistant.js 依赖这些元素，删除会导致主脚本报错） -->
+                <div class="advice-generator" style="display: none;">
                     <button id="generate-advice" class="advice-btn">生成建议</button>
                 </div>
-                <div id="advice-result" class="advice-result">
+                <div id="advice-result" class="advice-result" style="display: none;">
                     <h3>基于你的复盘记录，我们为你准备了以下建议：</h3>
                     <div class="advice-content">
                         <!-- 智能建议将在这里显示 -->
@@ -1083,6 +1087,7 @@
     <script src="ai-planner.js"></script>
     <script src="ai-review-core.js"></script>
     <script src="ai-review.js"></script>
+    <script src="ai-coach.js"></script>
     <!-- commercial-system.js 已禁用 -->
     <script src="import-for-browser.js"></script>
 

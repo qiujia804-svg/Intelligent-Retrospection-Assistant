@@ -3915,3 +3915,283 @@ body.mobile-mode .insight-cards .insight-card:last-child {
 body.mobile-mode .time-stats {
   order: -1;
 }
+
+/* ====================
+   第十阶段 - 2026-10-13 三项修复
+==================== */
+
+/* 修复2：头部标题与「会员中心/退出登录」按钮重叠 —— 按钮从绝对定位
+   改为跟随文档流，排在标题/副标题下方居中排列，任何按钮数量都不再遮挡 */
+body.mobile-mode header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+body.mobile-mode .member-controls {
+  position: static;
+  top: auto;
+  right: auto;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+/* ====================
+   AI复盘教练（对话式智能体，参照智省AI记账「AI教练」页）
+   容器沿用白卡规格（radius20 + 大投影），教练头部用紫色渐变
+==================== */
+.ai-coach {
+  background: #ffffff;
+  border: none;
+  border-radius: 20px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.10);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* 教练信息栏 */
+.ai-coach .ac-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  background: linear-gradient(135deg, #667eea, #764ba2);
+}
+
+.ai-coach .ac-avatar {
+  position: relative;
+  width: 54px;
+  height: 54px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #ffd700, #ffed4a);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 16px rgba(255, 215, 0, 0.4);
+  flex-shrink: 0;
+}
+
+.ai-coach .ac-avatar-icon { font-size: 26px; }
+
+.ai-coach .ac-status {
+  position: absolute;
+  bottom: -6px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #48bb78;
+  color: #fff;
+  font-size: 9px;
+  font-weight: 600;
+  padding: 2px 7px;
+  border-radius: 10px;
+  border: 2px solid #fff;
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.ai-coach .ac-status i {
+  width: 5px;
+  height: 5px;
+  background: #fff;
+  border-radius: 50%;
+  animation: ac-blink 1.5s infinite;
+}
+
+@keyframes ac-blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+
+.ai-coach .ac-info { flex: 1; min-width: 0; }
+
+.ai-coach .ac-name {
+  font-size: 17px;
+  font-weight: 700;
+  color: #fff;
+}
+
+.ai-coach .ac-title {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.85);
+  margin-top: 2px;
+}
+
+.ai-coach .ac-tags {
+  display: flex;
+  gap: 6px;
+  margin-top: 6px;
+  flex-wrap: wrap;
+}
+
+.ai-coach .ac-tags span {
+  background: rgba(255, 255, 255, 0.2);
+  color: #fff;
+  font-size: 10px;
+  padding: 2px 8px;
+  border-radius: 10px;
+}
+
+/* 消息流 */
+.ai-coach .ac-msgs {
+  padding: 14px 12px 6px;
+  max-height: 52vh;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  background: #f8f9fc;
+  -webkit-overflow-scrolling: touch;
+}
+
+.ai-coach .ac-row { display: flex; align-items: flex-start; gap: 8px; }
+.ai-coach .ac-row.user { justify-content: flex-end; }
+
+.ai-coach .ac-ma {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #ffd700, #ffed4a);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 15px;
+  flex-shrink: 0;
+}
+
+.ai-coach .ac-mc { flex: 1; min-width: 0; max-width: 82%; }
+.ai-coach .ac-row.user .ac-bubble { max-width: 85%; }
+
+.ai-coach .ac-bubble {
+  padding: 10px 13px;
+  border-radius: 14px;
+  font-size: 13px;
+  line-height: 1.65;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.ai-coach .ac-bu {
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  color: #fff;
+  border-bottom-right-radius: 4px;
+}
+
+.ai-coach .ac-bc {
+  background: #ffffff;
+  color: #2a2a3e;
+  border: 1px solid #eceef6;
+  border-bottom-left-radius: 4px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+/* 思考中动画 */
+.ai-coach .ac-typing { display: flex; gap: 4px; align-items: center; }
+
+.ai-coach .ac-typing i {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #b9bed6;
+  animation: ac-typing 1.2s infinite;
+}
+
+.ai-coach .ac-typing i:nth-child(2) { animation-delay: 0.15s; }
+.ai-coach .ac-typing i:nth-child(3) { animation-delay: 0.3s; }
+
+@keyframes ac-typing { 0%, 100% { opacity: 0.3; transform: translateY(0); } 50% { opacity: 1; transform: translateY(-2px); } }
+
+/* 快捷回复 */
+.ai-coach .ac-qr { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+
+.ai-coach .ac-reply {
+  border: 1px solid rgba(102, 126, 234, 0.45);
+  background: rgba(102, 126, 234, 0.08);
+  color: #5a6fd6;
+  font-size: 11px;
+  font-family: inherit;
+  padding: 6px 12px;
+  border-radius: 20px;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.ai-coach .ac-reply:active { background: rgba(102, 126, 234, 0.18); }
+
+/* 快捷指令行 */
+.ai-coach .ac-actions {
+  display: flex;
+  gap: 8px;
+  padding: 10px 12px;
+  overflow-x: auto;
+  background: #ffffff;
+  border-top: 1px solid #f0f1f8;
+}
+
+.ai-coach .ac-act {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  border: none;
+  background: #eef1fd;
+  color: #5a6fd6;
+  font-size: 12px;
+  font-weight: 600;
+  font-family: inherit;
+  padding: 9px 14px;
+  border-radius: 20px;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* 输入区 */
+.ai-coach .ac-input-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px calc(10px + env(safe-area-inset-bottom, 0px));
+  background: #ffffff;
+  border-top: 1px solid #f0f1f8;
+}
+
+.ai-coach .ac-input {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  outline: none;
+  background: #f4f5fa;
+  border-radius: 20px;
+  padding: 11px 16px;
+  font-size: 13px;
+  font-family: inherit;
+  color: #2a2a3e;
+}
+
+.ai-coach .ac-input::placeholder { color: #a8adc4; }
+
+.ai-coach .ac-send {
+  width: 40px;
+  height: 40px;
+  border: none;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  color: #fff;
+  font-size: 16px;
+  cursor: pointer;
+  flex-shrink: 0;
+  box-shadow: 0 2px 10px rgba(102, 126, 234, 0.35);
+  -webkit-tap-highlight-color: transparent;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.ai-coach .ac-send.busy { opacity: 0.55; transform: scale(0.94); }
+
+/* AI复盘教练挂载点：桌面端居中限宽（手机端自适应满宽） */
+#ai-coach-mount {
+  max-width: 760px;
+  margin: 0 auto;
+}
