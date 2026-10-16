@@ -4190,9 +4190,8 @@ body.mobile-mode .member-controls {
 
 .ai-coach .ac-send.busy { opacity: 0.55; transform: scale(0.94); }
 
-/* AI复盘教练挂载点：桌面端居中限宽（手机端自适应满宽） */
+/* AI复盘教练挂载点：跟随容器宽度（手机端自适应满宽，桌面端随容器全屏） */
 #ai-coach-mount {
-  max-width: 760px;
   margin: 0 auto;
 }
 
@@ -4742,4 +4741,17 @@ body.mobile-mode .service-contact {
 body.mobile-mode .contact-label {
   color: rgba(255, 255, 255, 0.75);
   font-size: 12px;
+}
+
+/* 电脑端教练聊天窗占满可用空间：高度撑满视口、消息区弹性伸展（2026-10-16） */
+@media (min-width: 769px) {
+  #ai-coach-mount .ai-coach {
+    height: calc(100vh - 60px);
+    min-height: 560px;
+  }
+
+  #ai-coach-mount .ai-coach .ac-msgs {
+    flex: 1;
+    max-height: none;
+  }
 }

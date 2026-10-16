@@ -141,7 +141,12 @@
                     });
                     var data = await response.json().catch(function () { throw new Error('AI接口不可用，请稍后重试。'); });
                     if (!response.ok) {
-                        if (response.status === 401) throw new Error('请先登录后再和教练对话。');
+                        if (response.status === 401) {
+                            var hasLocalLogin = !!(window.currentUser || localStorage.getItem('currentUser') || sessionStorage.getItem('currentUser'));
+                            throw new Error(hasLocalLogin
+                                ? '检测到你已登录，但登录状态还没有同步到云端。请点击右上角「退出登录」，再重新登录一次，教练就能认出你了。'
+                                : '请先登录后再和教练对话（点右上角「登录」按钮）。');
+                        }
                         if (response.status === 403) {
                             if (typeof openVipCenter === 'function') { try { openVipCenter(); } catch (e) { /* 忽略 */ } }
                             throw new Error(data.error || 'AI 教练属于会员权益，请先开通会员。');
