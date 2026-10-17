@@ -107,7 +107,12 @@
             const data = await response.json().catch(() => { throw new Error('AI接口不可用，请通过已配置后端的网站访问。'); });
             if (!response.ok) {
                 // 服务端会员鉴权：401 未登录 / 403 无权益
-                if (response.status === 401) throw new Error('请先登录后再使用 AI 复盘。');
+                if (response.status === 401) {
+                    // 统一由 AuthState 判定：区分「未登录」和「登录已过期」，并清理失效的本地登录态
+                    const u401 = (window.AuthState && typeof window.AuthState.onUnauthorized === 'function')
+                        ? await window.AuthState.onUnauthorized() : null;
+                    throw new Error(u401 ? u401.message : '请先登录后再使用 AI 复盘。');
+                }
                 if (response.status === 403) {
                     if (typeof openVipCenter === 'function') { try { openVipCenter(); } catch (e) { /* 会员中心不可用时忽略 */ } }
                     throw new Error(data.error || 'AI 功能属于会员权益，请先开通会员。');

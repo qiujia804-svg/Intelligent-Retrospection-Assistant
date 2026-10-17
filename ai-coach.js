@@ -142,10 +142,10 @@
                     var data = await response.json().catch(function () { throw new Error('AI接口不可用，请稍后重试。'); });
                     if (!response.ok) {
                         if (response.status === 401) {
-                            var hasLocalLogin = !!(window.currentUser || localStorage.getItem('currentUser') || sessionStorage.getItem('currentUser'));
-                            throw new Error(hasLocalLogin
-                                ? '检测到你已登录，但登录状态还没有同步到云端。请点击右上角「退出登录」，再重新登录一次，教练就能认出你了。'
-                                : '请先登录后再和教练对话（点右上角「登录」按钮）。');
+                            // 统一由 AuthState 判定：区分「未登录」和「登录已过期」，并清理失效的本地登录态
+                            var u401 = (window.AuthState && typeof window.AuthState.onUnauthorized === 'function')
+                                ? await window.AuthState.onUnauthorized() : null;
+                            throw new Error(u401 ? u401.message : '请先登录后再和教练对话（点右上角「登录」按钮）。');
                         }
                         if (response.status === 403) {
                             if (typeof openVipCenter === 'function') { try { openVipCenter(); } catch (e) { /* 忽略 */ } }

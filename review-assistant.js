@@ -1046,9 +1046,28 @@ function initMembershipSystem() {
     // 检查本地存储中的用户信息
     const savedUser = localStorage.getItem('currentUser');
     if (savedUser) {
-        currentUser = JSON.parse(savedUser);
-        updateMemberUI();
-        
+        try {
+            currentUser = JSON.parse(savedUser);
+        } catch (e) {
+            console.warn('【VIP】本地登录态解析失败，按未登录处理');
+            currentUser = null;
+        }
+
+        // 本地缓存只作待确认项，不直接显示「已登录」：
+        // 云端会话可能早已失效，乐观显示会让界面说谎（AI 门禁误拦的根因）。
+        if (currentUser && window.AuthState && typeof window.AuthState.whenReady === 'function') {
+            window.AuthState.whenReady().then(function (snap) {
+                if (snap && snap.status === 'signed-in') return; // 有效会话：由 cloud-auth 接管显示
+                currentUser = null;
+                try { localStorage.removeItem('currentUser'); } catch (e) { /* 忽略 */ }
+                try { sessionStorage.removeItem('currentUser'); } catch (e) { /* 忽略 */ }
+                if (typeof updateMemberUI === 'function') updateMemberUI();
+            }).catch(function () { /* 状态确定失败时保持原样，不影响本地功能 */ });
+        } else {
+            // 兼容：AuthState 缺失时维持旧行为
+            updateMemberUI();
+        }
+
         // 为已注册但没有试用开始时间的用户设置试用时间
         if (!localStorage.getItem(TRIAL_CONFIG.storageKey)) {
             console.log('【VIP】为已注册用户设置试用开始时间');

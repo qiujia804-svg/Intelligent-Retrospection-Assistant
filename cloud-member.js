@@ -43,6 +43,7 @@
     const state = {
         userId: null,
         loaded: false,     // 是否已从云端读到（或确认无）记录；未登录时恒为 false
+        phase: 'idle',     // idle | loading | ready | error —— 门禁据此区分「尚未确定」与「确定无权限」
         vipType: null,
         expiresAt: null,
         trialEnd: null,
@@ -89,6 +90,7 @@
     function applyRow(row) {
         resetState();
         state.loaded = true;
+        state.phase = 'ready';
         if (!row) return;
 
         const now = Date.now();
@@ -136,6 +138,7 @@
         const ms = remainingMs();
         return {
             loaded: state.loaded,
+            phase: state.phase,
             isPremium: state.isPremium,
             vipType: state.vipType,
             trialActive: state.trialActive,
@@ -158,16 +161,19 @@
         if (!c || !user) {
             state.userId = null;
             state.loaded = false;
+            state.phase = 'idle';
             resetState();
             return { ok: false, reason: 'not-signed-in' };
         }
         state.userId = user.email || user.id || null;
+        state.phase = 'loading';
 
         try {
             const res = await c.database.from('memberships').select(MEMBERSHIP_COLUMNS);
             if (res.error) {
                 // 读取失败时保留上一次结果，避免网络抖动把会员误降级
                 console.error('[CloudMember] 会员状态读取失败:', res.error.code || res.error.message);
+                state.phase = state.loaded ? 'ready' : 'error';
                 state.lastSyncError = res.error;
                 return { ok: false, error: res.error };
             }
@@ -184,6 +190,7 @@
                     row = (again.data && again.data[0]) || null;
                     if (!row) {
                         console.error('[CloudMember] 建立试用记录失败:', ins.error.code || ins.error.message);
+                        state.phase = state.loaded ? 'ready' : 'error';
                         state.lastSyncError = ins.error;
                         return { ok: false, error: ins.error };
                     }
@@ -201,6 +208,7 @@
             return { ok: true, row: row };
         } catch (e) {
             console.error('[CloudMember] 会员状态加载异常:', e && e.message);
+            state.phase = state.loaded ? 'ready' : 'error';
             state.lastSyncError = e;
             return { ok: false, error: e };
         }
@@ -564,6 +572,7 @@
     function onSignedOut() {
         state.userId = null;
         state.loaded = false;
+        state.phase = 'idle';
         state.myOrders = [];
         resetState();
         refreshMemberUI();
@@ -601,6 +610,10 @@
      * 失败返回空对象（调用方仍可发请求，由服务端裁决）。
      */
     async function getAuthHeader() {
+        // 统一入口：优先走 AuthState，避免各模块各自取令牌导致状态不一致
+        if (window.AuthState && typeof window.AuthState.authHeader === 'function') {
+            return window.AuthState.authHeader();
+        }
         try {
             const c = initCloud();
             if (!c) return {};
@@ -638,9 +651,14 @@
     const PREMIUM_ENTRY_SELECTORS = ['.ai-review-entry', '.ai-plan-entry'];
 
     /**
-     * 用文档级「捕获阶段」监听拦下未授权的点击。
-     * 捕获先于按钮自身的冒泡监听执行，因此能可靠阻止原逻辑运行，
-     * 且不必与 AI 脚本内部实现耦合（它们的函数在自己的闭包里）。
+     * 文档级「捕获阶段」监听拦下未授权的点击。
+     *
+     * 判定策略（关键）：只在「能确定无权限」时才拦人。
+     *  - 未登录（AuthState 已确认）：拦下 + 引导登录
+     *  - 会员状态已就绪且确认无权益：拦下 + 引导开通
+     *  - 会员状态尚未确定（加载中 / 读取失败）：不拦，交给服务端裁决
+     *    服务端会返回 401/403 与准确文案；前端在信息不全时抢先拦人，
+     *    只会在网络抖动时误伤付费会员（历史 Bug 的根因）。
      */
     function installPremiumGate() {
         document.addEventListener('click', function (e) {
@@ -651,18 +669,46 @@
             });
             if (!hit) return;
             if (hasPremiumAccess()) return;
-            e.preventDefault();
-            e.stopImmediatePropagation();
-            showUpgradePrompt();
+
+            const authStatus = window.AuthState
+                ? window.AuthState.getState().status
+                : 'unknown';
+
+            // 1) 未登录：确认过的状态才拦，并引导去登录（不是会员中心）
+            if (authStatus === 'signed-out') {
+                e.preventDefault();
+                e.stopImmediatePropagation();
+                showSignInPrompt();
+                return;
+            }
+
+            // 2) 会员状态已就绪且确认无权益：拦下并引导开通
+            if (state.loaded) {
+                e.preventDefault();
+                e.stopImmediatePropagation();
+                showUpgradePrompt();
+                return;
+            }
+
+            // 3) 状态未确定：放行，由服务端裁决；顺带后台刷新一次会员状态
+            log('会员状态未就绪(' + state.phase + ')，放行请求由服务端裁决');
+            if (state.phase !== 'loading') {
+                loadFromCloud().then(refreshMemberUI).catch(function () { /* 忽略 */ });
+            }
         }, true);
     }
 
+    /** 未登录提示：引导去登录，而不是打开会员中心 */
+    function showSignInPrompt() {
+        alert('请先登录后再使用 AI 功能。\n\n登录后可获得 7 天免费试用。');
+        try {
+            const lm = document.getElementById('login-modal');
+            if (lm && typeof openModal === 'function') openModal(lm);
+        } catch (e) { /* 登录框不可用时忽略 */ }
+    }
+
     function showUpgradePrompt() {
-        if (state.loaded) {
-            alert('AI 功能属于会员权益，你的免费试用已结束。\n\n开通会员即可继续使用 AI 复盘与 AI 规划。');
-        } else {
-            alert('AI 功能属于会员权益。\n\n登录后即可获得 7 天免费试用。');
-        }
+        alert('AI 功能属于会员权益，你的免费试用已结束。\n\n开通会员即可继续使用 AI 复盘与 AI 规划。');
         try {
             if (typeof openVipCenter === 'function') openVipCenter();
         } catch (e) { /* 会员中心不可用时忽略 */ }
@@ -681,12 +727,25 @@
         takeOverVipCenter();
         installPremiumGate();
 
-        // 若已有登录会话（cloud-auth.js 会先恢复），这里兜底再拉一次状态
-        setTimeout(function () {
-            if (window.currentUser) {
-                loadFromCloud().then(refreshMemberUI);
-            }
-        }, 800);
+        // 跟随认证状态：会话确定后拉会员状态；会话失效则同步清空，
+        // 不再用 setTimeout 猜 cloud-auth 何时恢复完（时序不确定的根源）
+        if (window.AuthState && typeof window.AuthState.subscribe === 'function') {
+            window.AuthState.subscribe(function (snap) {
+                if (!snap) return;
+                if (snap.status === 'signed-in' && !state.loaded && state.phase !== 'loading') {
+                    loadFromCloud().then(refreshMemberUI).catch(function () { /* 忽略 */ });
+                } else if (snap.status === 'signed-out' && (state.loaded || state.userId)) {
+                    onSignedOut();
+                }
+            });
+        } else {
+            // 兼容：AuthState 缺失时退回旧的兜底逻辑
+            setTimeout(function () {
+                if (window.currentUser) {
+                    loadFromCloud().then(refreshMemberUI);
+                }
+            }, 800);
+        }
 
         log('模块已加载');
     }

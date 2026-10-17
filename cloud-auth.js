@@ -435,19 +435,38 @@
         }
     }
 
-    /** 启动时恢复已有会话 */
+    /**
+     * 清除本地残留的旧登录态（会话已失效时调用）。
+     *
+     * 背景：界面原本只认 localStorage.currentUser，云端会话失效后若不清，
+     * 界面会继续显示「已登录」，而 AI 门禁按云端状态判定为「未登录」，
+     * 于是出现「弹窗让已登录用户去登录」的矛盾。
+     */
+    function clearStaleLocalState() {
+        try { currentUser = null; } catch (e) { /* 顶层变量不可写时忽略 */ }
+        try { window.currentUser = null; } catch (e) { /* 忽略 */ }
+        try { localStorage.removeItem('currentUser'); } catch (e) { /* 忽略 */ }
+        try { sessionStorage.removeItem('currentUser'); } catch (e) { /* 忽略 */ }
+
+        if (typeof updateMemberUI === 'function') updateMemberUI();
+        if (window.CloudSync && typeof CloudSync.onSignedOut === 'function') CloudSync.onSignedOut();
+        if (window.CloudMember && typeof CloudMember.onSignedOut === 'function') CloudMember.onSignedOut();
+    }
+
+    /** 启动时恢复已有会话（登录状态以 AuthState 为唯一真相源） */
     async function restoreSession() {
-        const session = await getSession();
-        if (!session || !session.user) {
-            log('无有效会话，保持未登录状态');
+        const snap = window.AuthState ? await window.AuthState.whenReady() : null;
+
+        if (!snap || snap.status !== 'signed-in') {
+            let hadLocal = false;
+            try { hadLocal = !!localStorage.getItem('currentUser'); } catch (e) { /* 忽略 */ }
+            if (hadLocal) log('云端会话已失效，清除本地残留登录态');
+            clearStaleLocalState();
             return;
         }
-        // ⚠️ SDK 的 getSession() 返回的 user 只有 id/name/avatarUrl，不含 email
-        // （见 userFromSessionPayload 映射）。直接读 session.user.email 恒为空，
-        // 会导致「刷新页面后下单 → 订单 contact 为空 → 站长不知道谁付的钱」。
-        // 这里必须用 getUser()（走 /v1/user/me，响应里有 email）补全，
-        // 与管理台 admin-members.html 的做法一致。
-        let email = session.user.email || '';
+
+        // SDK 的 session.user 不含 email，AuthState 已用 getUser() 异步补全，这里优先取它。
+        let email = (snap.user && snap.user.email) || '';
         if (!email) {
             try {
                 const c = initCloud();
@@ -465,6 +484,20 @@
         applySignedInState(profile);
     }
 
+    /** 会话中途失效（token 刷新失败等）时，把界面同步回未登录 */
+    function watchSessionExpiry() {
+        if (!window.AuthState || typeof window.AuthState.subscribe !== 'function') return;
+        window.AuthState.subscribe(function (snap) {
+            if (!snap || snap.status !== 'signed-out') return;
+            let hadLocal = false;
+            try { hadLocal = !!localStorage.getItem('currentUser') || !!window.currentUser; } catch (e) { /* 忽略 */ }
+            if (hadLocal) {
+                log('会话已失效，同步清除界面登录态');
+                clearStaleLocalState();
+            }
+        });
+    }
+
     function boot() {
         if (!initCloud()) {
             console.warn('[CloudAuth] 云服务不可用，登录功能保持原状');
@@ -475,6 +508,7 @@
         rebindAuthForms();
         takeOverLogout();
         takeOverSendCodeButton();
+        watchSessionExpiry();
         restoreSession();
     }
 
