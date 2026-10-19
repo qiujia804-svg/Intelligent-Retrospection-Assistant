@@ -1470,10 +1470,10 @@ function updateMemberUI() {
         });
         generateSubscriptionPlans();
     } else {
-        // 显示登录和注册按钮
+        // 显示登录和注册按钮（会员中心对游客也可见：注册前需要能看到价格）
         if (loginBtn) loginBtn.style.display = 'inline-block';
         if (registerBtn) registerBtn.style.display = 'inline-block';
-        if (memberCenterBtn) memberCenterBtn.style.display = 'none';
+        if (memberCenterBtn) memberCenterBtn.style.display = 'inline-block';
         if (logoutBtn) logoutBtn.style.display = 'none';
     }
 }

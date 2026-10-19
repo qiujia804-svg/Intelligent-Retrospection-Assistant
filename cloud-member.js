@@ -463,8 +463,8 @@
                 ? '⏱️ 免费试用已结束'
                 : '⏱️ 试用剩余 ' + cur.d + '天' + cur.h + '小时' + cur.m + '分钟';
         } else {
-            // 未登录：沿用主程序传入的本地试用倒计时
-            label = '⏱️ 试用剩余 ' + (days || 0) + '天' + (hours || 0) + '小时' + (minutes || 0) + '分钟';
+            // 未登录：不显示误导性的「试用剩余 0天」，改为登录引导
+            label = '👋 登录后可享 7 天免费试用';
         }
 
         // renderVipCenter 返回的是**已求值**的 HTML，模板里的 ${days} 早变成了数字，
@@ -576,6 +576,25 @@
         state.myOrders = [];
         resetState();
         refreshMemberUI();
+    }
+
+    /**
+     * 游客点「立即订阅」：先引导登录。
+     * 价格对游客开放浏览（转化入口），但支付/下单必须登录，
+     * 否则订单创建会因无会话而失败。
+     */
+    function takeOverSubscribeForGuests() {
+        if (typeof handleSubscribeWithExpiry !== 'function') return;
+        const original = handleSubscribeWithExpiry;
+        window.handleSubscribeWithExpiry = function (planType) {
+            const auth = window.AuthState ? window.AuthState.getState().status : 'unknown';
+            if (auth === 'signed-out') {
+                showSignInPrompt();
+                return;
+            }
+            return original.apply(this, arguments);
+        };
+        log('游客订阅守卫已接管');
     }
 
     /** 让界面上的会员状态跟着刷新（复用主程序已有函数） */
@@ -725,6 +744,7 @@
         takeOverTrialStatus();
         takeOverUnlockButtons();
         takeOverVipCenter();
+        takeOverSubscribeForGuests();
         installPremiumGate();
 
         // 跟随认证状态：会话确定后拉会员状态；会话失效则同步清空，
