@@ -99,6 +99,14 @@
     .warnbox b{color:#5c4104;}
     code{background:#f2f3f6;padding:1px 5px;border-radius:4px;font-size:12.4px;font-family:ui-monospace,Menlo,Consolas,monospace;}
     .hidden{display:none !important;}
+
+    /* 用户反馈区块（2026-10-20 新增，不影响订单区样式） */
+    .fb-sec-title{font-size:15px;font-weight:660;margin:0;display:flex;align-items:center;gap:8px;}
+    .fb-content{max-width:430px;white-space:pre-wrap;word-break:break-word;line-height:1.55;}
+    .pill.handled{background:#e9f6ee;color:var(--ok);}
+    .pill.type{background:#eef3fb;color:var(--navy);font-weight:600;}
+    .card .stats{margin-bottom:0;}
+    .num-mid{font-size:19px !important;}
 </style>
 </head>
 <body>
@@ -216,6 +224,106 @@
             数据直接来自云端数据库，实时反映真实状态。用户端会立即生效（用户刷新页面后获得会员权限）。
         </div>
 
+        <!-- ================= 用户反馈（新增区块，不改动上方订单区） ================= -->
+        <div class="card" style="margin-top:16px;">
+            <div class="bar">
+                <div class="fb-sec-title">用户反馈 <span class="pill none" id="fbPendingCount">–</span></div>
+                <div class="seg" id="fbSeg">
+                    <button data-f="pending" class="act">待处理</button>
+                    <button data-f="handled">已处理</button>
+                    <button data-f="all">全部</button>
+                </div>
+                <div class="grow"></div>
+                <button class="btn-ghost btn-sm" id="fbRefreshBtn">刷新反馈</button>
+            </div>
+
+            <div class="tbl-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>编号</th>
+                            <th>类型</th>
+                            <th>内容</th>
+                            <th>联系方式</th>
+                            <th>来源页</th>
+                            <th>提交时间</th>
+                            <th>状态</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody id="fbBody">
+                        <tr><td colspan="8" class="empty">登录后加载…</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="toolbar-note">
+                数据来自云端 <code>feedbacks</code> 表：游客与会员在网站右下角「客服反馈」提交的内容都会出现在这里，与提交者用哪台设备无关。
+            </div>
+            <div class="msg" id="fbMsg"></div>
+        </div>
+
+        <!-- ================= 登录数据（新增区块） ================= -->
+        <div class="card" style="margin-top:16px;">
+            <div class="bar">
+                <div class="fb-sec-title">登录数据 <span class="pill none" id="usageRange">今天</span></div>
+                <div class="seg" id="usageSeg">
+                    <button data-p="today" class="act">今天</button>
+                    <button data-p="week">本周</button>
+                    <button data-p="month">本月</button>
+                    <button data-p="quarter">本季度</button>
+                    <button data-p="year">本年</button>
+                </div>
+                <div class="grow"></div>
+                <button class="btn-ghost btn-sm" id="usageRefreshBtn">刷新数据</button>
+            </div>
+
+            <div class="stats">
+                <div class="stat">
+                    <div class="k">活跃人数</div>
+                    <div class="v" id="uUsers">–</div>
+                </div>
+                <div class="stat">
+                    <div class="k">登录次数</div>
+                    <div class="v" id="uLogins">–</div>
+                </div>
+                <div class="stat">
+                    <div class="k">平均停留</div>
+                    <div class="v num-mid" id="uAvg">–</div>
+                </div>
+                <div class="stat">
+                    <div class="k">总停留</div>
+                    <div class="v num-mid" id="uTotal">–</div>
+                </div>
+            </div>
+
+            <div class="tbl-wrap" style="margin-top:16px;">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>邮箱</th>
+                            <th>登录次数</th>
+                            <th>访问次数</th>
+                            <th>总停留</th>
+                            <th>平均停留</th>
+                            <th>首次访问</th>
+                            <th>最近活跃</th>
+                        </tr>
+                    </thead>
+                    <tbody id="usageBody">
+                        <tr><td colspan="7" class="empty">登录后加载…</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="toolbar-note">
+                口径：只统计<b>已登录用户</b>（游客没有邮箱，不纳入）。
+                停留时长＝会话内最后一次心跳减去进入时间，45 秒一次心跳，离开超过 5 分钟自动停止计时，单次会话最多计 4 小时。
+                从本功能上线起开始积累数据，历史访问无法追溯。
+            </div>
+            <div class="msg" id="usageMsg"></div>
+        </div>
+
         <div class="msg" id="adminMsg"></div>
     </div>
 
@@ -244,6 +352,10 @@
     var pendingOtp = null;
     var allRows = [];
     var currentFilter = 'pending';
+    var allFeeds = [];
+    var fbFilter = 'pending';
+    var usagePeriod = 'today';
+    var usageRows = [];
 
     /* ---------- DOM ---------- */
     var $ = function (id) { return document.getElementById(id); };
@@ -596,6 +708,238 @@
         }
     }
 
+    /* ============================================================
+    /* 用户反馈（独立于订单逻辑，任何失败都不影响订单区）
+    /* ============================================================ */
+    var FB_TYPE_LABEL = { bug: 'Bug报告', feature: '功能建议', question: '使用咨询', other: '其他问题' };
+
+    /** 拉取云端反馈：走 SECURITY DEFINER 函数，函数内二次校验管理员身份 */
+    async function loadFeedbacks() {
+        var c = initCloud();
+        if (!c) return;
+        var res = await c.database.rpc('admin_list_feedbacks');
+        if (res.error) throw new Error(res.error.message || '查询失败');
+        allFeeds = Array.isArray(res.data) ? res.data : [];
+        log('反馈条数：', allFeeds.length);
+        renderFeedbacks();
+    }
+
+    function renderFeedbacks() {
+        var pend = allFeeds.filter(function (r) { return r.status === 'pending'; });
+        var badge = $('fbPendingCount');
+        badge.textContent = pend.length ? pend.length + ' 条待处理' : '无待处理';
+        badge.className = 'pill ' + (pend.length ? 'pending' : 'none');
+
+        var rows = allFeeds.filter(function (r) {
+            if (fbFilter === 'all') return true;
+            return r.status === fbFilter;
+        });
+
+        var body = $('fbBody');
+        if (!rows.length) {
+            body.innerHTML = '<tr><td colspan="8" class="empty">' +
+                (fbFilter === 'pending' ? '没有待处理的反馈。' : '暂无数据。') + '</td></tr>';
+            return;
+        }
+
+        body.innerHTML = rows.map(function (r) {
+            var handled = r.status === 'handled';
+            var ops = (handled
+                ? '<button class="btn-ghost btn-sm fb-back" data-id="' + esc(r.id) + '">恢复待处理</button>'
+                : '<button class="btn-wine btn-sm fb-done" data-id="' + esc(r.id) + '">标记已处理</button>') +
+                ' <button class="btn-ghost btn-sm fb-del" data-id="' + esc(r.id) + '">删除</button>';
+            return '<tr>' +
+                '<td class="mono">#' + esc(r.id) + '</td>' +
+                '<td><span class="pill type">' + esc(FB_TYPE_LABEL[r.type] || r.type || '其他') + '</span></td>' +
+                '<td class="fb-content">' + esc(r.content) + '</td>' +
+                '<td class="mono">' + esc(r.contact || '–') + '</td>' +
+                '<td class="mono">' + esc(r.page || '–') + '</td>' +
+                '<td class="mono">' + fmtTime(r.created_at) + '</td>' +
+                '<td><span class="pill ' + (handled ? 'handled' : 'pending') + '">' + (handled ? '已处理' : '待处理') + '</span></td>' +
+                '<td>' + ops + '</td>' +
+            '</tr>';
+        }).join('');
+
+        Array.prototype.forEach.call(body.querySelectorAll('.fb-done'), function (b) {
+            b.addEventListener('click', function () { setFbStatus(b, 'handled'); });
+        });
+        Array.prototype.forEach.call(body.querySelectorAll('.fb-back'), function (b) {
+            b.addEventListener('click', function () { setFbStatus(b, 'pending'); });
+        });
+        Array.prototype.forEach.call(body.querySelectorAll('.fb-del'), function (b) {
+            b.addEventListener('click', function () { deleteFb(b); });
+        });
+    }
+
+    async function setFbStatus(btn, status) {
+        var id = btn.getAttribute('data-id');
+        btn.disabled = true;
+        var old = btn.textContent;
+        btn.textContent = '处理中…';
+        hideMsg($('fbMsg'));
+        try {
+            var c = initCloud();
+            var res = await c.database.rpc('admin_set_feedback_status', { p_id: Number(id), p_status: status });
+            if (res.error) throw new Error(res.error.message || '操作失败');
+            var out = Array.isArray(res.data) ? res.data[0] : res.data;
+            if (out && out.ok === false) throw new Error(out.message || '未成功');
+            showMsg($('fbMsg'), '✅ ' + ((out && out.message) || ('反馈 #' + id + ' 已更新')), 'ok');
+            await loadFeedbacks();
+        } catch (err) {
+            showMsg($('fbMsg'), '❌ 操作失败：' + (err && err.message ? err.message : '未知错误'), 'err');
+            btn.disabled = false;
+            btn.textContent = old;
+        }
+    }
+
+    async function deleteFb(btn) {
+        var id = btn.getAttribute('data-id');
+        var row = allFeeds.filter(function (r) { return String(r.id) === String(id); })[0];
+        var ask = '确认删除这条反馈？\n\n' +
+            '编号：#' + id + '\n' +
+            '内容：' + (row ? String(row.content).slice(0, 60) : '') + '\n\n' +
+            '删除后不可恢复。';
+        if (!window.confirm(ask)) return;
+
+        btn.disabled = true;
+        var old = btn.textContent;
+        btn.textContent = '删除中…';
+        hideMsg($('fbMsg'));
+        try {
+            var c = initCloud();
+            var res = await c.database.rpc('admin_delete_feedback', { p_id: Number(id) });
+            if (res.error) throw new Error(res.error.message || '删除失败');
+            var out = Array.isArray(res.data) ? res.data[0] : res.data;
+            if (out && out.ok === false) throw new Error(out.message || '未成功');
+            showMsg($('fbMsg'), '🗑️ ' + ((out && out.message) || ('反馈 #' + id + ' 已删除')), 'ok');
+            await loadFeedbacks();
+        } catch (err) {
+            showMsg($('fbMsg'), '❌ 删除失败：' + (err && err.message ? err.message : '未知错误'), 'err');
+            btn.disabled = false;
+            btn.textContent = old;
+        }
+    }
+
+    Array.prototype.forEach.call($('fbSeg').querySelectorAll('button'), function (b) {
+        b.addEventListener('click', function () {
+            Array.prototype.forEach.call($('fbSeg').querySelectorAll('button'), function (x) {
+                x.classList.remove('act');
+            });
+            b.classList.add('act');
+            fbFilter = b.getAttribute('data-f');
+            renderFeedbacks();
+        });
+    });
+
+    $('fbRefreshBtn').addEventListener('click', async function () {
+        $('fbRefreshBtn').disabled = true;
+        try { await loadFeedbacks(); hideMsg($('fbMsg')); }
+        catch (err) { showMsg($('fbMsg'), '刷新失败：' + (err && err.message ? err.message : '未知错误'), 'err'); }
+        finally { $('fbRefreshBtn').disabled = false; }
+    });
+
+    /* ============================================================
+    /* 登录数据：按周期统计活跃人数 / 登录次数 / 停留时长
+    /* ============================================================ */
+    var PERIOD_LABEL = { today: '今天', week: '本周', month: '本月', quarter: '本季度', year: '本年' };
+
+    // 以本地时区算出起止区间（左闭右开）
+    function periodRange(p) {
+        var now = new Date();
+        var start = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        if (p === 'week') {
+            var dow = (start.getDay() + 6) % 7;          // 周一为一周之始
+            start = new Date(start.getFullYear(), start.getMonth(), start.getDate() - dow);
+        } else if (p === 'month') {
+            start = new Date(now.getFullYear(), now.getMonth(), 1);
+        } else if (p === 'quarter') {
+            start = new Date(now.getFullYear(), Math.floor(now.getMonth() / 3) * 3, 1);
+        } else if (p === 'year') {
+            start = new Date(now.getFullYear(), 0, 1);
+        }
+        var end;
+        if (p === 'week') end = new Date(start.getFullYear(), start.getMonth(), start.getDate() + 7);
+        else if (p === 'month') end = new Date(start.getFullYear(), start.getMonth() + 1, 1);
+        else if (p === 'quarter') end = new Date(start.getFullYear(), start.getMonth() + 3, 1);
+        else if (p === 'year') end = new Date(start.getFullYear() + 1, 0, 1);
+        else end = new Date(start.getFullYear(), start.getMonth(), start.getDate() + 1);
+        return { from: start, to: end };
+    }
+
+    function fmtDur(sec) {
+        var v = Math.max(0, Math.round(Number(sec) || 0));
+        if (v < 60) return v + '秒';
+        var m = Math.floor(v / 60);
+        if (m < 60) return m + '分' + (v % 60 ? (v % 60) + '秒' : '');
+        var h = Math.floor(m / 60);
+        return h + '小时' + (m % 60 ? (m % 60) + '分' : '');
+    }
+
+    async function loadUsage() {
+        var c = initCloud();
+        if (!c) return;
+        var r = periodRange(usagePeriod);
+        var args = { p_from: r.from.toISOString(), p_to: r.to.toISOString() };
+        var sumRes = await c.database.rpc('admin_usage_summary', args);
+        if (sumRes.error) throw new Error(sumRes.error.message || '统计查询失败');
+        var usersRes = await c.database.rpc('admin_usage_users', args);
+        if (usersRes.error) throw new Error(usersRes.error.message || '用户明细查询失败');
+
+        var sum = sumRes.data || {};
+        if (Array.isArray(sum)) sum = sum[0] || {};
+        $('uUsers').textContent = (sum.users == null ? '–' : sum.users);
+        $('uLogins').textContent = (sum.logins == null ? '–' : sum.logins);
+        $('uAvg').textContent = sum.avg_sec == null ? '–' : fmtDur(sum.avg_sec);
+        $('uTotal').textContent = sum.total_sec == null ? '–' : fmtDur(sum.total_sec);
+
+        usageRows = Array.isArray(usersRes.data) ? usersRes.data : [];
+        renderUsage();
+    }
+
+    function renderUsage() {
+        var body = $('usageBody');
+        if (!usageRows.length) {
+            body.innerHTML = '<tr><td colspan="7" class="empty">该时间段内还没有登录记录。</td></tr>';
+            return;
+        }
+        body.innerHTML = usageRows.map(function (r) {
+            return '<tr>' +
+                '<td class="mono">' + esc(r.email || '–') + '</td>' +
+                '<td>' + esc(r.logins) + '</td>' +
+                '<td>' + esc(r.sessions) + '</td>' +
+                '<td>' + fmtDur(r.total_sec) + '</td>' +
+                '<td>' + fmtDur(r.avg_sec) + '</td>' +
+                '<td class="mono">' + fmtTime(r.first_at) + '</td>' +
+                '<td class="mono">' + fmtTime(r.last_at) + '</td>' +
+            '</tr>';
+        }).join('');
+    }
+
+    Array.prototype.forEach.call($('usageSeg').querySelectorAll('button'), function (b) {
+        b.addEventListener('click', async function () {
+            Array.prototype.forEach.call($('usageSeg').querySelectorAll('button'), function (x) {
+                x.classList.remove('act');
+            });
+            b.classList.add('act');
+            usagePeriod = b.getAttribute('data-p');
+            $('usageRange').textContent = PERIOD_LABEL[usagePeriod] || '';
+            hideMsg($('usageMsg'));
+            $('usageBody').innerHTML = '<tr><td colspan="7" class="empty">加载中…</td></tr>';
+            try { await loadUsage(); }
+            catch (err) {
+                showMsg($('usageMsg'), '加载失败：' + (err && err.message ? err.message : '未知错误'), 'err');
+                $('usageBody').innerHTML = '<tr><td colspan="7" class="empty">加载失败，请重试。</td></tr>';
+            }
+        });
+    });
+
+    $('usageRefreshBtn').addEventListener('click', async function () {
+        $('usageRefreshBtn').disabled = true;
+        try { await loadUsage(); hideMsg($('usageMsg')); }
+        catch (err) { showMsg($('usageMsg'), '刷新失败：' + (err && err.message ? err.message : '未知错误'), 'err'); }
+        finally { $('usageRefreshBtn').disabled = false; }
+    });
+
     /* ---------- 过滤与刷新 ---------- */
     Array.prototype.forEach.call($('filterSeg').querySelectorAll('button'), function (b) {
         b.addEventListener('click', function () {
@@ -610,7 +954,11 @@
 
     $('refreshBtn').addEventListener('click', async function () {
         $('refreshBtn').disabled = true;
-        try { await loadOrders(); hideMsg(adminMsg); }
+        try {
+            await loadOrders();
+            hideMsg(adminMsg);
+            try { await loadFeedbacks(); } catch (e) { log('反馈刷新失败:', e && e.message); }
+        }
         catch (err) { showMsg(adminMsg, '刷新失败：' + (err && err.message ? err.message : '未知错误'), 'err'); }
         finally { $('refreshBtn').disabled = false; }
     });
@@ -625,13 +973,25 @@
             if (user) {
                 try { await loadOrders(); }
                 catch (err) { showMsg(adminMsg, '加载订单失败：' + (err && err.message ? err.message : '未知错误'), 'err'); }
+                // 反馈区独立加载：失败只提示，不影响订单区
+                try { await loadFeedbacks(); }
+                catch (err) {
+                    showMsg($('fbMsg'), '加载反馈失败：' + (err && err.message ? err.message : '未知错误'), 'err');
+                    $('fbBody').innerHTML = '<tr><td colspan="8" class="empty">加载失败，请点「刷新反馈」重试。</td></tr>';
+                }
+                // 登录数据独立加载：失败只提示，不影响订单与反馈
+                try { await loadUsage(); }
+                catch (err) {
+                    showMsg($('usageMsg'), '加载登录数据失败：' + (err && err.message ? err.message : '未知错误'), 'err');
+                    $('usageBody').innerHTML = '<tr><td colspan="7" class="empty">加载失败，请点「刷新数据」重试。</td></tr>';
+                }
             }
         } catch (e) {
             setSignedOut();
         }
     })();
 
-    window.__adminMembers = { reload: loadOrders, get rows() { return allRows; } };
+    window.__adminMembers = { reload: loadOrders, reloadFeedbacks: loadFeedbacks, reloadUsage: loadUsage, get rows() { return allRows; }, get feeds() { return allFeeds; }, get usage() { return usageRows; } };
 })();
 </script>
 </body>

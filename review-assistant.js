@@ -5789,7 +5789,7 @@ function initFeedbackWidget() {
         }
     });
 
-    submitBtn.addEventListener('click', () => {
+    submitBtn.addEventListener('click', async () => {
         const feedbackType = document.getElementById('feedback-type').value;
         const feedbackContent = document.getElementById('feedback-content').value.trim();
         const feedbackContact = document.getElementById('feedback-contact').value.trim();
@@ -5809,17 +5809,43 @@ function initFeedbackWidget() {
             userAgent: navigator.userAgent
         };
 
+        // 本地留一份：离线或云端故障时的兜底（原有行为，未改动）
         const feedbacks = JSON.parse(localStorage.getItem('user_feedbacks') || '[]');
         feedbacks.push(feedbackData);
         localStorage.setItem('user_feedbacks', JSON.stringify(feedbacks));
 
-        console.log('【客服反馈】已提交:', feedbackData);
+        // 真正送达站长的通道：写入云端 feedbacks 表（管理台读的是这张表）
+        submitBtn.disabled = true;
+        const oldBtnText = submitBtn.textContent;
+        submitBtn.textContent = '提交中…';
+        let cloudRes = { ok: false, error: '云服务未就绪' };
+        try {
+            if (window.FeedbackCloud && typeof window.FeedbackCloud.submit === 'function') {
+                cloudRes = await window.FeedbackCloud.submit({
+                    type: feedbackType,
+                    content: feedbackContent,
+                    contact: feedbackContact,
+                    page: window.location.pathname + window.location.search
+                });
+            }
+        } catch (e) {
+            cloudRes = { ok: false, error: (e && e.message) || '网络异常' };
+        }
+        submitBtn.disabled = false;
+        submitBtn.textContent = oldBtnText;
+
+        console.log('【客服反馈】已提交:', feedbackData, cloudRes.ok ? '(已送达云端)' : '(仅本地)');
 
         document.getElementById('feedback-content').value = '';
         document.getElementById('feedback-contact').value = '';
         modal.classList.remove('show');
 
-        alert('感谢您的反馈！我们会尽快处理。\n\n如需即时沟通，请添加客服微信：JQJSBXXZI');
+        // 失败时如实告知，不假称「已收到」——否则用户以为反馈送达，实际没有
+        if (cloudRes.ok) {
+            alert('感谢您的反馈！我们已经收到，会尽快处理。\n\n如需即时沟通，请添加客服微信：JQJSBXXZI');
+        } else {
+            alert('反馈已保存在本机，但同步到云端失败（' + (cloudRes.error || '网络异常') + '）。\n\n为确保我们收到，请直接添加客服微信：JQJSBXXZI');
+        }
     });
 
     console.log('【客服反馈】模块初始化完成');
