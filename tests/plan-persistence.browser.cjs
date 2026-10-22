@@ -34,6 +34,7 @@ const root = path.resolve(__dirname, '..');
         await page.waitForTimeout(1300);
         await page.locator('#splash-screen').waitFor({state:'hidden'});
         await page.evaluate(() => {
+            window.AuthState.getState = () => ({status:'signed-in'});
             document.querySelectorAll('.tab-content').forEach(e => e.classList.remove('active'));
             document.getElementById('plan-content').classList.add('active');
             document.querySelector('#quadrant-b .task-what').value = '原有任务';

@@ -506,8 +506,9 @@
 
     function boot() {
         if (!initCloud()) {
-            console.warn('[CloudAuth] 云服务不可用，登录功能保持原状');
-            return;
+            // 即使SDK缺失，也必须接管旧的本地注册和发信事件。
+            // 新处理器会提示云服务不可用，绝不回退到已删除的/api/send-email。
+            console.warn('[CloudAuth] 云服务不可用，保留云端处理器并提示重试');
         }
         takeOverLogin();
         takeOverRegister();

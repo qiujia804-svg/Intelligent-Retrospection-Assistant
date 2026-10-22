@@ -3,14 +3,15 @@
  * 提供离线缓存和后台同步功能
  */
 
-const CACHE_NAME = 'retrospection-assistant-v1.0.53';
-const STATIC_CACHE = 'static-v1.0.53';
-const DYNAMIC_CACHE = 'dynamic-v1.0.53';
+const CACHE_NAME = 'retrospection-assistant-v1.0.54';
+const STATIC_CACHE = 'static-v1.0.54';
+const DYNAMIC_CACHE = 'dynamic-v1.0.54';
 
 // 需要预缓存的静态资源
 // 注意：CDN 地址必须与 index.html 中实际 <script src> 使用的地址完全一致，
 // 否则缓存里存的是另一个 URL，离线时页面依然取不到资源。
 const STATIC_ASSETS = [
+  './vendor/workbuddy-cloud-sdk.js',
   './vendor/chart.umd.js',
   './',
   './index.html',
