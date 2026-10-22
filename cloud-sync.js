@@ -348,7 +348,6 @@
         state.ready = true;
         log('用户已登录，开始首次同步');
         await syncAll({ quiet: true });
-        notify('云端同步已开启', 'success');
     }
 
     /** 退出登录 */
