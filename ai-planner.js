@@ -123,11 +123,18 @@
             if(tag?.color) input.style.borderColor=tag.color;
         });
         updateTimeStatistics();
-        if(window.LocalStorageManager) window.LocalStorageManager.manualSave();
+        try {
+            if (!window.LocalStorageManager?.savePlanFormNow ||
+                !window.LocalStorageManager.savePlanFormNow(true)) {
+                return status('安排已填入，但自动保存失败。请不要关闭页面，检查浏览器存储空间后重试。');
+            }
+        } catch (error) {
+            return status('安排已填入，但自动保存失败。请不要关闭页面，检查浏览器存储空间后重试。');
+        }
         invalidate();
         status(createdTags.length
-            ? `已填入原规划和时间表，时间分配图已更新，并自动新增标签：${createdTags.join('、')}。请检查后使用原来的“保存规划”按钮。`
-            : '已填入原规划和时间表，时间分配图已更新。请检查后使用原来的“保存规划”按钮。');
+            ? `已自动保存原规划和时间表，时间分配图已更新，并自动新增标签：${createdTags.join('、')}。刷新或重新进入后可恢复。`
+            : '已自动保存原规划和时间表，时间分配图已更新。刷新或重新进入后可恢复。');
     }
     function init() {
         const form = $('plan-form'); if(!form) return;

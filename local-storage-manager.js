@@ -217,7 +217,10 @@
                 formData.schedule.push({
                     time: timeSelect.value,
                     task: taskInput.value,
-                    duration: durationInput.value
+                    duration: durationInput.value,
+                    aiTag: taskInput.dataset.aiTag || '',
+                    aiTagText: taskInput.dataset.aiTagText || '',
+                    aiCat: taskInput.dataset.aiCat || ''
                 });
             }
         });
@@ -317,8 +320,23 @@
         
         // 恢复时间安排数据
         if (data.schedule && Array.isArray(data.schedule)) {
-            // 这里需要根据实际的日程安排UI来实现
-            console.log('[LocalStorageManager] 检测到时间安排数据，但恢复功能需要UI支持');
+            const rows = [...document.querySelectorAll('#schedule-items .schedule-item')];
+            data.schedule.forEach(slot => {
+                const row = rows.find(r => r.querySelector('.time-select')?.value === slot.time);
+                if (!row) return;
+                const input = row.querySelector('.task-input');
+                input.value = slot.task || '';
+                row.querySelector('.duration-input').value = slot.duration ?? '';
+                ['aiTag', 'aiTagText', 'aiCat'].forEach(key => {
+                    if (slot[key]) input.dataset[key] = slot[key];
+                    else delete input.dataset[key];
+                });
+                const tag = typeof getUserTags === 'function'
+                    ? getUserTags().find(t => t.name === slot.aiTag) : null;
+                input.style.borderColor = tag?.color || '';
+                restoredCount++;
+            });
+            if (typeof updateTimeStatistics === 'function') updateTimeStatistics();
         }
         
         console.log('[LocalStorageManager] 规划表单数据恢复完成，恢复了', restoredCount, '个字段');
@@ -359,8 +377,7 @@
     /**
      * 自动保存规划表单
      */
-    const autoSavePlanForm = throttle(function() {
-        if (!AUTO_SAVE_CONFIG.enabled) return;
+    function savePlanFormNow(confirmed = false) {
         
         console.log('[LocalStorageManager] 开始自动保存规划表单...');
         
@@ -371,6 +388,17 @@
             saveTime: new Date().toISOString()
         };
         
+        // 已确认的规划进入原有规划记录，避免仅靠24小时草稿保留。
+        if (confirmed) {
+            const date = getCurrentDate();
+            const plans = typeof getPlans === 'function' ? getPlans() : [];
+            const previous = plans.find(p => p.date === date) || {};
+            savePlan({
+                ...previous, date, quadrants: formData.quadrants,
+                schedule: formData.schedule,
+                timeStats: typeof getCurrentTimeStats === 'function' ? getCurrentTimeStats() : previous.timeStats
+            });
+        }
         const success = safeLocalStorageSetItem(
             STORAGE_KEYS.PLAN_FORM_DRAFT,
             JSON.stringify(dataToSave)
@@ -385,6 +413,11 @@
         } else {
             console.error('[LocalStorageManager] 规划表单自动保存失败');
         }
+        return success;
+    }
+
+    const autoSavePlanForm = throttle(function() {
+        if (AUTO_SAVE_CONFIG.enabled) savePlanFormNow();
     }, AUTO_SAVE_CONFIG.interval);
 
     /**
@@ -413,10 +446,7 @@
                 restored = restoreReviewFormData(draftData);
             }
         } else if (activeTab.id === 'plan-content') {
-            const draftData = safeJsonParse(localStorage.getItem(STORAGE_KEYS.PLAN_FORM_DRAFT));
-            if (draftData && !isDraftExpired(draftData.timestamp)) {
-                restored = restorePlanFormData(draftData);
-            }
+            restored = restoreSavedPlan();
         }
         
         if (restored) {
@@ -426,6 +456,14 @@
         }
         
         return restored;
+    }
+
+    function restoreSavedPlan() {
+        const draft = safeJsonParse(localStorage.getItem(STORAGE_KEYS.PLAN_FORM_DRAFT));
+        if (draft && !isDraftExpired(draft.timestamp)) return restorePlanFormData(draft);
+        const plan = typeof getPlans === 'function'
+            ? getPlans().find(p => p.date === getCurrentDate()) : null;
+        return plan ? restorePlanFormData(plan) : false;
     }
 
     /**
@@ -470,6 +508,12 @@
         // 规划表单事件（使用事件委托处理动态添加的任务项）
         const planContent = document.getElementById('plan-content');
         if (planContent) {
+            const schedule = document.getElementById('schedule-items');
+            if (schedule) {
+                const saveSchedule = debounce(autoSavePlanForm, AUTO_SAVE_CONFIG.debounceDelay);
+                schedule.addEventListener('input', saveSchedule);
+                schedule.addEventListener('change', saveSchedule);
+            }
             // 监听四象限区域的输入事件
             const quadrants = ['a', 'b', 'c', 'd'];
             quadrants.forEach(quadrant => {
@@ -546,7 +590,7 @@
                 // 页面隐藏时立即保存当前数据
                 if (AUTO_SAVE_CONFIG.enabled) {
                     autoSaveReviewForm();
-                    autoSavePlanForm();
+                    savePlanFormNow();
                 }
             }
         });
@@ -564,7 +608,7 @@
             // 执行最后的数据保存
             if (AUTO_SAVE_CONFIG.enabled) {
                 autoSaveReviewForm();
-                autoSavePlanForm();
+                savePlanFormNow();
             }
             
             // 如果有未保存的草稿，显示确认提示
@@ -602,6 +646,7 @@
                     bindTabSwitchListeners();
                     bindVisibilityChangeListener();
                     bindBeforeUnloadListener();
+                    restoreSavedPlan();
                     restoreDraftData();
                     
                     console.log('[LocalStorageManager] 本地存储管理器初始化完成');
@@ -614,6 +659,7 @@
                 bindTabSwitchListeners();
                 bindVisibilityChangeListener();
                 bindBeforeUnloadListener();
+                restoreSavedPlan();
                 restoreDraftData();
                 
                 console.log('[LocalStorageManager] 本地存储管理器初始化完成');
@@ -731,6 +777,7 @@
         setAutoSaveEnabled,
         isAutoSaveEnabled,
         manualSave,
+        savePlanFormNow,
         clearDraftData,
         getStorageStats,
         restoreDraftData,

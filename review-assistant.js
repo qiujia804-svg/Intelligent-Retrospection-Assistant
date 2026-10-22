@@ -2144,7 +2144,18 @@ function setupPlanForm() {
         const timeStats = getCurrentTimeStats();
 
         const plan = {
-            date: new Date().toISOString().split('T')[0], // 保存为今天的日期
+            date: new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().split('T')[0], // 本地今天，与自动保存一致
+            schedule: [...document.querySelectorAll('#schedule-items .schedule-item')].map(row => {
+                const input = row.querySelector('.task-input');
+                return {
+                    time: row.querySelector('.time-select').value,
+                    task: input.value,
+                    duration: row.querySelector('.duration-input').value,
+                    aiTag: input.dataset.aiTag || '',
+                    aiTagText: input.dataset.aiTagText || '',
+                    aiCat: input.dataset.aiCat || ''
+                };
+            }),
             quadrants: {
                 a: getTasksFromQuadrant('quadrant-a'),
                 b: getTasksFromQuadrant('quadrant-b'),
