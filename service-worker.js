@@ -3,14 +3,15 @@
  * 提供离线缓存和后台同步功能
  */
 
-const CACHE_NAME = 'retrospection-assistant-v1.0.51';
-const STATIC_CACHE = 'static-v1.0.51';
-const DYNAMIC_CACHE = 'dynamic-v1.0.51';
+const CACHE_NAME = 'retrospection-assistant-v1.0.52';
+const STATIC_CACHE = 'static-v1.0.52';
+const DYNAMIC_CACHE = 'dynamic-v1.0.52';
 
 // 需要预缓存的静态资源
 // 注意：CDN 地址必须与 index.html 中实际 <script src> 使用的地址完全一致，
 // 否则缓存里存的是另一个 URL，离线时页面依然取不到资源。
 const STATIC_ASSETS = [
+  './vendor/chart.umd.js',
   './',
   './index.html',
   './review-assistant.css',
@@ -36,7 +37,6 @@ const STATIC_ASSETS = [
   './images/pay-wechat.jpg',
   './images/pay-alipay-v2.jpg',
   // CDN 资源（与 index.html 保持一致）
-  'https://cdn.jsdelivr.net/npm/chart.js',
   'https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js',
   'https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js'
 ];

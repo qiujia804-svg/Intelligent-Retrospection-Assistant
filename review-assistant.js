@@ -1082,6 +1082,9 @@ function initMembershipSystem() {
         }
     }
     
+    // 首次访问没有本地用户缓存，也要初始化游客的登录和会员入口。
+    if (!savedUser) updateMemberUI();
+
     // 绑定事件监听器
     bindMembershipEventListeners();
     
@@ -4301,6 +4304,11 @@ function updateTotalStatistics(totalMinutes, taskCount, studyTotalMinutes, enter
 function initPieChart() {
     const ctx = document.getElementById('timeDistributionChart');
     if (!ctx) return;
+    // 图表资源不可用时仍完成时间表、登录和会员事件的初始化。
+    if (typeof Chart === 'undefined') {
+        console.warn('图表库未加载，暂不绘制时间分配图');
+        return;
+    }
     
     // 销毁已存在的图表
     if (timeDistributionChart) {

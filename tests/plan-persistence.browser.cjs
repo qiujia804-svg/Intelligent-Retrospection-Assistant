@@ -22,6 +22,7 @@ const root = path.resolve(__dirname, '..');
         });
         // Chart rendering is external; compare the real application's chart data.
         await context.addInitScript(() => {
+            localStorage.setItem('ra_guide_acknowledged', 'true');
             window.Chart = class { constructor(ctx, config) { Object.assign(this, config); } update() {} destroy() {} };
             window.alert = () => {};
         });
@@ -31,6 +32,7 @@ const root = path.resolve(__dirname, '..');
         console.log('Loading local application');
         await page.goto('http://plan.test/', {waitUntil:'domcontentloaded'});
         await page.waitForTimeout(1300);
+        await page.locator('#splash-screen').waitFor({state:'hidden'});
         await page.evaluate(() => {
             document.querySelectorAll('.tab-content').forEach(e => e.classList.remove('active'));
             document.getElementById('plan-content').classList.add('active');
