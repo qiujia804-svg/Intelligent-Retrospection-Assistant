@@ -34,6 +34,12 @@
 
     function initCloud() {
         if (cloud) return cloud;
+        // 登录/注册必须在 AuthState 订阅的同一个 SDK 实例上完成。
+        // SDK 的会话事件只通知本实例，不会通知同页面的另一个客户端。
+        if (window.AuthState && typeof window.AuthState.init === 'function') {
+            cloud = window.AuthState.init();
+            if (cloud) return cloud;
+        }
         if (typeof WorkBuddyCloud === 'undefined' || !WorkBuddyCloud.createWorkBuddyCloud) {
             console.warn('[CloudAuth] Cloud SDK 未加载');
             return null;
