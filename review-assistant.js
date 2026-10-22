@@ -718,6 +718,13 @@ function triggerVipLock() {
 
 // 初始化VIP支付弹窗事件监听
 function initVipPaymentEvents() {
+    // 支付弹窗不能放在会被锁定样式模糊、禁用点击的主容器内。
+    // 挂到 body 后，沿用原有层级即可显示在会员中心之上。
+    const paymentModal = document.getElementById('vip-payment-modal');
+    if (paymentModal && paymentModal.parentElement !== document.body) {
+        document.body.appendChild(paymentModal);
+    }
+
     // 关闭按钮
     const closeBtn = document.getElementById('vip-payment-close');
     if (closeBtn) {
