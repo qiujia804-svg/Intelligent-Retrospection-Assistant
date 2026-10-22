@@ -586,13 +586,25 @@
     function takeOverSubscribeForGuests() {
         if (typeof handleSubscribeWithExpiry !== 'function') return;
         const original = handleSubscribeWithExpiry;
-        window.handleSubscribeWithExpiry = function (planType) {
-            const auth = window.AuthState ? window.AuthState.getState().status : 'unknown';
-            if (auth === 'signed-out') {
-                showSignInPrompt();
-                return;
+        let checking = false;
+        window.handleSubscribeWithExpiry = async function (planType) {
+            if (checking) return;
+            checking = true;
+            try {
+                let auth = window.AuthState ? window.AuthState.getState().status : 'unknown';
+                if (auth !== 'signed-in' && window.AuthState && typeof window.AuthState.revalidate === 'function') {
+                    auth = await window.AuthState.revalidate();
+                }
+                if (auth === 'signed-out') {
+                    showSignInPrompt(true);
+                    return;
+                }
+                return original.apply(this, arguments);
+            } catch (e) {
+                alert('暂时无法确认登录状态，请稍后重试。');
+            } finally {
+                checking = false;
             }
-            return original.apply(this, arguments);
         };
         log('游客订阅守卫已接管');
     }
@@ -718,8 +730,8 @@
     }
 
     /** 未登录提示：引导去登录，而不是打开会员中心 */
-    function showSignInPrompt() {
-        alert('请先登录后再使用 AI 功能。\n\n登录后可获得 7 天免费试用。');
+    function showSignInPrompt(subscription) {
+        alert(subscription ? '请先登录后再订阅会员。' : '请先登录后再使用 AI 功能。\n\n登录后可获得 7 天免费试用。');
         try {
             const lm = document.getElementById('login-modal');
             if (lm && typeof openModal === 'function') openModal(lm);

@@ -329,7 +329,7 @@
 
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/@tencent-ai/workbuddy-cloud-sdk@dev/lib/index.global.js"></script>
+<script src="vendor/workbuddy-cloud-sdk.js"></script>
 <script>
 /* ============================================================
    会员管理台 admin-members.html
@@ -375,6 +375,13 @@
     function log() {
         var a = ['[管理台]'].concat(Array.prototype.slice.call(arguments));
         console.log.apply(console, a);
+    }
+
+    function queryError(error, fallback) {
+        var detail = typeof error === 'string' ? error
+            : error && (error.message || error.error_description || error.details || error.code || (typeof error.error === 'string' ? error.error : ''));
+        var code = error && typeof error === 'object' && (error.status || error.statusCode);
+        return new Error(fallback + (detail ? '：' + detail : '') + (code ? '（HTTP ' + code + '）' : ''));
     }
 
     /* ---------- 初始化 SDK ---------- */
@@ -489,7 +496,7 @@
                 return;
             }
             var user = await requireAdmin();
-            if (user) hideMsg(loginMsg);
+            if (user) { hideMsg(loginMsg); await loadDashboard(); }
             return;
         }
 
@@ -531,7 +538,7 @@
         var c = initCloud();
         if (!c) return;
         var res = await c.database.rpc('admin_list_orders');
-        if (res.error) throw new Error(res.error.message || '查询失败');
+        if (res.error) throw queryError(res.error, '订单查询失败');
         allRows = Array.isArray(res.data) ? res.data : [];
         log('订单条数：', allRows.length);
         render();
@@ -718,7 +725,7 @@
         var c = initCloud();
         if (!c) return;
         var res = await c.database.rpc('admin_list_feedbacks');
-        if (res.error) throw new Error(res.error.message || '查询失败');
+        if (res.error) throw queryError(res.error, '反馈查询失败');
         allFeeds = Array.isArray(res.data) ? res.data : [];
         log('反馈条数：', allFeeds.length);
         renderFeedbacks();
@@ -881,9 +888,9 @@
         var r = periodRange(usagePeriod);
         var args = { p_from: r.from.toISOString(), p_to: r.to.toISOString() };
         var sumRes = await c.database.rpc('admin_usage_summary', args);
-        if (sumRes.error) throw new Error(sumRes.error.message || '统计查询失败');
+        if (sumRes.error) throw queryError(sumRes.error, '统计查询失败');
         var usersRes = await c.database.rpc('admin_usage_users', args);
-        if (usersRes.error) throw new Error(usersRes.error.message || '用户明细查询失败');
+        if (usersRes.error) throw queryError(usersRes.error, '用户明细查询失败');
 
         var sum = sumRes.data || {};
         if (Array.isArray(sum)) sum = sum[0] || {};
@@ -963,6 +970,21 @@
         finally { $('refreshBtn').disabled = false; }
     });
 
+    async function loadDashboard() {
+        try { await loadOrders(); hideMsg(adminMsg); }
+        catch (err) { showMsg(adminMsg, '加载订单失败：' + err.message, 'err'); }
+        try { await loadFeedbacks(); hideMsg($('fbMsg')); }
+        catch (err) {
+            showMsg($('fbMsg'), '加载反馈失败：' + err.message, 'err');
+            $('fbBody').innerHTML = '<tr><td colspan="8" class="empty">加载失败，请点「刷新反馈」重试。</td></tr>';
+        }
+        try { await loadUsage(); hideMsg($('usageMsg')); }
+        catch (err) {
+            showMsg($('usageMsg'), '加载登录数据失败：' + err.message, 'err');
+            $('usageBody').innerHTML = '<tr><td colspan="7" class="empty">加载失败，请点「刷新数据」重试。</td></tr>';
+        }
+    }
+
     /* ---------- 启动 ---------- */
     (async function boot() {
         var c = initCloud();
@@ -970,22 +992,7 @@
         try {
             // requireAdmin 内部已处理「未登录 / 非管理员」两种情况的界面切换与提示
             var user = await requireAdmin();
-            if (user) {
-                try { await loadOrders(); }
-                catch (err) { showMsg(adminMsg, '加载订单失败：' + (err && err.message ? err.message : '未知错误'), 'err'); }
-                // 反馈区独立加载：失败只提示，不影响订单区
-                try { await loadFeedbacks(); }
-                catch (err) {
-                    showMsg($('fbMsg'), '加载反馈失败：' + (err && err.message ? err.message : '未知错误'), 'err');
-                    $('fbBody').innerHTML = '<tr><td colspan="8" class="empty">加载失败，请点「刷新反馈」重试。</td></tr>';
-                }
-                // 登录数据独立加载：失败只提示，不影响订单与反馈
-                try { await loadUsage(); }
-                catch (err) {
-                    showMsg($('usageMsg'), '加载登录数据失败：' + (err && err.message ? err.message : '未知错误'), 'err');
-                    $('usageBody').innerHTML = '<tr><td colspan="7" class="empty">加载失败，请点「刷新数据」重试。</td></tr>';
-                }
-            }
+            if (user) await loadDashboard();
         } catch (e) {
             setSignedOut();
         }

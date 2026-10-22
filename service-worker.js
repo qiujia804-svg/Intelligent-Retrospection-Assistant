@@ -3,9 +3,9 @@
  * 提供离线缓存和后台同步功能
  */
 
-const CACHE_NAME = 'retrospection-assistant-v1.0.56';
-const STATIC_CACHE = 'static-v1.0.56';
-const DYNAMIC_CACHE = 'dynamic-v1.0.56';
+const CACHE_NAME = 'retrospection-assistant-v1.0.57';
+const STATIC_CACHE = 'static-v1.0.57';
+const DYNAMIC_CACHE = 'dynamic-v1.0.57';
 
 // 需要预缓存的静态资源
 // 注意：CDN 地址必须与 index.html 中实际 <script src> 使用的地址完全一致，
@@ -37,10 +37,7 @@ const STATIC_ASSETS = [
   './manifest.json',
   './offline.html',
   './images/pay-wechat.jpg',
-  './images/pay-alipay-v2.jpg',
-  // CDN 资源（与 index.html 保持一致）
-  'https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js',
-  'https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js'
+  './images/pay-alipay-v2.jpg'
 ];
 
 // 离线回退页面
@@ -51,29 +48,23 @@ self.addEventListener('install', (event) => {
   console.log(`[SW] Installing Service Worker ${CACHE_NAME}...`);
 
   event.waitUntil(
-    // 先清除所有旧缓存
-    caches.keys().then((cacheNames) => {
-      return Promise.all(
-        cacheNames.map((name) => {
-          console.log('[SW] Deleting old cache:', name);
-          return caches.delete(name);
-        })
-      );
-    })
-    .then(() => {
-      console.log('[SW] All old caches cleared');
-      return caches.open(STATIC_CACHE);
-    })
+    // 旧缓存由activate清理，安装过程中保留正在使用的版本。
+    caches.open(STATIC_CACHE)
     .then((cache) => {
       console.log('[SW] Pre-caching static assets');
       // 逐项缓存：原先用 cache.addAll 时，只要有任意一个资源（例如某个 CDN 临时不可用）
       // 请求失败，整个预缓存都会失败，导致离线功能彻底不可用。改为逐项缓存 + 单独记录失败。
       return Promise.all(
-        STATIC_ASSETS.map((asset) =>
-          cache.add(asset).catch((error) => {
+        STATIC_ASSETS.map(async (asset) => {
+          const controller = new AbortController();
+          const timer = setTimeout(() => controller.abort(), 8000);
+          try {
+            const response = await fetch(asset, { signal: controller.signal, cache: 'reload' });
+            if (response.ok) await cache.put(asset, response);
+          } catch (error) {
             console.warn('[SW] Skip asset, caching failed:', asset, error.message);
-          })
-        )
+          } finally { clearTimeout(timer); }
+        })
       );
     })
     .then(() => {
@@ -129,8 +120,14 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // API 请求使用网络优先策略
-  if (url.pathname.startsWith('/api/')) {
+  // 账号、会员、数据库请求只能走网络，不能复用其他会话的缓存响应。
+  if (url.pathname.startsWith('/api/') || url.pathname.startsWith('/cb/')) {
+    event.respondWith(fetch(request));
+    return;
+  }
+
+  // 在线时优先取得最新页面和脚本，离线时仍可使用缓存。
+  if (url.origin === self.location.origin && (request.mode === 'navigate' || /\.(js|css|html)$/.test(url.pathname))) {
     event.respondWith(networkFirst(request));
     return;
   }

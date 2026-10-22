@@ -41,8 +41,11 @@ const root=path.resolve(__dirname,'..');
   assert(visits.some(v=>v.body.p_kind==='login'&&v.authorization==='Bearer test-access-token'),
       'successful login must immediately submit authenticated usage for admin email list');
   await p.locator('#member-center-btn').click();
+  // Model stale guest state while the SDK holds a valid session; the guard must recheck.
+  await p.evaluate(()=>{const get=AuthState.getState,revalidate=AuthState.revalidate;window.testRechecks=0;AuthState.getState=()=>({status:'signed-out'});AuthState.revalidate=async()=>{testRechecks++;AuthState.getState=get;return revalidate();};});
   await p.locator('#vip-center-overlay button').filter({hasText:'立即订阅'}).first().click();
   assert.equal(await p.locator('#vip-payment-modal').isVisible(),true);
+  assert.equal(await p.evaluate(()=>testRechecks),1);
   assert.equal(await p.evaluate(()=>window.testAlerts.some(m=>m.includes('请先登录'))),false);
   await p.evaluate(async()=>{closeVipPaymentModal();await logout();document.getElementById('vip-center-overlay')?.remove();window.testAlerts=[];});
   visits.length=0;
