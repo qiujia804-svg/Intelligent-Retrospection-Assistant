@@ -580,7 +580,7 @@
      */
     function restoreDraftData() {
         if (window.LocalStorageManager) {
-            const restored = window.LocalStorageManager.restoreDraftData();
+            const restored = window.LocalStorageManager.restoreDraftData(true);
             if (restored) {
                 updateDataManagementPanel();
             }

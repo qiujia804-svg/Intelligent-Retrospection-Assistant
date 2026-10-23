@@ -27,6 +27,8 @@
         debounceDelay: 1000, // 输入防抖延迟
         maxDraftAge: 24 * 60 * 60 * 1000 // 草稿最大保存时间：24小时
     };
+    let loadedPlanDate = null;
+    let restoringPlan = false;
 
     // 防抖函数
     function debounce(func, delay) {
@@ -171,10 +173,11 @@
      */
     function collectPlanFormData() {
         const formData = {
+            date: loadedPlanDate || getCurrentDate(),
             quadrants: {},
             schedule: [],
             timestamp: Date.now(),
-            version: '1.0'
+            version: '1.1'
         };
         
         // 收集四象限数据
@@ -378,6 +381,7 @@
      * 自动保存规划表单
      */
     function savePlanFormNow(confirmed = false) {
+        if (restoringPlan || !loadedPlanDate) return false;
         
         console.log('[LocalStorageManager] 开始自动保存规划表单...');
         
@@ -388,17 +392,22 @@
             saveTime: new Date().toISOString()
         };
         
-        // 已确认的规划进入原有规划记录，避免仅靠24小时草稿保留。
-        if (confirmed) {
-            const date = getCurrentDate();
+        // AI确认和手动修改都写入所属日期的规划记录，避免只保留临时草稿。
+        {
+            const date = formData.date;
             const plans = typeof getPlans === 'function' ? getPlans() : [];
             const previous = plans.find(p => p.date === date) || {};
             savePlan({
                 ...previous, date, quadrants: formData.quadrants,
                 schedule: formData.schedule,
+                timestamp: formData.timestamp,
                 timeStats: typeof getCurrentTimeStats === 'function' ? getCurrentTimeStats() : previous.timeStats
             });
         }
+        const dailySaved = safeLocalStorageSetItem(
+            STORAGE_KEYS.PLAN_FORM_DRAFT + ':' + formData.date,
+            JSON.stringify(dataToSave)
+        );
         const success = safeLocalStorageSetItem(
             STORAGE_KEYS.PLAN_FORM_DRAFT,
             JSON.stringify(dataToSave)
@@ -413,12 +422,12 @@
         } else {
             console.error('[LocalStorageManager] 规划表单自动保存失败');
         }
-        return success;
+        return success && dailySaved;
     }
 
-    const autoSavePlanForm = throttle(function() {
+    const autoSavePlanForm = function() {
         if (AUTO_SAVE_CONFIG.enabled) savePlanFormNow();
-    }, AUTO_SAVE_CONFIG.interval);
+    };
 
     /**
      * 显示自动保存指示器（已禁用，避免遮挡界面）
@@ -431,7 +440,7 @@
     /**
      * 恢复草稿数据
      */
-    function restoreDraftData() {
+    function restoreDraftData(force = false) {
         console.log('[LocalStorageManager] 开始恢复草稿数据...');
         
         // 检查当前活跃的表单
@@ -446,7 +455,7 @@
                 restored = restoreReviewFormData(draftData);
             }
         } else if (activeTab.id === 'plan-content') {
-            restored = restoreSavedPlan();
+            restored = restoreSavedPlan(force === true);
         }
         
         if (restored) {
@@ -458,12 +467,44 @@
         return restored;
     }
 
-    function restoreSavedPlan() {
+    function restoreSavedPlan(force = false) {
+        const today = getCurrentDate();
+        // 当前页面的内容已经恢复后，不因切换标签或回到窗口而重复覆盖。
+        if (loadedPlanDate === today && !force) return false;
+        if (loadedPlanDate && loadedPlanDate !== today) savePlanFormNow();
         const draft = safeJsonParse(localStorage.getItem(STORAGE_KEYS.PLAN_FORM_DRAFT));
-        if (draft && !isDraftExpired(draft.timestamp)) return restorePlanFormData(draft);
+        const draftDate = draft && (draft.date || (Number.isFinite(draft.timestamp)
+            ? new Date(draft.timestamp).getFullYear() + '-' + String(new Date(draft.timestamp).getMonth()+1).padStart(2,'0') + '-' + String(new Date(draft.timestamp).getDate()).padStart(2,'0') : null));
+        // 旧版无日期草稿按原始时间戳归档，不删除，也不冒充今天的草稿。
+        if (draft && draftDate && !localStorage.getItem(STORAGE_KEYS.PLAN_FORM_DRAFT + ':' + draftDate)) {
+            safeLocalStorageSetItem(STORAGE_KEYS.PLAN_FORM_DRAFT + ':' + draftDate, JSON.stringify({...draft, date:draftDate}));
+        }
+        const daily = safeJsonParse(localStorage.getItem(STORAGE_KEYS.PLAN_FORM_DRAFT + ':' + today));
         const plan = typeof getPlans === 'function'
-            ? getPlans().find(p => p.date === getCurrentDate()) : null;
-        return plan ? restorePlanFormData(plan) : false;
+            ? getPlans().find(p => p.date === today) : null;
+        const candidates = [daily, draftDate === today ? draft : null, plan].filter(Boolean);
+        candidates.sort((a,b) => (b.timestamp || Date.parse(b.saveTime) || 0) - (a.timestamp || Date.parse(a.saveTime) || 0));
+        restoringPlan = true;
+        loadedPlanDate = today;
+        try {
+            // 先清理当前表单，避免跨日残留任务和时间段混入今天。
+            ['a','b','c','d'].forEach(q => {
+                const items = [...document.querySelectorAll('#quadrant-' + q + ' .task-item')];
+                items.forEach((item,index) => {
+                    if (index) item.remove();
+                    else item.querySelectorAll('input,textarea').forEach(field => { field.value = ''; });
+                });
+            });
+            document.querySelectorAll('#schedule-items .schedule-item').forEach(row => {
+                const input = row.querySelector('.task-input'); input.value = '';
+                row.querySelector('.duration-input').value = '';
+                ['aiTag','aiTagText','aiCat'].forEach(key => delete input.dataset[key]);
+                input.style.borderColor = '';
+            });
+            if (candidates[0]) return restorePlanFormData(candidates[0]);
+            if (typeof updateTimeStatistics === 'function') updateTimeStatistics();
+            return false;
+        } finally { restoringPlan = false; }
     }
 
     /**
@@ -474,6 +515,7 @@
         
         localStorage.removeItem(STORAGE_KEYS.REVIEW_FORM_DRAFT);
         localStorage.removeItem(STORAGE_KEYS.PLAN_FORM_DRAFT);
+        localStorage.removeItem(STORAGE_KEYS.PLAN_FORM_DRAFT + ':' + getCurrentDate());
         localStorage.removeItem(STORAGE_KEYS.LAST_AUTO_SAVE);
         
         console.log('[LocalStorageManager] 草稿数据已清除');
@@ -508,31 +550,15 @@
         // 规划表单事件（使用事件委托处理动态添加的任务项）
         const planContent = document.getElementById('plan-content');
         if (planContent) {
-            const schedule = document.getElementById('schedule-items');
-            if (schedule) {
-                const saveSchedule = debounce(autoSavePlanForm, AUTO_SAVE_CONFIG.debounceDelay);
-                schedule.addEventListener('input', saveSchedule);
-                schedule.addEventListener('change', saveSchedule);
-            }
-            // 监听四象限区域的输入事件
-            const quadrants = ['a', 'b', 'c', 'd'];
-            quadrants.forEach(quadrant => {
-                const quadrantElement = document.getElementById(`quadrant-${quadrant}`);
-                if (quadrantElement) {
-                    quadrantElement.addEventListener('input', debounce(autoSavePlanForm, AUTO_SAVE_CONFIG.debounceDelay));
-                }
-            });
-            
-            // 监听动态添加的任务项
+            // 规划写入本地很轻量，输入后立即保存，避免防抖等待期间退出或被旧草稿覆盖。
+            planContent.addEventListener('input', autoSavePlanForm);
+            planContent.addEventListener('change', autoSavePlanForm);
+            planContent.addEventListener('pointerdown', function() {
+                if (loadedPlanDate !== getCurrentDate()) restoreSavedPlan();
+            }, true);
             planContent.addEventListener('click', function(event) {
-                if (event.target.classList.contains('add-task-btn')) {
-                    // 延迟绑定新任务项的事件
-                    setTimeout(() => {
-                        const newTaskItem = event.target.closest('.task-list').querySelector('.task-item:last-child');
-                        if (newTaskItem) {
-                            newTaskItem.addEventListener('input', debounce(autoSavePlanForm, AUTO_SAVE_CONFIG.debounceDelay));
-                        }
-                    }, 100);
+                if (event.target.closest('.add-task-btn, .remove-task-btn')) {
+                    queueMicrotask(autoSavePlanForm);
                 }
             });
             
@@ -542,14 +568,14 @@
         // 监听表单提交事件以清除草稿
         if (reviewForm) {
             reviewForm.addEventListener('submit', function() {
-                setTimeout(clearDraftData, 1000); // 延迟清除，确保数据已保存
+                localStorage.removeItem(STORAGE_KEYS.REVIEW_FORM_DRAFT);
             });
         }
         
         const planForm = document.getElementById('plan-form');
         if (planForm) {
             planForm.addEventListener('submit', function() {
-                setTimeout(clearDraftData, 1000); // 延迟清除，确保数据已保存
+                savePlanFormNow(true);
             });
         }
         
@@ -584,6 +610,7 @@
         document.addEventListener('visibilitychange', function() {
             if (document.visibilityState === 'visible') {
                 console.log('[LocalStorageManager] 页面变为可见，检查草稿数据...');
+                restoreSavedPlan();
                 restoreDraftData();
             } else if (document.visibilityState === 'hidden') {
                 console.log('[LocalStorageManager] 页面变为隐藏，执行最后保存...');
@@ -651,7 +678,7 @@
                     
                     console.log('[LocalStorageManager] 本地存储管理器初始化完成');
                     console.log('[LocalStorageManager] 自动保存功能:', AUTO_SAVE_CONFIG.enabled ? '已启用' : '已禁用');
-                }, 1000); // 延迟1秒确保所有脚本加载完成
+                }, 0); // 同一轮页面初始化完成后恢复，避免用户先输入再被旧草稿覆盖。
             });
         } else {
             setTimeout(() => {
@@ -664,7 +691,7 @@
                 
                 console.log('[LocalStorageManager] 本地存储管理器初始化完成');
                 console.log('[LocalStorageManager] 自动保存功能:', AUTO_SAVE_CONFIG.enabled ? '已启用' : '已禁用');
-            }, 1000);
+            }, 0);
         }
         
         // 定期清理过期草稿（每天执行一次）
