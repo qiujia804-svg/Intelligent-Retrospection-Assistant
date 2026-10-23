@@ -5,13 +5,13 @@ window.TimeTools = (() => {
     const names = { personal: '你能掌控的时间板块', external: '别人掌控你的时间板块', other: '其他时段' };
     const ranges = { personal: [[300,510],[1140,1320]], external: [[540,1080]], other: [[510,540],[1080,1140]] };
     const modeNames = { focus: '专注', short: '短休', long: '长休' };
-    let host, state, audio, selected = 'personal';
+    let host, state, audio, selected = 'all';
     const read = (k, fallback) => { try { return JSON.parse(localStorage.getItem(k)) || fallback; } catch (_) { return fallback; } };
     const day = (d = new Date()) => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
     function emptyBlocks() {
-        return Object.fromEntries(Object.entries(ranges).map(([k, v]) => [k, { totalMinutes: v.reduce((s,[a,b])=>s+b-a,0), workMinutes: 0, recordedMinutes: 0, rate: 0 }]));
+        return Object.fromEntries(Object.entries(ranges).map(([k, v]) => [k, { totalMinutes: v.reduce((s,[a,b])=>s+b-a,0), workMinutes: 0, recordedMinutes: 0, lifeMinutes: 0, funMinutes: 0, taskCount: 0, typeDurations: {}, rate: 0 }]));
     }
-    function addSlot(blocks, slot, duration, work) {
+    function addSlot(blocks, slot, duration, work, type = '工作/学习', cat = 'work') {
         const match = /^(\d{2}):(\d{2})-(\d{2}):(\d{2})$/.exec(slot);
         if (!match) return;
         const start = Number(match[1])*60+Number(match[2]);
@@ -22,6 +22,12 @@ window.TimeTools = (() => {
             const minutes = rs.reduce((s,[a,b])=>s+Math.max(0,Math.min(usedEnd,b)-Math.max(start,a)),0);
             blocks[k].recordedMinutes += minutes;
             if (work) blocks[k].workMinutes += minutes;
+            if (minutes > 0) {
+                blocks[k].taskCount++;
+                blocks[k].typeDurations[type] = (blocks[k].typeDurations[type] || 0) + minutes;
+                if (cat === 'life') blocks[k].lifeMinutes += minutes;
+                if (cat === 'fun') blocks[k].funMinutes += minutes;
+            }
             blocks[k].rate = Math.min(100, Math.round(blocks[k].workMinutes/blocks[k].totalMinutes*1000)/10);
         }
     }
@@ -32,6 +38,13 @@ window.TimeTools = (() => {
             host.querySelector(`#tt-minutes-${k}`).textContent = `工作/学习 ${blocks[k].workMinutes} / ${blocks[k].totalMinutes} 分钟`;
         }
         filterRows();
+        if (selected !== 'all') {
+            const b = blocks[selected];
+            updateTotalStatistics(b.totalMinutes, b.taskCount, b.workMinutes, b.funMinutes, b.lifeMinutes);
+            updatePieChart({ ...b.typeDurations, '休息放松': Math.max(0,b.totalMinutes-b.recordedMinutes) }, b.totalMinutes);
+        }
+        const rate = document.getElementById('tt-active-rate');
+        if (rate) rate.textContent = selected === 'all' ? '' : `本板块达成率：${blocks[selected].rate}%（工作/学习时长 ÷ 本板块总时长）`;
     }
     function filterRows() {
         document.querySelectorAll('#schedule-items .schedule-item').forEach(row => {
@@ -40,6 +53,56 @@ window.TimeTools = (() => {
             const t = h*60+m;
             row.hidden = selected !== 'all' && !ranges[selected].some(([a,b])=>t>=a && t<b);
         });
+    }
+    function initViews() {
+        const plan = document.getElementById('plan-content');
+        const form = document.getElementById('plan-form');
+        const entry = plan.querySelector('.ai-plan-entry');
+        if (!entry || !form) return;
+        const nav = document.createElement('div'); nav.id = 'time-view-nav';
+        nav.setAttribute('role','group');nav.setAttribute('aria-label','今日规划功能');
+        entry.before(nav); nav.appendChild(entry);
+        for (const [view,label] of [['pomodoro','番茄时间'],['personal',names.personal],['external',names.external]]) {
+            const button=document.createElement('button');button.type='button';button.dataset.timeView=view;button.textContent=label;nav.appendChild(button);
+        }
+        const back = document.createElement('button');back.id='time-view-back';back.type='button';back.textContent='← 返回今日规划';nav.after(back);
+        const timerPanel=document.createElement('div');timerPanel.id='pomodoro-page';timerPanel.hidden=true;form.before(timerPanel);
+        timerPanel.appendChild(host.querySelector('[aria-label="番茄时间"]'));
+        host.querySelector('[aria-label="时间板块"]').hidden=true;
+        host.hidden=true;
+        host=plan;
+        const rate=document.createElement('p');rate.id='tt-active-rate';rate.className='tt-help';
+        form.querySelector('.time-management > h2').after(rate);
+        let activeView='plan';
+        function syncMobile() {
+            const bar=plan.querySelector('.mtb-bar');
+            if (!bar) return;
+            bar.hidden=activeView!=='plan';
+            if (activeView==='personal'||activeView==='external') {
+                const timeButton=bar.querySelectorAll('.mtb-item')[1];
+                if (timeButton && !timeButton.classList.contains('active')) timeButton.click();
+            }
+        }
+        function open(view) {
+            if (!['plan','personal','external','pomodoro'].includes(view)) view='plan';
+            const scoped=view==='personal'||view==='external';
+            activeView=view;
+            selected=scoped?view:'all';
+            form.hidden=view==='pomodoro';timerPanel.hidden=view!=='pomodoro';back.hidden=view==='plan';
+            form.querySelector('.quadrants').hidden=scoped;
+            form.querySelector('.time-management > h2').textContent=scoped ? names[view] : '时间管理';
+            plan.querySelector(':scope > h2').textContent=view==='plan'?'今日规划（四象限法则）':view==='pomodoro'?'番茄时间':names[view];
+            nav.querySelectorAll('[data-time-view]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.timeView===view)));
+            try { localStorage.setItem('ra_time_page_view',JSON.stringify(view)); } catch (_) {}
+            syncMobile();
+            updateTimeStatistics();
+            if (typeof timeDistributionChart !== 'undefined' && timeDistributionChart) requestAnimationFrame(()=>timeDistributionChart.resize());
+        }
+        nav.querySelectorAll('[data-time-view]').forEach(b=>b.onclick=()=>open(b.dataset.timeView));
+        entry.addEventListener('click',()=>open('plan'),true);
+        back.onclick=()=>open('plan');
+        window.addEventListener('resize',syncMobile);
+        open(read('ra_time_page_view','plan'));
     }
     function trendDatasets(reviews = []) {
         const records = new Map();
@@ -119,7 +182,7 @@ window.TimeTools = (() => {
     }
     function init() {
         host=document.getElementById('time-tools');if(!host)return;
-        selected=read('ra_time_block_view','personal');if(![...Object.keys(ranges),'all'].includes(selected))selected='personal';
+        selected='all';
         const fallback={mode:'focus',durations:{focus:25,short:5,long:15},remaining:1500000,end:null,count:0,countDate:day(),sound:true,task:''};
         state=read(key,fallback);
         if(!modeNames[state.mode] || !state.durations || !['focus','short','long'].every(k=>Number.isFinite(state.durations[k])&&state.durations[k]>=1&&state.durations[k]<=180) || !Number.isFinite(state.remaining) || state.remaining<0 || (state.end!==null&&!Number.isFinite(state.end)) || !Number.isInteger(state.count)||state.count<0)state=fallback;
@@ -149,7 +212,7 @@ window.TimeTools = (() => {
         // Keep other open tabs in step with persisted timer changes.
         window.addEventListener('storage',e=>{if(e.key===key && e.newValue){const s=read(key,null);if(s){state=s;draw();}}});
         setInterval(()=>{finish();draw();},500);document.addEventListener('visibilitychange',()=>{finish();draw();});
-        select();if(typeof updateTimeStatistics==='function')updateTimeStatistics();finish();draw();
+        select();initViews();if(typeof updateTimeStatistics==='function')updateTimeStatistics();finish();draw();
     }
     document.addEventListener('DOMContentLoaded',()=>setTimeout(init,0));
     return { emptyBlocks, addSlot, renderBlocks, trendDatasets };

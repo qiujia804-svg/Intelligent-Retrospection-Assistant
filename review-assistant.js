@@ -4032,7 +4032,7 @@ function updateTimeStatistics() {
             const aiCat = aiTag ? ((taskInput.dataset && taskInput.dataset.aiCat) || '') : '';
             const isEntertainment = aiTag ? (aiCat === 'fun') : entertainmentKeywords.some(keyword => taskName.includes(keyword));
             const isLife = aiTag ? (aiCat === 'life') : lifeKeywords.some(keyword => taskName.includes(keyword));
-            if (timeBlocks) TimeTools.addSlot(timeBlocks, timeSlotValue, duration, !isEntertainment && !isLife);
+            if (timeBlocks) TimeTools.addSlot(timeBlocks, timeSlotValue, duration, !isEntertainment && !isLife, taskType, isEntertainment ? 'fun' : (isLife ? 'life' : 'work'));
             
             if (isEntertainment) {
                 entertainmentTotalMinutes += duration;

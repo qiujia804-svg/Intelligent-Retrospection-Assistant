@@ -1,17 +1,17 @@
-#time-tools { margin: 16px 0; color: #334155; }
-#time-tools .tt-card { border: 1px solid #e2e8f0; border-radius: 14px; background: #f8faff; padding: 18px; margin-bottom: 14px; }
-#time-tools h3 { margin: 0 0 10px; }
-#time-tools p { margin: 8px 0; line-height: 1.6; }
-#time-tools .tt-row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
-#time-tools button { border: 1px solid #ccd5f5; border-radius: 9px; background: white; color: #4655a8; padding: 9px 14px; cursor: pointer; }
-#time-tools button[aria-pressed="true"], #time-tools .tt-primary { background: #667eea; color: white; }
-#time-tools .tt-help { font-size: 13px; color: #64748b; }
-#time-tools .tt-blocks { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 12px; margin: 12px 0; }
-#time-tools .tt-block { padding: 12px; background: white; border-radius: 10px; border: 1px solid #e2e8f0; }
-#time-tools .tt-block strong { display: block; margin: 7px 0; color: #5364d9; font-size: 23px; }
-#time-tools .tt-timer { font-size: 48px; font-variant-numeric: tabular-nums; font-weight: 700; color: #5965cd; margin: 8px 0; }
-#time-tools input[type="number"] { width: 65px; padding: 6px; border: 1px solid #cbd5e1; border-radius: 6px; }
-#time-tools input[type="text"] { padding: 9px; border: 1px solid #cbd5e1; border-radius: 6px; max-width: 100%; box-sizing: border-box; }
+:is(#time-tools, #pomodoro-page) { margin: 16px 0; color: #334155; }
+:is(#time-tools, #pomodoro-page) .tt-card { border: 1px solid #e2e8f0; border-radius: 14px; background: #f8faff; padding: 18px; margin-bottom: 14px; }
+:is(#time-tools, #pomodoro-page) h3 { margin: 0 0 10px; }
+:is(#time-tools, #pomodoro-page) p { margin: 8px 0; line-height: 1.6; }
+:is(#time-tools, #pomodoro-page) .tt-row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+:is(#time-tools, #pomodoro-page) button { border: 1px solid #ccd5f5; border-radius: 9px; background: white; color: #4655a8; padding: 9px 14px; cursor: pointer; }
+:is(#time-tools, #pomodoro-page) button[aria-pressed="true"], :is(#time-tools, #pomodoro-page) .tt-primary { background: #667eea; color: white; }
+:is(#time-tools, #pomodoro-page) .tt-help { font-size: 13px; color: #64748b; }
+:is(#time-tools, #pomodoro-page) .tt-blocks { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 12px; margin: 12px 0; }
+:is(#time-tools, #pomodoro-page) .tt-block { padding: 12px; background: white; border-radius: 10px; border: 1px solid #e2e8f0; }
+:is(#time-tools, #pomodoro-page) .tt-block strong { display: block; margin: 7px 0; color: #5364d9; font-size: 23px; }
+:is(#time-tools, #pomodoro-page) .tt-timer { font-size: 48px; font-variant-numeric: tabular-nums; font-weight: 700; color: #5965cd; margin: 8px 0; }
+:is(#time-tools, #pomodoro-page) input[type="number"] { width: 65px; padding: 6px; border: 1px solid #cbd5e1; border-radius: 6px; }
+:is(#time-tools, #pomodoro-page) input[type="text"] { padding: 9px; border: 1px solid #cbd5e1; border-radius: 6px; max-width: 100%; box-sizing: border-box; }
 #schedule-items .schedule-item[hidden] { display: none !important; }
 #daily-reminder-tools { margin: 16px 0; color: #334155; }
 #daily-reminder-tools .tt-card { border: 1px solid #e2e8f0; border-radius: 14px; background: #f8faff; padding: 18px; margin-bottom: 14px; }
@@ -19,4 +19,12 @@
 #daily-reminder-tools p { margin: 8px 0; line-height: 1.6; }
 #daily-reminder-tools button { border: 1px solid #ccd5f5; border-radius: 9px; background: #667eea; color: white; padding: 9px 14px; cursor: pointer; }
 #daily-reminder-tools .tt-help { font-size: 13px; color: #64748b; }
-@media(max-width:600px) { #time-tools .tt-blocks { grid-template-columns: 1fr; } #time-tools .tt-card { padding: 12px; } }
+#time-view-nav { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; margin: 14px 0; }
+#time-view-nav .ai-plan-entry { margin: 0; }
+#time-view-nav [data-time-view], #time-view-back { padding: 10px 15px; border: 1px solid #cdd5f5; border-radius: 8px; background: white; color: #5263ca; cursor: pointer; font-size: 15px; }
+#time-view-nav [aria-pressed="true"] { background: #667eea; color: white; }
+#time-view-back { margin-bottom: 12px; }
+#plan-form[hidden], #plan-form .quadrants[hidden], #pomodoro-page[hidden], #time-tools[hidden], #time-view-back[hidden] { display: none !important; }
+#tt-active-rate { text-align: center; color: #5263ca; margin: 0 0 16px; }
+#plan-content .mtb-bar[hidden] { display: none !important; }
+@media(max-width:600px) { :is(#time-tools, #pomodoro-page) .tt-blocks { grid-template-columns: 1fr; } :is(#time-tools, #pomodoro-page) .tt-card { padding: 12px; } }
