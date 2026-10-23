@@ -3423,6 +3423,7 @@ function initCompletionTrendChart(reviews) {
 
         // 获取趋势图数据
         let trendData = getTrendChartData(reviews);
+        const blockDatasets = typeof TimeTools !== 'undefined' ? TimeTools.trendDatasets(reviews) : [];
 
         // 如果图表已存在，销毁它
         if (completionTrendChart && typeof completionTrendChart.destroy === 'function') {
@@ -3458,7 +3459,7 @@ function initCompletionTrendChart(reviews) {
             type: 'line',
             data: {
                 labels: trendData.labels,
-                datasets: [{
+                datasets: blockDatasets.length ? blockDatasets : [{
                     label: '目标达成率',
                     data: trendData.data,
                     borderColor: '#4F9CFE',
@@ -3478,7 +3479,7 @@ function initCompletionTrendChart(reviews) {
                 maintainAspectRatio: false,
                 plugins: {
                     legend: {
-                        display: false
+                        display: blockDatasets.length > 0
                     },
                     tooltip: {
                         backgroundColor: 'rgba(79, 156, 254, 0.9)',
@@ -3490,7 +3491,7 @@ function initCompletionTrendChart(reviews) {
                         displayColors: false,
                         callbacks: {
                             label: function(context) {
-                                return `${context.parsed.y}%`;
+                                return `${context.dataset.label}: ${context.parsed.y}%`;
                             }
                         }
                     }
@@ -3979,6 +3980,7 @@ function getTaskType(taskName) {
 }
 
 function updateTimeStatistics() {
+    const timeBlocks = typeof TimeTools !== 'undefined' ? TimeTools.emptyBlocks() : null;
     const scheduleRows = document.querySelectorAll('.schedule-item');
     const typeDurations = {};
     let totalMinutes = 0;
@@ -4030,6 +4032,7 @@ function updateTimeStatistics() {
             const aiCat = aiTag ? ((taskInput.dataset && taskInput.dataset.aiCat) || '') : '';
             const isEntertainment = aiTag ? (aiCat === 'fun') : entertainmentKeywords.some(keyword => taskName.includes(keyword));
             const isLife = aiTag ? (aiCat === 'life') : lifeKeywords.some(keyword => taskName.includes(keyword));
+            if (timeBlocks) TimeTools.addSlot(timeBlocks, timeSlotValue, duration, !isEntertainment && !isLife);
             
             if (isEntertainment) {
                 entertainmentTotalMinutes += duration;
@@ -4075,6 +4078,10 @@ function updateTimeStatistics() {
         lifeTotalMinutes: lifeTotalMinutes,
         taskCount: taskCount
     };
+    if (timeBlocks) {
+        currentTimeStats.timeBlocks = timeBlocks;
+        TimeTools.renderBlocks(timeBlocks);
+    }
 }
 
 // 【新增】全局变量：存储当前的时间统计数据
@@ -4100,6 +4107,7 @@ function getCurrentTimeStats() {
 
     return {
         items: timeStatsArray,
+        timeBlocks: currentTimeStats.timeBlocks,
         totalMinutes: currentTimeStats.totalMinutes,
         studyTotalMinutes: currentTimeStats.studyTotalMinutes,
         entertainmentTotalMinutes: currentTimeStats.entertainmentTotalMinutes,
