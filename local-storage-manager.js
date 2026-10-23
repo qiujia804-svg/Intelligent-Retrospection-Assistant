@@ -29,6 +29,18 @@
     };
     let loadedPlanDate = null;
     let restoringPlan = false;
+    let midnightTimer = null;
+
+    function schedulePlanMidnight() {
+        clearTimeout(midnightTimer);
+        const now = new Date();
+        const next = new Date(now);
+        next.setHours(24, 0, 0, 0);
+        midnightTimer = setTimeout(function() {
+            try { restoreSavedPlan(); }
+            finally { schedulePlanMidnight(); }
+        }, Math.max(1, next.getTime() - now.getTime()));
+    }
 
     // 防抖函数
     function debounce(func, delay) {
@@ -484,6 +496,7 @@
             ? getPlans().find(p => p.date === today) : null;
         const candidates = [daily, draftDate === today ? draft : null, plan].filter(Boolean);
         candidates.sort((a,b) => (b.timestamp || Date.parse(b.saveTime) || 0) - (a.timestamp || Date.parse(a.saveTime) || 0));
+        const changedDay = loadedPlanDate && loadedPlanDate !== today;
         restoringPlan = true;
         loadedPlanDate = today;
         try {
@@ -504,7 +517,10 @@
             if (candidates[0]) return restorePlanFormData(candidates[0]);
             if (typeof updateTimeStatistics === 'function') updateTimeStatistics();
             return false;
-        } finally { restoringPlan = false; }
+        } finally {
+            restoringPlan = false;
+            if (changedDay) window.dispatchEvent(new Event('plan-day-changed'));
+        }
     }
 
     /**
@@ -675,6 +691,7 @@
                     bindBeforeUnloadListener();
                     restoreSavedPlan();
                     restoreDraftData();
+                    schedulePlanMidnight();
                     
                     console.log('[LocalStorageManager] 本地存储管理器初始化完成');
                     console.log('[LocalStorageManager] 自动保存功能:', AUTO_SAVE_CONFIG.enabled ? '已启用' : '已禁用');
@@ -688,6 +705,7 @@
                 bindBeforeUnloadListener();
                 restoreSavedPlan();
                 restoreDraftData();
+                schedulePlanMidnight();
                 
                 console.log('[LocalStorageManager] 本地存储管理器初始化完成');
                 console.log('[LocalStorageManager] 自动保存功能:', AUTO_SAVE_CONFIG.enabled ? '已启用' : '已禁用');

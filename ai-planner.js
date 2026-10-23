@@ -1,7 +1,7 @@
 (function() {
     'use strict';
     const $ = id => document.getElementById(id);
-    let proposal = null, snapshot = '', previousFocus;
+    let proposal = null, snapshot = '', previousFocus, dayRevision = 0, activeController = null;
     const rows = () => [...document.querySelectorAll('#schedule-items .schedule-item')];
     const readSchedule = () => rows().map(r => ({ time: r.querySelector('.time-select').value, task: r.querySelector('.task-input').value, duration: r.querySelector('.duration-input').value }));
     const fingerprint = () => JSON.stringify({ schedule: readSchedule(), quadrants: [...document.querySelectorAll('#plan-form .task-item input, #plan-form .task-item textarea')].map(e => e.value) });
@@ -34,6 +34,7 @@
     }
     async function generate() {
         invalidate();
+        const revision = dayRevision;
         const text = $('ai-plan-input').value.trim();
         if (!text) return status('请先说说今天想做什么。');
         const existing = readSchedule();
@@ -42,12 +43,14 @@
         $('ai-plan-generate').disabled = true; $('ai-plan-input').disabled = true;
         status('正在生成安排，请稍候……');
         const controller = new AbortController(), timer = setTimeout(() => controller.abort(), 60000);
+        activeController = controller;
         try {
             const authHeader = (window.CloudMember && typeof window.CloudMember.getAuthHeader === 'function')
                 ? await window.CloudMember.getAuthHeader() : {};
             const response = await fetch('/api/ai-plan', {method:'POST', headers:Object.assign({'Content-Type':'application/json'}, authHeader), signal:controller.signal,
                 body:JSON.stringify({text, existing, tags: typeof getUserTags === 'function' ? getUserTags().map(t=>t.name) : []})});
             const data = await response.json().catch(()=>{throw new Error('AI接口不可用，请通过已配置后端的网站访问。');});
+            if (revision !== dayRevision) return;
             if (!response.ok) {
                 // 服务端会员鉴权：401 未登录 / 403 无权益 —— 给出明确指引而不是干巴巴报错
                 if (response.status === 401) {
@@ -64,8 +67,11 @@
             }
             proposal = AIPlanCore.validate(data, existing.map(s=>s.time));
             preview(proposal); status('请检查安排、估算时长和冲突。确认填入后仍可在原表单修改。');
-        } catch(e) { invalidate(); status(e.name === 'AbortError' ? '生成超时，请重试。' : e.message); }
-        finally { clearTimeout(timer); $('ai-plan-generate').disabled=false; $('ai-plan-input').disabled=false; }
+        } catch(e) { if (revision === dayRevision) { invalidate(); status(e.name === 'AbortError' ? '生成超时，请重试。' : e.message); } }
+        finally {
+            clearTimeout(timer);
+            if (activeController === controller) { activeController = null; $('ai-plan-generate').disabled=false; $('ai-plan-input').disabled=false; }
+        }
     }
     // 【AI规划同步】把AI使用的标签自动补充进“管理标签”，已存在的标签不重复创建。
     // 标签补齐后，时间分配统计与右侧饼图才能按标签正确归类并显示颜色。
@@ -142,6 +148,13 @@
         const dialog=document.createElement('dialog'); dialog.id='ai-plan-dialog'; dialog.setAttribute('aria-labelledby','ai-plan-title');
         dialog.innerHTML='<div class="ai-plan-heading"><h2 id="ai-plan-title">说说今天想做什么</h2><button type="button" id="ai-plan-close" aria-label="关闭">×</button></div><p>AI会参考当前时间表生成安排，确认后填入原表单。</p><label for="ai-plan-input">今天的计划</label><textarea id="ai-plan-input" maxlength="4000" rows="5" placeholder="例如：今天制作三个平台的视频，预计一个半小时；11点开始直播三个小时；晚上复盘作品半小时。"></textarea><p class="ai-plan-hint">生成时会将这段文字、当前时间表和标签发送给DeepSeek。时长未说明时会标注AI估算。</p><button type="button" id="ai-plan-generate">生成安排</button><p id="ai-plan-status" role="status" aria-live="polite"></p><div id="ai-plan-preview"></div><button type="button" id="ai-plan-apply" disabled>确认填入原表单</button>';
         document.body.append(dialog);
+        window.addEventListener('plan-day-changed', () => {
+            dayRevision++; invalidate(); $('ai-plan-input').value = '';
+            if (activeController) activeController.abort();
+            activeController = null; $('ai-plan-input').disabled = false; $('ai-plan-generate').disabled = false;
+            status('已进入新的一天，请重新填写今天的计划。');
+            if (dialog.open) dialog.close();
+        });
         entry.addEventListener('click',()=>{previousFocus=document.activeElement;dialog.showModal();$('ai-plan-input').focus();});
         $('ai-plan-close').addEventListener('click',()=>dialog.close());
         dialog.addEventListener('close',()=>previousFocus?.focus());
