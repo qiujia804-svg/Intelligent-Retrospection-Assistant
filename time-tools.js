@@ -65,7 +65,6 @@ window.TimeTools = (() => {
         for (const [view,label] of [['pomodoro','番茄时间'],['personal',names.personal],['external',names.external]]) {
             const button=document.createElement('button');button.type='button';button.dataset.timeView=view;button.textContent=label;nav.appendChild(button);
         }
-        const back = document.createElement('button');back.id='time-view-back';back.type='button';back.textContent='← 返回今日规划';nav.after(back);
         const timerPanel=document.createElement('div');timerPanel.id='pomodoro-page';timerPanel.hidden=true;form.before(timerPanel);
         timerPanel.appendChild(host.querySelector('[aria-label="番茄时间"]'));
         window.addEventListener('message',event=>{
@@ -92,7 +91,7 @@ window.TimeTools = (() => {
             const scoped=view==='personal'||view==='external';
             activeView=view;
             selected=scoped?view:'all';
-            form.hidden=view==='pomodoro';timerPanel.hidden=view!=='pomodoro';back.hidden=view==='plan';
+            form.hidden=view==='pomodoro';timerPanel.hidden=view!=='pomodoro';
             form.querySelector('.quadrants').hidden=scoped;
             form.querySelector('.time-management > h2').textContent=scoped ? names[view] : '时间管理';
             plan.querySelector(':scope > h2').textContent=view==='plan'?'今日规划（四象限法则）':view==='pomodoro'?'番茄时间':names[view];
@@ -104,7 +103,6 @@ window.TimeTools = (() => {
         }
         nav.querySelectorAll('[data-time-view]').forEach(b=>b.onclick=()=>open(b.dataset.timeView));
         entry.addEventListener('click',()=>open('plan'),true);
-        back.onclick=()=>open('plan');
         window.addEventListener('resize',syncMobile);
         open(read('ra_time_page_view','plan'));
     }
