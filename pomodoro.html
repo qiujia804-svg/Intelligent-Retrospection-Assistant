@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+
+<meta charset="UTF-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>1024 番茄时钟 · Pomodoro</title>
+<meta content="WorkBuddy 1024 造物挑战参赛作品：单文件番茄时钟，专注 25 分钟、短休 5 分钟、长休 15 分钟，四番茄一组自动长休。" name="description">
+<link href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🍅</text></svg>" rel="icon">
+<style>
+:root{
+  --bg:#0a0e14; --panel:#0f1520; --panel2:#131a26; --line:#1e2a3a;
+  --text:#e6edf3; --dim:#8b98a9; --faint:#54626f;
+  --focus:#f97316; --short:#34d399; --long:#60a5fa;
+  --accent:var(--focus);
+  --mono:'JetBrains Mono','Cascadia Code','SF Mono',Consolas,'Liberation Mono',monospace;
+  --sans:'PingFang SC','Microsoft YaHei','Segoe UI',system-ui,sans-serif;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{
+  background:var(--bg); color:var(--text); font-family:var(--sans);
+  min-height:100vh; display:flex; flex-direction:column; align-items:center;
+  padding:28px 16px 48px; position:relative; overflow-x:hidden;
+}
+#rain{position:fixed; inset:0; z-index:0; pointer-events:none;}
+.wrap{position:relative; z-index:1; width:100%; max-width:520px;}
+header{display:flex; align-items:baseline; gap:10px; margin-bottom:6px; flex-wrap:wrap;}
+.logo{font-family:var(--mono); font-size:20px; font-weight:700; letter-spacing:.5px;}
+.logo b{color:var(--focus);}
+.badge{font-family:var(--mono); font-size:11px; color:var(--dim); border:1px solid var(--line); border-radius:999px; padding:2px 10px;}
+.tagline{font-family:var(--mono); font-size:12px; color:var(--faint); margin-bottom:22px;}
+.tagline .kw{color:#c792ea;} .tagline .fn{color:#82aaff;} .tagline .num{color:#f78c6c;}
+.card{background:linear-gradient(180deg,var(--panel),var(--panel2)); border:1px solid var(--line); border-radius:16px; padding:22px; margin-bottom:16px; box-shadow:0 10px 40px rgba(0,0,0,.35);}
+/* 模式页签 */
+.tabs{display:flex; gap:8px; margin-bottom:20px;}
+.tab{flex:1; font-family:var(--mono); font-size:13px; padding:9px 0; text-align:center; color:var(--dim); background:transparent; border:1px solid var(--line); border-radius:10px; cursor:pointer; transition:.15s;}
+.tab:hover{color:var(--text);}
+.tab.on{color:#0a0e14; background:var(--accent); border-color:var(--accent); font-weight:700;}
+/* 圆环计时器 */
+.ringbox{position:relative; width:260px; height:260px; margin:0 auto 6px;}
+svg.ring{transform:rotate(-90deg); width:100%; height:100%;}
+.ring .track{fill:none; stroke:var(--line); stroke-width:10;}
+.ring .bar{fill:none; stroke:var(--accent); stroke-width:10; stroke-linecap:round; transition:stroke-dashoffset .25s linear, stroke .3s;}
+.center{position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px;}
+.time{font-family:var(--mono); font-size:52px; font-weight:700; letter-spacing:2px; font-variant-numeric:tabular-nums;}
+.phase{font-family:var(--mono); font-size:12px; color:var(--dim);}
+/* 控制按钮 */
+.btns{display:flex; gap:10px; margin:14px 0 4px;}
+.btn{flex:1; font-family:var(--mono); font-size:14px; padding:11px 0; border-radius:10px; border:1px solid var(--line); background:var(--panel2); color:var(--text); cursor:pointer; transition:.15s;}
+.btn:hover{border-color:var(--dim);}
+.btn.primary{background:var(--accent); border-color:var(--accent); color:#0a0e14; font-weight:700;}
+.btn.primary:hover{filter:brightness(1.1);}
+.meta{display:flex; align-items:center; justify-content:space-between; margin-top:14px; font-family:var(--mono); font-size:12px; color:var(--dim);}
+.dots{display:flex; gap:6px;}
+.dot{width:9px; height:9px; border-radius:50%; background:var(--line); transition:.2s;}
+.dot.on{background:var(--accent); box-shadow:0 0 8px var(--accent);}
+/* 任务清单 */
+.tasks h3, .set h3{font-family:var(--mono); font-size:13px; color:var(--dim); font-weight:600; margin-bottom:12px; display:flex; justify-content:space-between; align-items:center;}
+.addrow{display:flex; gap:8px; margin-bottom:12px;}
+.addrow input{flex:1; font-family:var(--sans); font-size:14px; padding:9px 12px; color:var(--text); background:#0b1017; border:1px solid var(--line); border-radius:10px; outline:none;}
+.addrow input:focus{border-color:var(--accent);}
+.addrow button{font-family:var(--mono); font-size:13px; padding:0 16px; border:1px solid var(--line); border-radius:10px; background:var(--panel2); color:var(--text); cursor:pointer;}
+.addrow button:hover{border-color:var(--accent); color:var(--accent);}
+ul.tk{list-style:none;}
+ul.tk li{display:flex; align-items:center; gap:10px; padding:9px 10px; border:1px solid transparent; border-radius:10px; cursor:pointer; font-size:14px;}
+ul.tk li:hover{background:#0b1017;}
+ul.tk li.on{border-color:var(--accent); background:#0b1017;}
+ul.tk li .t{flex:1;}
+ul.tk li.done .t{text-decoration:line-through; color:var(--faint);}
+ul.tk li .x{font-family:var(--mono); color:var(--faint); padding:0 4px; visibility:hidden;}
+ul.tk li:hover .x{visibility:visible;}
+ul.tk li .x:hover{color:#f87171;}
+.empty{font-family:var(--mono); font-size:12px; color:var(--faint); padding:6px 2px;}
+/* 设置 */
+.setgrid{display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; margin-bottom:14px;}
+.fld{display:flex; flex-direction:column; gap:6px;}
+.fld label{font-family:var(--mono); font-size:11px; color:var(--dim);}
+.fld input{font-family:var(--mono); font-size:15px; padding:8px 10px; color:var(--text); background:#0b1017; border:1px solid var(--line); border-radius:8px; outline:none; width:100%;}
+.fld input:focus{border-color:var(--accent);}
+.chk{display:flex; align-items:center; gap:8px; font-family:var(--mono); font-size:12px; color:var(--dim); cursor:pointer; margin-bottom:8px;}
+.chk input{accent-color:var(--accent);}
+footer{margin-top:4px; font-family:var(--mono); font-size:11px; color:var(--faint); text-align:center; line-height:2;}
+footer kbd{font-family:var(--mono); border:1px solid var(--line); border-bottom-width:2px; border-radius:5px; padding:1px 6px; color:var(--dim); background:var(--panel2);}
+@media (max-width:420px){ .ringbox{width:220px;height:220px;} .time{font-size:44px;} }
+</style>
+<style>.addrow input{min-width:0}.task-check{accent-color:var(--accent)}ul.tk li .x{visibility:visible;background:none;border:0;cursor:pointer}button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline-offset:3px}button:disabled{opacity:.5;cursor:not-allowed}#notice{color:var(--accent);font-size:13px;line-height:1.7;margin-top:12px}#notify-enable{width:100%;margin-top:6px}</style></head>
+<body>
+<canvas id="rain"></canvas>
+<div class="wrap">
+  <header>
+    <div class="logo">🍅 <b>pomodoro</b>.1024</div>
+    <span class="badge">2^10 · 程序员节</span>
+  </header>
+  <div class="tagline"><span class="kw">while</span> (!done) { <span class="fn">focus</span>(); <span class="fn">rest</span>(); } <span class="num">// 25 + 5</span></div>
+
+  <!-- 计时器 -->
+  <div class="card">
+    <div class="tabs">
+      <button class="tab on" data-mode="focus">专注 25</button>
+      <button class="tab" data-mode="short">短休 5</button>
+      <button class="tab" data-mode="long">长休 15</button>
+    </div>
+    <div class="ringbox">
+      <svg class="ring" viewBox="0 0 260 260">
+        <circle class="track" cx="130" cy="130" r="118"></circle>
+        <circle class="bar" cx="130" cy="130" id="bar" r="118"></circle>
+      </svg>
+      <div class="center">
+        <div class="time" id="time">25:00</div>
+        <div class="phase" id="phase">第 1 个番茄 · 本组 0/4</div>
+      </div>
+    </div>
+    <div class="btns">
+      <button class="btn primary" id="toggle">开始</button>
+      <button class="btn" id="reset">重置</button>
+      <button class="btn" id="skip">跳过</button>
+    </div>
+    <div class="meta">
+      <div class="dots" id="dots"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="dot"></span></div>
+      <div id="stat">今日 0 个番茄 · 0 min</div>
+    </div>
+  </div>
+
+  <!-- 任务清单 -->
+  <div class="card tasks">
+    <h3>任务清单 <span id="tkcount" style="color:var(--faint)"></span></h3>
+    <div class="addrow">
+      <input id="tkinput" maxlength="60" placeholder="这个番茄要做什么？回车添加">
+      <button id="tkadd">添加</button>
+    </div>
+    <ul class="tk" id="tklist"></ul>
+    <div class="empty" id="tkempty">// 还没有任务，先加一个吧</div>
+  </div>
+
+  <!-- 设置 -->
+  <div class="card set">
+    <h3>设置 <span style="color:var(--faint)">单位：分钟</span></h3>
+    <div class="setgrid">
+      <div class="fld"><label>专注</label><input id="d_focus" max="180" min="1" type="number"></div>
+      <div class="fld"><label>短休</label><input id="d_short" max="180" min="1" type="number"></div>
+      <div class="fld"><label>长休</label><input id="d_long" max="180" min="1" type="number"></div>
+    </div>
+    <label class="chk"><input id="autoStart" type="checkbox"> 阶段结束后自动开始下一阶段</label>
+    <label class="chk"><input id="sound" type="checkbox"> 完成提示音</label><label class="chk"><input id="notify" type="checkbox"> 系统通知提醒</label><button type="button" class="btn" id="notify-enable">开启通知提醒</button><p id="reminder-status" role="status" style="font-size:12px;color:var(--dim);line-height:1.8;margin-top:10px">到时会显示页面提醒。开启通知后，切换到其他页面也可提醒；关闭网站或浏览器后无法保证番茄钟响铃。</p>
+  </div>
+
+  <footer>
+    <kbd>空格</kbd> 开始/暂停 · <kbd>R</kbd> 重置 · <kbd>S</kbd> 跳过 · <kbd>N</kbd> 聚焦任务框 · 双击任务标记完成<br>
+    计时和任务自动保存在此浏览器
+  </footer>
+</div>
+
+
+<script src="pomodoro.js"></script></body>
+</html>
