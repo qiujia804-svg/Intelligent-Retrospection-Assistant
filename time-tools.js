@@ -66,24 +66,30 @@ window.TimeTools = (() => {
         return datasets;
     }
     function calendar() {
+        const hour = Number(document.querySelector('input[name="tt-reminder-hour"]:checked')?.value);
+        if (hour !== 5 && hour !== 9) return;
         const now = new Date();
         const stamp = now.toISOString().replace(/[-:]/g,'').replace(/\.\d{3}/,'');
-        const events = [5,9].map(hour => {
-            const start = new Date(now); start.setHours(hour,0,0,0);
-            if (start <= now) start.setDate(start.getDate()+1);
-            const date = day(start).replace(/-/g,'');
+        const events = [hour].map(hour => {
+            // Encode the Beijing wall-clock time as an explicit UTC instant.
+            // Floating DTSTART was interpreted as UTC by some calendar importers (+8 hours).
+            const beijing = new Date(now.getTime() + 8 * 60 * 60 * 1000);
+            beijing.setUTCHours(hour,0,0,0);
+            const start = new Date(beijing.getTime() - 8 * 60 * 60 * 1000);
+            if (start <= now) start.setUTCDate(start.getUTCDate()+1);
+            const instant = start.toISOString().replace(/[-:]/g,'').replace(/\.\d{3}/,'');
             const hh=String(hour).padStart(2,'0');
-            return ['BEGIN:VEVENT',`UID:deepmind-daily-${hh}-v1@deepmind.work`,`DTSTAMP:${stamp}`,`DTSTART:${date}T${hh}0000`,`DTEND:${date}T${hh}0500`,'RRULE:FREQ=DAILY',`SUMMARY:智能复盘助手·${hour===5?'晨间规划':'工作规划'}`,'DESCRIPTION:打开 https://www.deepmind.work/ 安排今天的时间','BEGIN:VALARM','TRIGGER:PT0S','ACTION:DISPLAY','DESCRIPTION:该安排今天的时间了','END:VALARM','END:VEVENT'].join('\r\n');
+            return ['BEGIN:VEVENT',`UID:deepmind-daily-${hh}-v1@deepmind.work`,`DTSTAMP:${stamp}`,`DTSTART:${instant}`,'RRULE:FREQ=DAILY',`SUMMARY:智能复盘助手·早上${hour}点提醒`,'DESCRIPTION:北京时间到点提醒。打开 https://www.deepmind.work/ 安排今天的时间','BEGIN:VALARM','TRIGGER:PT0S','ACTION:DISPLAY','DESCRIPTION:该安排今天的时间了','END:VALARM','END:VEVENT'].join('\r\n');
         });
-        const content=['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//Deepmind//Daily Reminders//ZH','CALSCALE:GREGORIAN',...events,'END:VCALENDAR',''].join('\r\n');
+        const content=['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//Deepmind//Daily Reminders//ZH','CALSCALE:GREGORIAN','X-WR-TIMEZONE:Asia/Shanghai',...events,'END:VCALENDAR',''].join('\r\n');
         // iCalendar lines are folded at UTF-8 byte boundaries, not JS character counts.
         const folded=content.split('\r\n').map(line=>{
             let parts=[],part='',bytes=0;
             for(const ch of line){const n=new TextEncoder().encode(ch).length;if(bytes+n>74){parts.push(part);part=' ';bytes=1;}part+=ch;bytes+=n;}parts.push(part);return parts.join('\r\n');
         }).join('\r\n');
         const url=URL.createObjectURL(new Blob([folded],{type:'text/calendar;charset=utf-8'}));
-        const a=document.createElement('a');a.href=url;a.download='智能复盘-每日提醒.ics';a.click();setTimeout(()=>URL.revokeObjectURL(url),10000);
-        document.getElementById('tt-calendar-status').textContent='日历文件已下载。请打开并导入系统日历，确认两项每日重复事件均启用提醒。';
+        const a=document.createElement('a');a.href=url;a.download=`智能复盘-早上${hour}点提醒.ics`;a.click();setTimeout(()=>URL.revokeObjectURL(url),10000);
+        document.getElementById('tt-calendar-status').textContent=`已下载每天早上${hour}:00（北京时间）的提醒，请导入系统日历并开启通知。如已导入旧提醒或更换时间，请先在日历中删除旧的重复提醒。`;
     }
     function save() { try { localStorage.setItem(key,JSON.stringify(state)); } catch (_) { host.querySelector('#tt-pomo-status').textContent='浏览器存储不可用，计时无法在刷新后恢复。'; } }
     function remaining() { return state.end ? Math.max(0,state.end-Date.now()) : state.remaining; }
@@ -117,10 +123,14 @@ window.TimeTools = (() => {
         const fallback={mode:'focus',durations:{focus:25,short:5,long:15},remaining:1500000,end:null,count:0,countDate:day(),sound:true,task:''};
         state=read(key,fallback);
         if(!modeNames[state.mode] || !state.durations || !['focus','short','long'].every(k=>Number.isFinite(state.durations[k])&&state.durations[k]>=1&&state.durations[k]<=180) || !Number.isFinite(state.remaining) || state.remaining<0 || (state.end!==null&&!Number.isFinite(state.end)) || !Number.isInteger(state.count)||state.count<0)state=fallback;
-        host.innerHTML=`<section class="tt-card" aria-label="每日提醒"><h3>⏰ 每日定时提醒</h3><p>每天 05:00 晨间规划 · 09:00 工作规划</p><button type="button" id="tt-calendar" class="tt-primary">添加到系统日历</button><p class="tt-help" id="tt-calendar-status" role="status">导入日历并开启系统通知后，关闭网站也可提醒。按设备本地时间执行；停止提醒请在日历中删除这两项重复事件。</p></section>
+        host.innerHTML=`<section class="tt-card" aria-label="每日提醒"></section>
         <section class="tt-card" aria-label="时间板块"><h3>分开管理你的时间</h3><div class="tt-blocks"><div class="tt-block">${names.personal}<p class="tt-help">05:00–08:30 · 19:00–22:00</p><strong id="tt-rate-personal">0%</strong><span id="tt-minutes-personal"></span></div><div class="tt-block">${names.external}<p class="tt-help">09:00–18:00</p><strong id="tt-rate-external">0%</strong><span id="tt-minutes-external"></span></div></div><p class="tt-help">达成率 = 本板块工作/学习时长 ÷ 本板块总时长，两类分别计算。生活、娱乐和未安排时段不计为工作/学习；每行最多按该时间段计入。</p><div class="tt-row" role="group" aria-label="显示时间板块"><button type="button" data-block="personal">你能掌控</button><button type="button" data-block="external">别人掌控</button><button type="button" data-block="other">其他时段</button><button type="button" data-block="all">全部时段</button></div><p class="tt-help">下方时间表按所选板块显示；原有饼图仍展示全天分布。其他时段的记录保留。</p></section>
         <section class="tt-card" aria-label="番茄时间"><h3>🍅 番茄时间</h3><div class="tt-row"><button type="button" data-pomo="focus">专注</button><button type="button" data-pomo="short">短休</button><button type="button" data-pomo="long">长休</button></div><p><input id="tt-task" type="text" maxlength="120" placeholder="这次专注要做什么？" aria-label="本次专注任务"></p><div class="tt-timer" id="tt-clock" role="timer">25:00</div><div class="tt-row"><button type="button" class="tt-primary" id="tt-toggle">开始</button><button type="button" id="tt-reset">重置当前阶段</button><span id="tt-count"></span></div><details><summary>计时设置</summary><div class="tt-row"><label>专注 <input id="tt-focus" type="number" min="1" max="180"> 分钟</label><label>短休 <input id="tt-short" type="number" min="1" max="180"> 分钟</label><label>长休 <input id="tt-long" type="number" min="1" max="180"> 分钟</label><label><input id="tt-sound" type="checkbox">提示音</label></div></details><p id="tt-pomo-status" role="status" class="tt-help">每完成4次专注进入长休。刷新或重进会恢复计时；阶段结束后手动开始下一阶段。关闭网站期间无法保证到点响铃，重进时会显示结束状态。</p></section>`;
         const reminder = host.querySelector('[aria-label="每日提醒"]');
+        reminder.innerHTML=`<h3>⏰ 每日定时提醒</h3><p>选择适合你的一个提醒时间（北京时间）</p><p><label><input type="radio" name="tt-reminder-hour" value="5"> 早上5:00 · 我有早起习惯</label></p><p><label><input type="radio" name="tt-reminder-hour" value="9"> 早上9:00 · 我不习惯早起</label></p><button type="button" id="tt-calendar" class="tt-primary">添加所选提醒到系统日历</button><p class="tt-help" id="tt-calendar-status" role="status">只添加所选的一条每日提醒。导入日历并开启系统通知后，关闭网站也可提醒。更换时间或停止提醒，请在日历中删除旧的重复提醒。</p>`;
+        const chosenHour = read('ra_daily_reminder_hour',9) === 5 ? 5 : 9;
+        reminder.querySelector(`input[value="${chosenHour}"]`).checked=true;
+        reminder.querySelectorAll('input[name="tt-reminder-hour"]').forEach(input=>input.onchange=()=>{try{localStorage.setItem('ra_daily_reminder_hour',input.value);}catch(_){}});
         document.getElementById('daily-reminder-tools').appendChild(reminder);
         reminder.querySelector('#tt-calendar').onclick=calendar;
         const select=()=>{filterRows();host.querySelectorAll('[data-block]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.block===selected)));};
