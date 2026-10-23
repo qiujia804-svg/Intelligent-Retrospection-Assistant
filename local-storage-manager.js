@@ -304,10 +304,13 @@
                         let taskItem = taskItems[index];
                         if (!taskItem && tasks.length > taskItems.length) {
                             // 如果需要更多任务项，添加新的任务项
-                            const addBtn = taskList.querySelector('.add-task-btn');
-                            if (addBtn) {
-                                addBtn.click();
-                                taskItem = taskList.querySelectorAll('.task-item')[index];
+                            const template = taskList.querySelector('.task-item');
+                            if (template) {
+                                taskItem = template.cloneNode(true);
+                                taskItem.querySelectorAll('input,textarea').forEach(field => { field.value = ''; });
+                                taskList.appendChild(taskItem);
+                                setupAddTaskButton(taskItem.querySelector('.add-task-btn'));
+                                setupRemoveTaskButton(taskItem.querySelector('.remove-task-btn'));
                             }
                         }
                         

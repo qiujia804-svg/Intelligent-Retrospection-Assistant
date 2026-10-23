@@ -4627,29 +4627,28 @@ function initDataInsight() {
     console.log('【初始化】月份选择器:', insightMonthInput ? '找到' : '未找到');
     console.log('【初始化】刷新按钮:', refreshInsightBtn ? '找到' : '未找到');
 
-    if (!insightMonthInput || !refreshInsightBtn) {
+    if (!document.getElementById('radar-chart') || !document.getElementById('bar-chart')) {
         console.log('数据洞察模块元素未找到，跳过初始化');
         return;
     }
 
     // 设置默认月份为当月
     const now = new Date();
-    const currentMonth = now.toISOString().substring(0, 7);
-    insightMonthInput.value = currentMonth;
+    const currentMonth = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0');
+    if (insightMonthInput) insightMonthInput.value = currentMonth;
     console.log('【初始化】设置默认月份:', currentMonth);
 
     // 绑定事件
-    insightMonthInput.addEventListener('change', () => {
+    if (insightMonthInput) insightMonthInput.addEventListener('change', () => {
         forceInitChartsAndUpdate();
     });
 
-    refreshInsightBtn.addEventListener('click', () => {
+    if (refreshInsightBtn) refreshInsightBtn.addEventListener('click', () => {
         forceInitChartsAndUpdate();
     });
 
     // 【关键修复】监听历史记录标签点击，使用requestAnimationFrame确保渲染完成
-    const historyTabBtn = document.querySelector('[data-tab="history-content"]');
-    if (historyTabBtn) {
+    document.querySelectorAll('[data-tab="history-content"]').forEach(historyTabBtn => {
         historyTabBtn.addEventListener('click', () => {
             console.log('【图表】用户点击历史记录标签');
             // 使用多重延迟确保Tab完全显示
@@ -4660,7 +4659,7 @@ function initDataInsight() {
                 }, 300);
             });
         });
-    }
+    });
 
     // 检查当前是否已在历史记录标签
     const historyContent = document.getElementById('history-content');
@@ -4673,6 +4672,7 @@ function initDataInsight() {
     }
 
     console.log('【初始化】数据洞察模块初始化完成');
+    updateDataInsight();
 }
 
 // 【新增】强制初始化图表并更新数据
@@ -4698,9 +4698,7 @@ function forceInitChartsAndUpdate() {
 
     console.log('【强制初始化】初始化结果:', success ? '成功' : '失败');
 
-    if (success) {
-        updateDataInsight();
-    }
+    updateDataInsight();
 }
 
 // 确保图表已初始化
@@ -4711,8 +4709,7 @@ function ensureChartsInitialized() {
     }
 
     console.log('【图表】首次初始化ECharts图表...');
-    initInsightCharts();
-    chartsInitialized = true;
+    chartsInitialized = initInsightCharts();
 }
 
 // 【真实数据抓取】从复盘记录中提取时间数据 - 只允许读取真实数据，严禁伪造
@@ -5019,10 +5016,10 @@ function initInsightCharts() {
         console.error('【图表初始化】ECharts库未加载！尝试重新加载...');
         // 动态加载ECharts
         const script = document.createElement('script');
-        script.src = 'https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js';
+        script.src = 'vendor/echarts.min.js';
         script.onload = () => {
             console.log('【图表初始化】ECharts动态加载成功，重新初始化...');
-            setTimeout(initInsightCharts, 100);
+            setTimeout(forceInitChartsAndUpdate, 100);
         };
         document.head.appendChild(script);
         return false;
@@ -5138,7 +5135,7 @@ function updateDataInsight() {
         ensureChartsInitialized();
     }
 
-    const targetMonth = insightMonthInput ? insightMonthInput.value : new Date().toISOString().substring(0, 7);
+    const targetMonth = insightMonthInput ? insightMonthInput.value : new Date().getFullYear() + '-' + String(new Date().getMonth() + 1).padStart(2, '0');
     console.log('【更新】目标月份:', targetMonth);
 
     // 获取复盘数据
@@ -5159,25 +5156,15 @@ function updateDataInsight() {
     };
     console.log('12月抓取结果汇总:', monthlyStats);
 
-    // 【数据真实性检查】若无真实数据，使用示例数据
+    // 无记录时展示真实的空状态，不填入示例数据。
     let hasRealData = Object.keys(projectData).length > 0 && totalMinutes > 0;
 
     if (!hasRealData) {
-        console.log('【更新】⚠️ 暂无真实数据，使用示例数据生成图表');
-        
-        // 使用示例数据
-        projectData = {
-            '看书': 155,
-            '学习AI': 480,
-            '学习营销': 240
-        };
-        totalMinutes = Object.values(projectData).reduce((sum, val) => sum + val, 0);
-        reviewCount = 5;
-        hasRealData = true;
+        updateInsightCardsNoData();
     }
 
     // 更新洞察卡片
-    updateInsightCards(projectData, totalMinutes, reviewCount);
+    if (hasRealData) updateInsightCards(projectData, totalMinutes, reviewCount);
 
     // 【关键】确保容器可见并有正确尺寸
     const radarContainer = document.getElementById('radar-chart');
@@ -5266,7 +5253,7 @@ function updateMonthlyInvestment() {
     }
     
     // 获取目标月份
-    const targetMonth = insightMonthInput ? insightMonthInput.value : new Date().toISOString().substring(0, 7);
+    const targetMonth = insightMonthInput ? insightMonthInput.value : new Date().getFullYear() + '-' + String(new Date().getMonth() + 1).padStart(2, '0');
     console.log('【自动同步】目标月份:', targetMonth);
     
     // 获取所有复盘数据
@@ -5445,9 +5432,8 @@ function updateRadarChart(projectData) {
                     lineHeight: 22
                 }
             },
-            radar: { indicator: [] },
             series: []
-        });
+        }, true);
         return;
     }
 
@@ -5592,9 +5578,8 @@ function updateBarChart(projectData) {
                     lineHeight: 22
                 }
             },
-            xAxis: { data: [] },
             series: []
-        });
+        }, true);
         return;
     }
 
@@ -5711,25 +5696,13 @@ function updateBarChart(projectData) {
 }
 
 // 在init函数中调用数据洞察初始化
-const originalInit = init;
-init = function() {
-    originalInit();
+window.addEventListener('DOMContentLoaded', function() {
     // 延迟初始化数据洞察，确保DOM加载完成
     setTimeout(initDataInsight, 100);
     // 初始化客服反馈模块
     setTimeout(initFeedbackWidget, 200);
     
-    // 为历史记录标签添加点击事件，确保图表能被正确初始化
-    const historyTab = document.querySelector('[data-tab="history-content"]');
-    if (historyTab) {
-        historyTab.addEventListener('click', function() {
-            // 延迟初始化图表，确保标签页已切换完成
-            setTimeout(() => {
-                forceInitChartsAndUpdate();
-            }, 300);
-        });
-    }
-};
+});
 
 // ========================================
 // 客服反馈模块 - 右下角悬浮按钮
@@ -6187,6 +6160,10 @@ function checkAndExtendMembership() {
  * 显示通知
  */
 function showNotification(title, message, type = 'info', duration = 5000) {
+    // 兼容原有的showNotification(message, type)，不把success当作正文显示。
+    if (arguments.length <= 2 && ['success', 'warning', 'error', 'info'].includes(message)) {
+        type = message; message = '';
+    }
     // 创建通知元素
     const notification = document.createElement('div');
     notification.className = `challenge-notification ${type}`;
@@ -6195,7 +6172,7 @@ function showNotification(title, message, type = 'info', duration = 5000) {
             <span class="notification-icon">${type === 'warning' ? '⚠️' : type === 'success' ? '✅' : 'ℹ️'}</span>
             <span class="notification-title">${title}</span>
         </div>
-        <div class="notification-body">${message}</div>
+        ${message ? `<div class="notification-body">${message}</div>` : ''}
     `;
     
     // 添加样式
