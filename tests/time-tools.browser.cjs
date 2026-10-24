@@ -66,7 +66,7 @@ const root=path.resolve(__dirname,'..');
   const capped=await p.evaluate(()=>{const b=TimeTools.emptyBlocks();TimeTools.addSlot(b,'08:00-08:30',180,true);TimeTools.addSlot(b,'08:30-09:00',30,true);return b;});
   assert.equal(capped.personal.workMinutes,0);assert.equal(capped.other.workMinutes,60);assert.equal(capped.external.workMinutes,0);
   const legacy=await p.evaluate(()=>TimeTools.trendDatasets([{date:'2026-10-22',goalCompletion:{percentage:35}}]));
-  assert.equal(legacy.length,3);assert.equal(legacy[2].data[5],35,'historical aggregate remains visible without inventing split rates');
+  assert.equal(legacy.length,2,'only personal and work curves remain; old records are not reclassified');
   await p.setViewportSize({width:390,height:844});
   await p.evaluate(()=>{document.querySelectorAll('.tab-content').forEach(e=>e.classList.remove('active'));document.getElementById('plan-content').classList.add('active');});
   const overflows=await p.locator('#pomodoro-page').evaluate(e=>e.scrollWidth>e.clientWidth+1);assert.equal(overflows,false,'mobile tools fit viewport');

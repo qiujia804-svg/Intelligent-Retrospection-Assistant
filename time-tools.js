@@ -119,23 +119,13 @@ window.TimeTools = (() => {
             if (!Array.isArray(list)) continue;
             for (const record of list) if (record.timeStats?.timeBlocks) records.set(String(record.date).split('T')[0], record.timeStats.timeBlocks);
         }
-        if (!records.size) return [];
         const datasets = ['personal','external'].map((k,index)=>({ label:names[k], data:Array.from({length:7},(_,i)=>{
             const d=new Date(); d.setDate(d.getDate()-6+i);
             const block = records.get(day(d))?.[k];
             if (block?.recordedMinutes === 0 && block?.taskCount === 0) return null;
             return block?.rate ?? null;
-        }), borderColor:index?'#20aa91':'#667eea', backgroundColor:'transparent', borderWidth:3, pointRadius:4, pointBackgroundColor:'#fff', pointBorderWidth:2, tension:0.25, spanGaps:true }));
+        }), borderColor:index?'#20aa91':'#667eea', backgroundColor:'transparent', borderWidth:3, pointRadius:5, pointHoverRadius:7, pointBackgroundColor:'#fff', pointBorderWidth:2, tension:0.35, cubicInterpolationMode:'monotone', spanGaps:true }));
         datasets[0].label='自主时间';datasets[1].label='工作时间';
-        const legacy = Array.from({length:7},(_,i)=>{
-            const d=new Date();d.setDate(d.getDate()-6+i);const date=day(d);
-            if(records.has(date))return null;
-            const r=reviews.find(r=>String(r.date).split('T')[0]===date);
-            if(!r)return null;
-            const value=typeof r.goalCompletion==='object'?r.goalCompletion?.percentage:parseFloat(r.goalCompletion);
-            return Number.isFinite(Number(value))?Math.max(0,Math.min(100,Number(value))):null;
-        });
-        if(legacy.some(v=>v!==null))datasets.push({label:'历史全天达成率（旧记录）',data:legacy,borderColor:'#94a3b8',borderDash:[5,5],pointRadius:4,spanGaps:true});
         return datasets;
     }
     function calendar() {
