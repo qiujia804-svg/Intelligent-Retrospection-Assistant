@@ -19,11 +19,13 @@
 #daily-reminder-tools p { margin: 8px 0; line-height: 1.6; }
 #daily-reminder-tools button { border: 1px solid #ccd5f5; border-radius: 9px; background: #667eea; color: white; padding: 9px 14px; cursor: pointer; }
 #daily-reminder-tools .tt-help { font-size: 13px; color: #64748b; }
-#time-view-nav { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; margin: 14px 0; }
+#time-view-nav { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 12px; align-items: stretch; margin: 14px 0; width: 100%; }
+#time-view-nav > button { width: 100%; min-width: 0; box-sizing: border-box; white-space: normal; overflow-wrap: anywhere; display: flex; align-items: center; justify-content: center; text-align: center; line-height: 1.5; }
 #time-view-nav .ai-plan-entry { margin: 0; }
 #time-view-nav [data-time-view] { padding: 10px 15px; border: 1px solid #cdd5f5; border-radius: 8px; background: white; color: #5263ca; cursor: pointer; font-size: 15px; }
 #time-view-nav [aria-pressed="true"] { background: #667eea; color: white; }
-#plan-form[hidden], #plan-form .quadrants[hidden], #pomodoro-page[hidden], #time-tools[hidden] { display: none !important; }
+#plan-form[hidden], #plan-form .quadrants[hidden], #plan-form .time-management[hidden], #pomodoro-page[hidden], #time-tools[hidden] { display: none !important; }
 #tt-active-rate { text-align: center; color: #5263ca; margin: 0 0 16px; }
 #plan-content .mtb-bar[hidden] { display: none !important; }
 @media(max-width:600px) { :is(#time-tools, #pomodoro-page) .tt-blocks { grid-template-columns: 1fr; } :is(#time-tools, #pomodoro-page) .tt-card { padding: 12px; } }
+@media(max-width:600px) { #time-view-nav { gap: 6px; } #time-view-nav > button, #time-view-nav .ai-plan-entry { font-size: 12px; padding: 8px 4px; } }

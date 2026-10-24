@@ -3,7 +3,7 @@ window.TimeTools = (() => {
     'use strict';
 
     const names = { personal: '你能掌控的时间板块', external: '别人掌控你的时间板块', other: '其他时段' };
-    const ranges = { personal: [[300,480]], external: [[540,1080]], other: [[480,540],[1080,1320]] };
+    const ranges = { personal: [[300,480],[1140,1320]], external: [[540,1080]], other: [[480,540],[1080,1140]] };
 
     let host, selected = 'all';
     const read = (k, fallback) => { try { return JSON.parse(localStorage.getItem(k)) || fallback; } catch (_) { return fallback; } };
@@ -80,7 +80,11 @@ window.TimeTools = (() => {
         function syncMobile() {
             const bar=plan.querySelector('.mtb-bar');
             if (!bar) return;
-            bar.hidden=activeView!=='plan';
+            bar.hidden=true;
+            if (activeView==='plan') {
+                const quadrantButton=bar.querySelector('.mtb-item');
+                if (quadrantButton && !quadrantButton.classList.contains('active')) quadrantButton.click();
+            }
             if (activeView==='personal'||activeView==='external') {
                 const timeButton=bar.querySelectorAll('.mtb-item')[1];
                 if (timeButton && !timeButton.classList.contains('active')) timeButton.click();
@@ -93,6 +97,7 @@ window.TimeTools = (() => {
             selected=scoped?view:'all';
             form.hidden=view==='pomodoro';timerPanel.hidden=view!=='pomodoro';
             form.querySelector('.quadrants').hidden=scoped;
+            form.querySelector('.time-management').hidden=!scoped;
             form.querySelector('.time-management > h2').textContent=scoped ? names[view] : '时间管理';
             plan.querySelector(':scope > h2').textContent=view==='plan'?'今日规划（四象限法则）':view==='pomodoro'?'番茄时间':names[view];
             nav.querySelectorAll('[data-time-view]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.timeView===view)));
@@ -160,7 +165,7 @@ window.TimeTools = (() => {
         host=document.getElementById('time-tools');if(!host)return;
         selected='all';
         host.innerHTML=`<section class="tt-card" aria-label="每日提醒"></section>
-        <section class="tt-card" aria-label="时间板块"><h3>分开管理你的时间</h3><div class="tt-blocks"><div class="tt-block">${names.personal}<p class="tt-help">05:00–08:00</p><strong id="tt-rate-personal">0%</strong><span id="tt-minutes-personal"></span></div><div class="tt-block">${names.external}<p class="tt-help">09:00–18:00</p><strong id="tt-rate-external">0%</strong><span id="tt-minutes-external"></span></div></div><p class="tt-help">达成率 = 本板块工作/学习时长 ÷ 本板块总时长，两类分别计算。生活、娱乐和未安排时段不计为工作/学习；每行最多按该时间段计入。</p><div class="tt-row" role="group" aria-label="显示时间板块"><button type="button" data-block="personal">你能掌控</button><button type="button" data-block="external">别人掌控</button><button type="button" data-block="other">其他时段</button><button type="button" data-block="all">全部时段</button></div><p class="tt-help">下方时间表按所选板块显示；原有饼图仍展示全天分布。其他时段的记录保留。</p></section>
+        <section class="tt-card" aria-label="时间板块"><h3>分开管理你的时间</h3><div class="tt-blocks"><div class="tt-block">${names.personal}<p class="tt-help">05:00–08:00 · 19:00–22:00</p><strong id="tt-rate-personal">0%</strong><span id="tt-minutes-personal"></span></div><div class="tt-block">${names.external}<p class="tt-help">09:00–18:00</p><strong id="tt-rate-external">0%</strong><span id="tt-minutes-external"></span></div></div><p class="tt-help">达成率 = 本板块工作/学习时长 ÷ 本板块总时长，两类分别计算。生活、娱乐和未安排时段不计为工作/学习；每行最多按该时间段计入。</p><div class="tt-row" role="group" aria-label="显示时间板块"><button type="button" data-block="personal">你能掌控</button><button type="button" data-block="external">别人掌控</button><button type="button" data-block="other">其他时段</button><button type="button" data-block="all">全部时段</button></div><p class="tt-help">下方时间表按所选板块显示；原有饼图仍展示全天分布。其他时段的记录保留。</p></section>
         <section aria-label="番茄时间"><iframe id="pomodoro-frame" title="番茄时间" src="pomodoro.html" style="width:100%;height:1080px;border:0;border-radius:16px;display:block;background:#0a0e14"></iframe></section>`;
         const reminder = host.querySelector('[aria-label="每日提醒"]');
         reminder.innerHTML=`<h3>⏰ 每日定时提醒</h3><p>选择适合你的一个提醒时间（北京时间）</p><p><label><input type="radio" name="tt-reminder-hour" value="5"> 早上5:00 · 我有早起习惯</label></p><p><label><input type="radio" name="tt-reminder-hour" value="9"> 早上9:00 · 我不习惯早起</label></p><button type="button" id="tt-calendar" class="tt-primary">添加所选提醒到系统日历</button><p class="tt-help" id="tt-calendar-status" role="status">只添加所选的一条每日提醒。导入日历并开启系统通知后，关闭网站也可提醒。更换时间或停止提醒，请在日历中删除旧的重复提醒。</p>`;
