@@ -3,9 +3,9 @@
  * 提供离线缓存和后台同步功能
  */
 
-const CACHE_NAME = 'retrospection-assistant-v1.0.69';
-const STATIC_CACHE = 'static-v1.0.69';
-const DYNAMIC_CACHE = 'dynamic-v1.0.69';
+const CACHE_NAME = 'retrospection-assistant-v1.0.70';
+const STATIC_CACHE = 'static-v1.0.70';
+const DYNAMIC_CACHE = 'dynamic-v1.0.70';
 
 // 需要预缓存的静态资源
 // 注意：CDN 地址必须与 index.html 中实际 <script src> 使用的地址完全一致，
@@ -20,6 +20,8 @@ const STATIC_ASSETS = [
   './mobile.css',
   './review-assistant.js',
   './time-tools.js',
+  './overview.js',
+  './overview.css',
   './quadrant-scroll.js',
   './pomodoro.html',
   './pomodoro.js',

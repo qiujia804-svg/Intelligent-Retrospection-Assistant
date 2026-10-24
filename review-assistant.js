@@ -2023,6 +2023,7 @@ function savePlan(plan) {
     }
     
     localStorage.setItem(STORAGE_KEY_PLANS, JSON.stringify(plans));
+    if (window.OverviewPanel) OverviewPanel.schedule();
 }
 
 // 复盘表单提交处理
@@ -3479,7 +3480,8 @@ function initCompletionTrendChart(reviews) {
                 maintainAspectRatio: false,
                 plugins: {
                     legend: {
-                        display: blockDatasets.length > 0
+                        display: blockDatasets.length > 0,
+                        labels: { usePointStyle: true, pointStyle: 'circle', boxWidth: 8, padding: 20, color: '#64748b', font: { size: 12 } }
                     },
                     tooltip: {
                         backgroundColor: 'rgba(79, 156, 254, 0.9)',
@@ -3648,6 +3650,7 @@ function updateDataOverview(reviews) {
         } else {
             console.error('Canvas元素不存在或Chart.js未加载');
         }
+        if (window.OverviewPanel) OverviewPanel.render();
     } catch (error) {
         console.error('更新数据概览时发生错误:', error);
     }

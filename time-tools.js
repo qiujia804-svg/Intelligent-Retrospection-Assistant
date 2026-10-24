@@ -122,8 +122,11 @@ window.TimeTools = (() => {
         if (!records.size) return [];
         const datasets = ['personal','external'].map((k,index)=>({ label:names[k], data:Array.from({length:7},(_,i)=>{
             const d=new Date(); d.setDate(d.getDate()-6+i);
-            return records.get(day(d))?.[k]?.rate ?? null;
-        }), borderColor:index?'#28a68c':'#667eea', backgroundColor:'transparent', borderWidth:3, pointRadius:4, tension:0.2, spanGaps:false }));
+            const block = records.get(day(d))?.[k];
+            if (block?.recordedMinutes === 0 && block?.taskCount === 0) return null;
+            return block?.rate ?? null;
+        }), borderColor:index?'#20aa91':'#667eea', backgroundColor:'transparent', borderWidth:3, pointRadius:4, pointBackgroundColor:'#fff', pointBorderWidth:2, tension:0.25, spanGaps:false }));
+        datasets[0].label='自主时间';datasets[1].label='工作时间';
         const legacy = Array.from({length:7},(_,i)=>{
             const d=new Date();d.setDate(d.getDate()-6+i);const date=day(d);
             if(records.has(date))return null;
